@@ -193,5 +193,248 @@
     "rtl": {
       "note": "dir=\"rtl\" with the Radix DirectionProvider. UI labels stay English until ar.json lands in Phase 2; record data is Arabic sample text. Icons that point a direction are mirrored, numbers and money stay LTR."
     }
+  },
+  "brand": {
+    "name": "Saqient CRM"
+  },
+  "landing": {
+    "metaTitle": "Saqient CRM · Sales CRM for Oman and the GCC",
+    "metaDescription": "Leads, deals, quotes and tax invoices for sales teams in Oman and the GCC. VAT on every line, rials to the baisa, sent by email or WhatsApp.",
+    "nav": {
+      "label": "Main",
+      "documents": "Documents",
+      "oman": "Built for Oman",
+      "cycle": "How it works",
+      "questions": "Questions",
+      "signIn": "Sign in"
+    },
+    "hero": {
+      "title": "Sales CRM that counts every baisa",
+      "lead": "Leads, deals, quotes and tax invoices for sales teams in Oman and the GCC. VAT on every line, rials to three decimals, sent by email or WhatsApp.",
+      "primary": "Sign in",
+      "secondary": "See the documents",
+      "facts": {
+        "currencyTerm": "Currencies",
+        "currency": "OMR, AED, INR",
+        "vatTerm": "VAT",
+        "vat": "Per line: 5%, zero-rated, exempt",
+        "sendTerm": "Sending",
+        "send": "Email and WhatsApp"
+      }
+    },
+    "sheet": {
+      "taxInvoice": "Tax invoice",
+      "quote": "Quote",
+      "salesOrder": "Sales order",
+      "number": "No. {n}",
+      "date": "Date",
+      "validTill": "Valid till",
+      "fromQuote": "From quote",
+      "status": "Status",
+      "approved": "Approved",
+      "seller": "From",
+      "buyer": "Bill to",
+      "vatin": "VATIN {n}",
+      "product": "Item",
+      "qty": "Qty",
+      "price": "Price",
+      "vat": "VAT",
+      "total": "Total",
+      "discount": "less {pct}%",
+      "less": "Fewer: {item}",
+      "more": "More: {item}",
+      "subTotal": "Sub total",
+      "vatBase": "{category} base",
+      "vatTotal": "Total VAT",
+      "adjustment": "Adjustment",
+      "grandTotal": "Grand total",
+      "cat": {
+        "standard": "Standard 5%",
+        "zero_rated": "Zero-rated",
+        "exempt": "Exempt"
+      },
+      "caption": "Sample tax invoice. Change a quantity: VAT is rounded per line, half-up, to the baisa.",
+      "label": "Sample tax invoice",
+      "items": {
+        "a": "Network switch, 24-port",
+        "b": "Export freight to Salalah",
+        "c": "Training session, half day"
+      }
+    },
+    "docs": {
+      "title": "One quote, four ways to the customer",
+      "listLabel": "Documents",
+      "quote": "Quote",
+      "salesOrder": "Sales order",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "emailTo": "To",
+      "emailSubjectLabel": "Subject",
+      "emailSubject": "Quote QT-000412 from Al Bustan Trading",
+      "emailBody": "Dear Salim, please find our quote for the Muscat Port fit-out attached. It is valid until 26 November.",
+      "emailSign": "Aisha Al Balushi, Al Bustan Trading LLC",
+      "attachment": "QT-000412.pdf",
+      "waTo": "WhatsApp to",
+      "waBody": "Hello Salim, here is quote QT-000412 for {total}. Open it here: crm.saqient.com/s/k3J9wQ… The link expires in 7 days.",
+      "waLogged": "Logged on the quote: WhatsApp link shared",
+      "waExpiry": "Private link, opens this PDF only"
+    },
+    "oman": {
+      "title": "Made for Oman",
+      "money": {
+        "title": "Rials to the baisa",
+        "l1": "OMR to three decimals, AED and INR to two",
+        "l2": "Each record keeps the exchange rate of the day it was made",
+        "l3": "Totals in OMR never shift when rates change",
+        "l4": "Rates entered by your admin, with a start date",
+        "rate": "Rate {rate}",
+        "label": "Amounts in three currencies"
+      },
+      "vat": {
+        "title": "VAT on every line",
+        "l1": "Standard 5%, zero-rated or exempt, set per product",
+        "l2": "Rounded half-up on each line, never on the total",
+        "l3": "A VAT summary by category on every document",
+        "l4": "Tax invoices numbered with no gaps and locked once issued",
+        "label": "VAT summary"
+      },
+      "deals": {
+        "title": "Your deals stay yours",
+        "l1": "Reps see their own deals, quotes and invoices",
+        "l2": "Managers see their whole team",
+        "l3": "Accounts and contacts are shared across the company",
+        "l4": "Quarterly forecasts in OMR, against each rep’s target",
+        "label": "A deal on the pipeline",
+        "stage": "Proposal/Price Quote",
+        "probability": "{p}% probability",
+        "expected": "Expected"
+      },
+      "phone": {
+        "title": "Sent from your phone",
+        "l1": "Email the PDF straight from the record",
+        "l2": "Share on WhatsApp with a private link that expires",
+        "l3": "Every screen works on a small phone",
+        "l4": "Built to switch to Arabic and right-to-left",
+        "label": "Sending a quote",
+        "button": "Send on WhatsApp",
+        "email": "Send email",
+        "expires": "Link expires in 7 days"
+      }
+    },
+    "cycle": {
+      "title": "Lead to invoice without retyping",
+      "label": "Stage",
+      "lead": {
+        "name": "Lead",
+        "text": "A lead from the exhibition becomes an account, a contact and a deal in one step."
+      },
+      "deal": {
+        "name": "Deal",
+        "text": "Move the deal to Proposal and the probability and forecast follow on their own."
+      },
+      "quote": {
+        "name": "Quote",
+        "text": "Raise the quote from the deal. Lines, VAT and totals are worked out for you."
+      },
+      "invoice": {
+        "name": "Invoice",
+        "text": "Convert to a sales order, then a tax invoice. An issued invoice takes the next number and locks."
+      },
+      "f": {
+        "lead": "Lead",
+        "source": "Source",
+        "exhibition": "Exhibition",
+        "convert": "Convert",
+        "deal": "Deal",
+        "stage": "Stage",
+        "probability": "Probability",
+        "expected": "Expected revenue",
+        "quote": "Quote",
+        "lines": "Lines",
+        "grand": "Grand total",
+        "toSo": "Convert to sales order",
+        "invoice": "Tax invoice",
+        "issued": "Issued",
+        "locked": "Locked",
+        "vat": "VAT"
+      }
+    },
+    "faq": {
+      "title": "Questions",
+      "items": [
+        {
+          "q": "Can we bring our data from our current CRM?",
+          "a": "Yes. Import leads, accounts, contacts, deals and products from CSV files. A dry run comes first, and every row that fails is listed with its reason."
+        },
+        {
+          "q": "Which currencies does it handle?",
+          "a": "Omani rials are the base, to three decimals. Any quote, order or invoice can also be in UAE dirhams or Indian rupees, at the rate your admin set for that day."
+        },
+        {
+          "q": "How is VAT worked out?",
+          "a": "Per line, from the product’s VAT category: standard 5%, zero-rated or exempt. Each line is rounded half-up to the currency’s decimals, and the document shows a summary by category."
+        },
+        {
+          "q": "Are tax invoice numbers safe?",
+          "a": "Numbers come from one company-wide sequence with no gaps and are never reused. An issued invoice is locked; cancelling it keeps its number."
+        },
+        {
+          "q": "Who can see a deal?",
+          "a": "Its owner and the people they report to. Accounts and contacts are shared with the whole company, so nobody keys in the same customer twice."
+        },
+        {
+          "q": "Do we need the WhatsApp Business API?",
+          "a": "No. Sending opens WhatsApp on your phone or computer with the message ready and a private link to the PDF. The link opens only that file, expires after 7 days and can be revoked."
+        },
+        {
+          "q": "Does it work on a phone?",
+          "a": "Every screen works on a phone, from converting a lead to sending a quote on WhatsApp."
+        },
+        {
+          "q": "Is it in Arabic?",
+          "a": "The app is in English today. It is built to switch to Arabic and right-to-left layouts without a redesign."
+        },
+        {
+          "q": "How do we get access?",
+          "a": "Your admin invites each person by email and gives them a role: admin, manager or rep. There is no public sign-up yet; write to us and we will set up your team."
+        }
+      ]
+    },
+    "cta": {
+      "text": "Something we have not answered? Write to us and we will set up your sales team.",
+      "button": "Email us",
+      "signIn": "Sign in"
+    },
+    "footer": {
+      "title": "Saqient CRM",
+      "menuLabel": "Footer",
+      "photoAlt": "Muttrah Corniche in Muscat, with the fort on the hill and gulls over the water",
+      "photoAlt2": "Muttrah harbour and the Hajar mountains, seen from above the fish market",
+      "contactTitle": "Contact",
+      "place": "Muscat, Sultanate of Oman",
+      "legal": "© 2026 Saqient. All rights reserved.",
+      "creditsLabel": "Photographs:",
+      "credit1": "“Muttrah Muscat Oman 2011” by Bilal Sarwar, CC BY 2.0",
+      "credit2": "“Oman-Muscat-Muttrah-21-Marina” by Ian Sewell, CC BY 2.5",
+      "creditsVia": "via Wikimedia Commons."
+    }
+  },
+  "login": {
+    "metaTitle": "Sign in · Saqient CRM",
+    "title": "Sign in",
+    "lead": "Use the email address your admin invited.",
+    "email": "Email",
+    "password": "Password",
+    "remember": "Keep me signed in",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "forgot": "Forgot your password? Ask your admin to reset it.",
+    "home": "Back to the home page",
+    "errors": {
+      "invalid": "The email or password is not right. Check both and try again.",
+      "deactivated": "This account has been deactivated. Ask your admin.",
+      "unavailable": "Sign-in is not available right now. Try again in a few minutes."
+    },
+    "photoAlt": "Muttrah Corniche in Muscat, with the fort on the hill and gulls over the water"
   }
 }

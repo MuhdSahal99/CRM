@@ -1,0 +1,108 @@
+/* Public landing + login motion. Transform and opacity only; content is visible without any of it. */
+
+.landing-fade {
+  animation: landing-fade 200ms ease-out;
+}
+@keyframes landing-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.landing-press {
+  transition: transform 120ms ease-out, color 150ms ease-out;
+}
+.landing-press:active {
+  transform: scale(0.97);
+}
+
+/* Footer photographs: the second slowly crossfades over the first (the page's signature move). */
+.landing-xfade {
+  animation: landing-xfade 16s ease-in-out infinite;
+}
+@keyframes landing-xfade {
+  0%, 40% { opacity: 0; }
+  50%, 90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Stage slider: solid 8px track, passed part in ink, square thumb in the accent. */
+.landing-range {
+  appearance: none;
+  height: 32px;
+  background: transparent;
+  cursor: pointer;
+}
+.landing-range::-webkit-slider-runnable-track {
+  height: 8px;
+  background: linear-gradient(to var(--landing-end, right), var(--foreground) var(--fill), var(--muted) var(--fill));
+}
+.landing-range::-moz-range-track {
+  height: 8px;
+  background: var(--muted);
+}
+.landing-range::-moz-range-progress {
+  height: 8px;
+  background: var(--foreground);
+}
+.landing-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  margin-top: -12px;
+  background: var(--primary);
+  transition: transform 120ms ease-out;
+}
+.landing-range::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: var(--primary);
+}
+.landing-range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+[dir="rtl"] .landing-range {
+  --landing-end: left;
+}
+@media (pointer: coarse) {
+  .landing-range::-webkit-slider-thumb {
+    width: 40px;
+    height: 40px;
+    margin-top: -16px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Section parts rise as they enter: heading, text, picture, staggered by --d. */
+  @supports (animation-timeline: view()) {
+    .landing-rise {
+      animation: landing-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry calc(60% + var(--d, 0) * 1%);
+    }
+    @keyframes landing-rise {
+      /* Travel only, no fade: content is never hidden if the timeline does not run. */
+      from {
+        transform: translateY(32px);
+      }
+    }
+  }
+  .landing-drift {
+    animation: landing-drift 24s ease-in-out infinite alternate;
+  }
+  @keyframes landing-drift {
+    to {
+      transform: scale(1.06);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-xfade {
+    animation: none;
+    opacity: 0;
+  }
+}

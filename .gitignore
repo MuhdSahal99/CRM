@@ -32,3 +32,6 @@ Thumbs.db
 # Next.js / TypeScript generated
 next-env.d.ts
 *.tsbuildinfo
+
+# taste-skill working files
+.taste-skill/
