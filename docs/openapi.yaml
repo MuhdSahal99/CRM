@@ -1,0 +1,2065 @@
+openapi: 3.1.0
+info:
+  title: Saqient Sales CRM API
+  version: 1.0.0-draft
+  summary: REST API mirroring the Zoho CRM v8 shape, limited to the MVP modules in docs/PRD.md.
+  description: |
+    Design: docs/TRD.md · Decisions: docs/adr/0015-rest-api-zoho-shape-openapi.md · Schema: docs/SCHEMA.md
+
+    **Conventions**
+    - Base path `/api/v1`. Paths use module API names: `Leads`, `Accounts`, `Contacts`, `Deals`, `Products`,
+      `Quotes`, `Sales_Orders`, `Invoices`, `Tasks`, `Calls`, `Meetings`.
+    - Body field names are field `api_name`s (Zoho style, e.g. `Deal_Name`). Custom fields (ADR-0006) appear in
+      the same object, keyed by their `api_name`, and are validated against `GET /settings/fields`.
+    - Success envelope `{data: [...], info: {...}}`. Single-record reads also return `data: [record]`.
+    - Error shape `{code, message, details, status}`, the same on every endpoint.
+    - **Records you cannot see return 404**, the same as records that do not exist (PRD US-01/US-02).
+    - Money is a **decimal string** (`"283.500"`). Totals are `readOnly`: the server computes them and
+      ignores any totals a client sends (PRD US-10).
+    - `PUT /{module}/{id}` is a **partial update**: `required` lists apply to POST only. Send the record's
+      current `version`; a stale version returns 409.
+    - State-changing actions accept `Idempotency-Key` (client-generated, one per intent, retained 7 days).
+    - Not in the MVP (no PRD story): bulk `PUT /{module}`, `POST /{module}/actions/mass_update`,
+      `PUT /{module}/{id}/{related_list}/{related_id}`.
+servers:
+  - url: https://crm.example.com/api/v1
+    description: Placeholder host. The real hostname is decided with ADR-0013.
+security:
+  - sessionCookie: []
+tags:
+  - name: Metadata
+  - name: Records
+  - name: Leads
+  - name: Deals
+  - name: Documents
+  - name: Sending
+  - name: Settings
+  - name: Users
+  - name: Forecasts
+  - name: Imports
+  - name: Public
+
+paths:
+  # ---------------------------------------------------------------- metadata (§7)
+  /settings/modules:
+    get:
+      tags: [Metadata]
+      operationId: listModules
+      summary: List modules
+      responses:
+        '200':
+          description: Modules
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ModuleMeta' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /settings/fields:
+    get:
+      tags: [Metadata]
+      operationId: listFields
+      summary: List fields of a module (standard + custom), with the caller's field permission
+      parameters:
+        - $ref: '#/components/parameters/ModuleQuery'
+      responses:
+        '200':
+          description: Fields
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/FieldMeta' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /settings/layouts:
+    get:
+      tags: [Metadata]
+      operationId: listLayouts
+      summary: List layouts (sections and placed fields) of a module
+      parameters:
+        - $ref: '#/components/parameters/ModuleQuery'
+      responses:
+        '200':
+          description: Layouts
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/LayoutMeta' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /settings/related_lists:
+    get:
+      tags: [Metadata]
+      operationId: listRelatedLists
+      summary: List the related lists shown on a module's detail page
+      parameters:
+        - $ref: '#/components/parameters/ModuleQuery'
+      responses:
+        '200':
+          description: Related lists
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [api_name, module, label_key]
+                      properties:
+                        api_name: { $ref: '#/components/schemas/RelatedListName' }
+                        module: { $ref: '#/components/schemas/ModuleName' }
+                        label_key: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /settings/pipeline:
+    get:
+      tags: [Metadata, Deals]
+      operationId: getPipeline
+      summary: Pipelines with their ordered stages (MVP has one seeded pipeline)
+      parameters:
+        - name: layout_id
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Pipelines
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Pipeline' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ---------------------------------------------------------------- settings (PRD US-08/09/12)
+  /settings/org:
+    get:
+      tags: [Settings]
+      operationId: getOrgSettings
+      summary: Org settings (seller VATIN, address, SMTP reference, share-link TTL)
+      responses:
+        '200':
+          description: Settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/OrgSettings' }, maxItems: 1 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Settings]
+      operationId: updateOrgSettings
+      summary: Update org settings (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data: { type: array, items: { $ref: '#/components/schemas/OrgSettings' }, minItems: 1, maxItems: 1 }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /settings/currencies:
+    get:
+      tags: [Settings]
+      operationId: listCurrencies
+      summary: Currencies with their precision and current effective rate
+      responses:
+        '200':
+          description: Currencies
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Currency' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /settings/exchange_rates:
+    get:
+      tags: [Settings]
+      operationId: listExchangeRates
+      summary: Exchange-rate history
+      parameters:
+        - name: currency
+          in: query
+          schema: { $ref: '#/components/schemas/CurrencyCode' }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Rates
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ListEnvelope'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/ExchangeRate' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Settings]
+      operationId: createExchangeRate
+      summary: Enter a rate with an effective date (Admin). Rates are append-only (US-09).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data: { type: array, items: { $ref: '#/components/schemas/ExchangeRate' }, minItems: 1, maxItems: 10 }
+      responses:
+        '201': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /settings/vat_rates:
+    get:
+      tags: [Settings]
+      operationId: listVatRates
+      summary: VAT rates by category with effective dates
+      responses:
+        '200':
+          description: VAT rates
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/VatRate' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Settings]
+      operationId: createVatRate
+      summary: Add a VAT rate effective from a date (Admin). Existing documents keep their stored rate (US-08).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data: { type: array, items: { $ref: '#/components/schemas/VatRate' }, minItems: 1, maxItems: 2 }
+      responses:
+        '201': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /settings/document_sequences:
+    get:
+      tags: [Settings]
+      operationId: listDocumentSequences
+      summary: Numbering for quotes, sales orders and invoices
+      responses:
+        '200':
+          description: Sequences
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/DocumentSequence' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Settings]
+      operationId: updateDocumentSequences
+      summary: Set prefix, padding and starting number (Admin). `next_value` can only increase (ADR-0008, OQ-06).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data: { type: array, items: { $ref: '#/components/schemas/DocumentSequence' }, minItems: 1, maxItems: 3 }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ---------------------------------------------------------------- users (US-01, US-03)
+  /users:
+    get:
+      tags: [Users]
+      operationId: listUsers
+      summary: List users in the caller's org (all roles can read names for owner pickers)
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, deactivated] }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Users
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ListEnvelope'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/User' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Users]
+      operationId: inviteUser
+      summary: Invite a user with a role and reporting manager (Admin)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items:
+                    type: object
+                    required: [email, name, role]
+                    properties:
+                      email: { type: string, format: email, maxLength: 254 }
+                      name: { type: string, maxLength: 120 }
+                      role: { $ref: '#/components/schemas/Role' }
+                      manager_id: { type: [string, 'null'], format: uuid }
+      responses:
+        '201': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Users]
+      operationId: getUser
+      summary: Get a user
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/User' }, maxItems: 1 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Users]
+      operationId: updateUser
+      summary: Change role or reporting manager (Admin). Cycles in the hierarchy are rejected.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: array
+                  minItems: 1
+                  maxItems: 1
+                  items:
+                    type: object
+                    properties:
+                      role: { $ref: '#/components/schemas/Role' }
+                      manager_id: { type: [string, 'null'], format: uuid }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /users/{id}/actions/deactivate:
+    post:
+      tags: [Users]
+      operationId: deactivateUser
+      summary: Deactivate a user (Admin). Sign-in is refused and sessions are revoked; their records are unchanged (US-01).
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /users/{id}/actions/transfer:
+    post:
+      tags: [Users]
+      operationId: transferRecords
+      summary: |
+        Transfer the user's open Leads, Deals, Quotes, Sales Orders and Activities to another user
+        in one transaction. A timeline event is written for each record (US-03). Admin only.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to_user_id]
+              properties:
+                to_user_id: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Counts transferred per module
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        module: { $ref: '#/components/schemas/ModuleName' }
+                        count: { type: integer, minimum: 0 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ---------------------------------------------------------------- generic records (§7)
+  /{module}:
+    parameters:
+      - $ref: '#/components/parameters/Module'
+    get:
+      tags: [Records]
+      operationId: listRecords
+      summary: List visible records of a module
+      parameters:
+        - name: fields
+          in: query
+          description: Comma-separated field api_names to return.
+          schema: { type: string, maxLength: 2000 }
+        - name: sort_by
+          in: query
+          schema: { type: string, maxLength: 60 }
+        - name: sort_order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: cvid
+          in: query
+          description: |
+            Custom view id. System views: `all`, `my`, `my_open`, `overdue` (activities),
+            `converted` (Leads; converted leads are excluded from every other view, US-05),
+            `recently_created`, `recently_modified`.
+          schema: { type: string, maxLength: 60 }
+      responses:
+        '200':
+          description: Page of records
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ListEnvelope'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/AnyRecord' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    post:
+      tags: [Records]
+      operationId: createRecords
+      summary: Create up to 100 records
+      description: |
+        `trigger` is accepted for Zoho compatibility and ignored (the MVP has no workflow engine).
+        Documents (Quotes/Sales_Orders/Invoices) capture the effective exchange rate. If no rate is
+        effective for the currency, the create fails with 422 `RATE_NOT_FOUND` (US-09).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data: { type: array, minItems: 1, maxItems: 100, items: { $ref: '#/components/schemas/AnyRecord' } }
+                trigger: { type: array, items: { type: string } }
+      responses:
+        '201': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Records]
+      operationId: deleteRecords
+      summary: Soft-delete up to 100 visible records
+      description: Ids that are not visible are reported per id as `NOT_FOUND`. Issued invoices cannot be deleted.
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          style: form
+          explode: false
+          schema: { type: array, minItems: 1, maxItems: 100, items: { type: string, format: uuid } }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /{module}/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Module'
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Records]
+      operationId: getRecord
+      summary: Get one visible record
+      responses:
+        '200':
+          description: Record
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, minItems: 1, maxItems: 1, items: { $ref: '#/components/schemas/AnyRecord' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Records]
+      operationId: updateRecord
+      summary: Partially update a record (send `version`)
+      description: |
+        Changing a Deal's `Stage` applies that stage's default Probability and Forecast Category and writes a Stage
+        History row. Moving to a Closed Lost stage requires `Reason_For_Loss__s`. Moving to Closed Won sets
+        Probability to 100 and Forecast Category to Closed (US-07). Converted leads and non-draft invoices are
+        rejected with 409 `INVALID_STATE`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data: { type: array, minItems: 1, maxItems: 1, items: { $ref: '#/components/schemas/AnyRecord' } }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Records]
+      operationId: deleteRecord
+      summary: Soft-delete a record
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /{module}/search:
+    parameters:
+      - $ref: '#/components/parameters/Module'
+    get:
+      tags: [Records]
+      operationId: searchRecords
+      summary: Search visible records
+      description: |
+        Exactly one of `criteria`, `word`, `email` or `phone` is required. `criteria` uses Zoho syntax, e.g.
+        `((Email:equals:x@y.com)and(Stage:starts_with:Neg))`. It is parsed into an AST with an allowlist of
+        fields and operators (`equals`, `not_equal`, `starts_with`, `in`, `between`, `greater_than`,
+        `less_than`). Values are always bound as parameters. Accounts and Contacts are searchable org-wide
+        (US-02); other modules are visibility-filtered.
+      parameters:
+        - name: criteria
+          in: query
+          schema: { type: string, maxLength: 2000 }
+        - name: word
+          in: query
+          schema: { type: string, minLength: 2, maxLength: 100 }
+        - name: email
+          in: query
+          schema: { type: string, maxLength: 254 }
+        - name: phone
+          in: query
+          schema: { type: string, maxLength: 30 }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Matches
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ListEnvelope'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/AnyRecord' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /{module}/{id}/{related_list}:
+    parameters:
+      - $ref: '#/components/parameters/Module'
+      - $ref: '#/components/parameters/Id'
+      - name: related_list
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/RelatedListName' }
+    get:
+      tags: [Records]
+      operationId: listRelated
+      summary: Related records of a visible parent, each filtered by its own visibility rule (US-06)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Related records
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ListEnvelope'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/AnyRecord' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /{module}/{id}/timeline:
+    parameters:
+      - $ref: '#/components/parameters/Module'
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Records]
+      operationId: getTimeline
+      summary: Timeline (field changes, stage changes, conversions, sends, activities), newest first (US-15)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Events
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ListEnvelope'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/TimelineEvent' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- leads (US-04, US-05)
+  /Leads/{id}/__conversion_options:
+    get:
+      tags: [Leads]
+      operationId: getLeadConversionOptions
+      summary: Matching Account and Contact candidates for the convert dialog (US-05)
+      description: |
+        Matching order (reference §3.1): lead Email → Contacts.Email, then Company → Accounts.Account_Name,
+        then name → Contacts. Only records the caller can see are offered.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    maxItems: 1
+                    items:
+                      type: object
+                      properties:
+                        Accounts: { type: array, items: { $ref: '#/components/schemas/Lookup' } }
+                        Contacts: { type: array, items: { $ref: '#/components/schemas/Lookup' } }
+                        preferred:
+                          type: object
+                          properties:
+                            Accounts: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+                            Contacts: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /Leads/{id}/actions/convert:
+    post:
+      tags: [Leads]
+      operationId: convertLead
+      summary: Convert a lead into Account + Contact (+ optional Deal) in one transaction (US-05)
+      description: |
+        - `Accounts`/`Contacts` set to `{id}` attaches to an existing record; omitted or `null` creates a new one.
+        - `Deals` omitted or `null` → no Deal is created. If `Deal_Name` is omitted it defaults to the lead's Company.
+        - The lead's notes and activities are re-parented to the Contact. The lead is flagged converted and is
+          then read-only.
+        - On any failure nothing is created (single transaction).
+        - Converting an already-converted lead returns 409 `INVALID_STATE`.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: array
+                  minItems: 1
+                  maxItems: 1
+                  items:
+                    type: object
+                    properties:
+                      Accounts: { oneOf: [ { $ref: '#/components/schemas/IdRef' }, { type: 'null' } ] }
+                      Contacts: { oneOf: [ { $ref: '#/components/schemas/IdRef' }, { type: 'null' } ] }
+                      assign_to: { $ref: '#/components/schemas/IdRef' }
+                      Deals:
+                        oneOf:
+                          - type: 'null'
+                          - type: object
+                            required: [Closing_Date, Pipeline, Stage]
+                            properties:
+                              Deal_Name: { type: string, maxLength: 120 }
+                              Closing_Date: { type: string, format: date }
+                              Pipeline: { $ref: '#/components/schemas/IdRef' }
+                              Stage: { type: string, maxLength: 60, description: Stage api_value }
+                              Amount: { $ref: '#/components/schemas/Money' }
+                              Currency: { $ref: '#/components/schemas/CurrencyCode' }
+                              Contact_Role: { type: string, maxLength: 60 }
+      responses:
+        '200':
+          description: Created or linked ids
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [Accounts, Contacts, Deals]
+                      properties:
+                        Accounts: { type: string, format: uuid }
+                        Contacts: { type: string, format: uuid }
+                        Deals: { type: [string, 'null'], format: uuid }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ---------------------------------------------------------------- deals (US-07)
+  /Deals/kanban:
+    get:
+      tags: [Deals]
+      operationId: getDealsKanban
+      summary: Kanban columns for one pipeline, with deal count and Σ Amount in OMR per stage
+      parameters:
+        - name: pipeline_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: per_column
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        '200':
+          description: Columns
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [stage, count, sum_amount_omr, deals]
+                      properties:
+                        stage: { $ref: '#/components/schemas/Stage' }
+                        count: { type: integer, minimum: 0 }
+                        sum_amount_omr: { $ref: '#/components/schemas/Money' }
+                        deals: { type: array, items: { $ref: '#/components/schemas/Deal' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ---------------------------------------------------------------- documents (US-10/11/12)
+  /Quotes/{id}/actions/convert:
+    post:
+      tags: [Documents]
+      operationId: convertQuote
+      summary: Convert a quote to a Sales Order or Invoice (US-11)
+      description: |
+        Copies the line items, addresses, Account, Contact, Deal, currency and the **stored** exchange rate.
+        The rate is not captured again. Sets the back-reference (`Quote_Name` on the new record).
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to]
+              properties:
+                to: { type: string, enum: [Sales_Orders, Invoices] }
+      responses:
+        '201': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /Sales_Orders/{id}/actions/convert:
+    post:
+      tags: [Documents]
+      operationId: convertSalesOrder
+      summary: Convert a sales order to a draft Invoice (US-11); same copy rules as quote conversion
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                to: { type: string, enum: [Invoices], default: Invoices }
+      responses:
+        '201': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /Invoices/{id}/actions/issue:
+    post:
+      tags: [Documents]
+      operationId: issueInvoice
+      summary: Issue a draft invoice
+      description: |
+        Re-prices the invoice, assigns the next gap-free number, snapshots seller and buyer details, locks the
+        lines and totals, and queues the PDF render (US-12, ADR-0008). A non-draft invoice returns 409
+        `INVALID_STATE`.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /Invoices/{id}/actions/cancel:
+    post:
+      tags: [Documents]
+      operationId: cancelInvoice
+      summary: Cancel an issued invoice. It keeps its number (US-12). Cancelling a paid invoice requires Admin.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3, maxLength: 500 }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /Invoices/{id}/actions/mark_paid:
+    post:
+      tags: [Documents]
+      operationId: markInvoicePaid
+      summary: Mark an issued invoice Paid by hand. The change appears on its timeline (US-12).
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paid_on: { type: string, format: date }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /{doc_module}/{id}/pdf:
+    parameters:
+      - $ref: '#/components/parameters/DocModule'
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Documents]
+      operationId: getDocumentPdf
+      summary: Download the PDF of a visible document
+      description: |
+        Issued invoices return the immutable PDF stored at issue. Quotes and sales orders return the latest
+        render. If that render is out of date, a new render is queued and the response is 202 with
+        `Retry-After`.
+      responses:
+        '200':
+          description: PDF
+          headers:
+            Cache-Control: { schema: { type: string, const: 'no-store, private' } }
+          content:
+            application/pdf:
+              schema: { type: string, contentMediaType: application/pdf }
+        '202':
+          description: Render queued
+          headers:
+            Retry-After: { schema: { type: integer } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- sending (US-13, US-14)
+  /{doc_module}/{id}/actions/send_email:
+    post:
+      tags: [Sending]
+      operationId: sendDocumentEmail
+      summary: Queue an email with the PDF attached to a Contact (US-13)
+      description: |
+        Returns 202 once the send is queued. The activity "Email sent to X" is logged only after the SMTP
+        send succeeds. A failure is visible on the `Emails` related list with its error, and no "sent"
+        activity is logged.
+      parameters:
+        - $ref: '#/components/parameters/DocModule'
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to_contact_id]
+              properties:
+                to_contact_id: { type: string, format: uuid }
+                subject: { type: string, maxLength: 255 }
+                message: { type: string, maxLength: 5000 }
+      responses:
+        '202':
+          description: Queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        email_send_id: { type: string, format: uuid }
+                        status: { type: string, const: queued }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /{doc_module}/{id}/share_links:
+    parameters:
+      - $ref: '#/components/parameters/DocModule'
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Sending]
+      operationId: listShareLinks
+      summary: Share links for a document (tokens are never returned again)
+      responses:
+        '200':
+          description: Links
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ShareLink' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Sending]
+      operationId: createShareLink
+      summary: Create a 7-day link to the current PDF and a wa.me URL (US-14)
+      description: |
+        Creates a link to one immutable PDF file. Logs the activity "WhatsApp link shared", which records that
+        the link was shared, not that it was delivered. A Contact without a mobile number returns 422
+        `NO_MOBILE`. The plaintext `url` is returned **only in this response**.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to_contact_id]
+              properties:
+                to_contact_id: { type: string, format: uuid }
+                message: { type: string, maxLength: 1000, description: Text placed before the link }
+      responses:
+        '201':
+          description: Link created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/ShareLink'
+                        - type: object
+                          required: [url, whatsapp_url]
+                          properties:
+                            url: { type: string, format: uri, description: 'https://<host>/s/<token>' }
+                            whatsapp_url: { type: string, format: uri, description: 'https://wa.me/<E.164 digits>?text=<encoded>' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /{doc_module}/{id}/share_links/{link_id}:
+    delete:
+      tags: [Sending]
+      operationId: revokeShareLink
+      summary: Revoke a share link. Takes effect on the next request.
+      parameters:
+        - $ref: '#/components/parameters/DocModule'
+        - $ref: '#/components/parameters/Id'
+        - name: link_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- forecasts (US-16)
+  /forecasts:
+    get:
+      tags: [Forecasts]
+      operationId: getForecast
+      summary: Quarterly forecast per visible user, in OMR
+      description: |
+        Deals whose Closing_Date falls in the quarter: Achieved = Σ Closed Won; Committed = Σ Committed;
+        Best Case = Committed + Σ Best Case; Pipeline = Σ open; Gap = Target − Achieved. Each deal's amount is
+        converted at its stored rate. A Rep sees only their own row. The team total equals the sum of the rows.
+        Fiscal year starts in January.
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema: { type: integer, minimum: 2000, maximum: 2100 }
+        - name: quarter
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 4 }
+      responses:
+        '200':
+          description: Forecast
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, team_total]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ForecastRow' } }
+                  team_total: { $ref: '#/components/schemas/ForecastRow' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /forecasts/targets:
+    put:
+      tags: [Forecasts]
+      operationId: setForecastTargets
+      summary: Set quarterly targets for users in the caller's team (Manager or Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items:
+                    type: object
+                    required: [user_id, year, quarter, target_omr]
+                    properties:
+                      user_id: { type: string, format: uuid }
+                      year: { type: integer, minimum: 2000, maximum: 2100 }
+                      quarter: { type: integer, minimum: 1, maximum: 4 }
+                      target_omr: { $ref: '#/components/schemas/Money' }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  # ---------------------------------------------------------------- imports (US-17)
+  /imports:
+    get:
+      tags: [Imports]
+      operationId: listImports
+      summary: Import jobs (Admin)
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Jobs
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ListEnvelope'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/ImportJob' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Imports]
+      operationId: createImport
+      summary: Upload a Zoho CSV export with a column mapping; starts a dry run (Admin)
+      description: |
+        Nothing is written to CRM tables until the import is confirmed. Limits: max 20 MB, CSV text only
+        (content-sniffed), max 100,000 rows.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [module, file, mapping]
+              properties:
+                module: { type: string, enum: [Leads, Accounts, Contacts, Deals, Products] }
+                file: { type: string, contentMediaType: text/csv }
+                mapping:
+                  type: string
+                  contentMediaType: application/json
+                  description: 'JSON object: CSV header → field api_name. The Zoho "Record Id" column maps to `zoho_id`.'
+      responses:
+        '202':
+          description: Dry run queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ImportJob' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/TooLarge' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /imports/{id}:
+    get:
+      tags: [Imports]
+      operationId: getImport
+      summary: Import job status, with row counts and errors per row (Admin)
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Job
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ImportJob' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /imports/{id}/actions/confirm:
+    post:
+      tags: [Imports]
+      operationId: confirmImport
+      summary: Confirm a validated dry run. Valid rows are upserted on Zoho id; failed rows go to the errors CSV.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Import queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ImportJob' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /imports/{id}/errors:
+    get:
+      tags: [Imports]
+      operationId: downloadImportErrors
+      summary: Download failed rows with error messages as CSV (cells escaped against formula injection)
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: CSV
+          headers:
+            Content-Disposition: { schema: { type: string } }
+          content:
+            text/csv:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------- public share link (US-14)
+  /s/{token}:
+    servers:
+      - url: https://crm.example.com
+        description: Public route, outside /api/v1
+    get:
+      tags: [Public]
+      operationId: openSharedPdf
+      summary: Open a shared PDF without signing in
+      description: |
+        Valid → the one PDF the link points to. Unknown, malformed, expired and revoked tokens all return the
+        same 404 "link expired" HTML page, so the response does not reveal which tokens exist. Rate-limited per
+        IP. The token never appears in logs (ADR-0009).
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+      responses:
+        '200':
+          description: The shared PDF
+          headers:
+            Cache-Control: { schema: { type: string, const: 'no-store, private' } }
+            X-Robots-Tag: { schema: { type: string, const: 'noindex, nofollow' } }
+            Referrer-Policy: { schema: { type: string, const: no-referrer } }
+            X-Content-Type-Options: { schema: { type: string, const: nosniff } }
+            Content-Security-Policy: { schema: { type: string, const: "default-src 'none'" } }
+          content:
+            application/pdf:
+              schema: { type: string, contentMediaType: application/pdf }
+        '404':
+          description: Link expired (the same page for unknown, expired and revoked tokens)
+          content:
+            text/html:
+              schema: { type: string }
+        '429':
+          description: Too many requests
+          headers:
+            Retry-After: { schema: { type: integer } }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+      description: |
+        Better Auth session cookie: httpOnly, Secure, SameSite=Lax. In production the cookie name carries the
+        `__Secure-` prefix. Sign-in and sign-out are Better Auth routes under `/api/auth/*` and are documented
+        by Better Auth. There is no API-key or header bypass.
+
+  parameters:
+    Module:
+      name: module
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/ModuleName' }
+    DocModule:
+      name: doc_module
+      in: path
+      required: true
+      schema: { type: string, enum: [Quotes, Sales_Orders, Invoices] }
+    ModuleQuery:
+      name: module
+      in: query
+      required: true
+      schema: { $ref: '#/components/schemas/ModuleName' }
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: |
+        One key per intent, reused on retry. A replay returns the stored response. The same key with a
+        different body returns 422 `IDEMPOTENCY_KEY_REUSED`. A request still in flight returns 409
+        `IN_PROGRESS`. Keys are kept for 7 days, scoped to org and user.
+      schema: { type: string, minLength: 8, maxLength: 255 }
+
+  responses:
+    WriteResult:
+      description: Per-record write outcome (Zoho shape)
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: array
+                items: { $ref: '#/components/schemas/WriteOutcome' }
+    Unauthorized:
+      description: Not signed in, session expired, or user deactivated
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: The caller's role cannot perform this action at all. Not used for invisible records, which return 404.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Does not exist, or not visible to the caller (indistinguishable by design)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Version conflict, invalid state transition, or idempotent request in flight
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Validation failed, with one `details` entry per field
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooLarge:
+      description: Upload exceeds the size limit
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    # ------------------------------------------------------------ envelope / errors
+    ListEnvelope:
+      type: object
+      required: [data, info]
+      properties:
+        data: { type: array }
+        info: { $ref: '#/components/schemas/Info' }
+    Info:
+      type: object
+      required: [page, per_page, count, more_records]
+      properties:
+        page: { type: integer, minimum: 1 }
+        per_page: { type: integer, minimum: 1, maximum: 200 }
+        count: { type: integer, minimum: 0, description: Records in this page }
+        more_records: { type: boolean }
+    Error:
+      type: object
+      required: [code, message, status]
+      properties:
+        code:
+          type: string
+          description: Machine-readable code.
+          examples: [INVALID_DATA, MANDATORY_NOT_FOUND, NOT_FOUND, NO_PERMISSION, VERSION_CONFLICT, INVALID_STATE,
+                     RATE_NOT_FOUND, NO_MOBILE, IDEMPOTENCY_KEY_REUSED, IN_PROGRESS, RATE_LIMITED, AUTHENTICATION_FAILURE]
+        message: { type: string, description: Human-readable; never contains stack traces or SQL }
+        details:
+          type: object
+          description: For validation errors, `api_name` and optionally `errors` (one per field).
+          properties:
+            api_name: { type: string }
+            errors:
+              type: array
+              items:
+                type: object
+                required: [api_name, code]
+                properties:
+                  api_name: { type: string }
+                  code: { type: string }
+                  message: { type: string }
+        status: { type: string, enum: [error] }
+    WriteOutcome:
+      type: object
+      required: [code, status]
+      properties:
+        code: { type: string, examples: [SUCCESS, NOT_FOUND, INVALID_DATA] }
+        status: { type: string, enum: [success, error] }
+        message: { type: string }
+        details:
+          type: object
+          properties:
+            id: { type: string, format: uuid }
+            version: { type: integer }
+            api_name: { type: string }
+
+    # ------------------------------------------------------------ primitives
+    ModuleName:
+      type: string
+      enum: [Leads, Accounts, Contacts, Deals, Products, Quotes, Sales_Orders, Invoices, Tasks, Calls, Meetings]
+    RelatedListName:
+      type: string
+      enum: [Contacts, Deals, Quotes, Sales_Orders, Invoices, Notes, Open_Activities, Closed_Activities,
+             Emails, Stage_History, Product_Details]
+    Role:
+      type: string
+      enum: [admin, manager, rep]
+    Money:
+      type: string
+      description: Exact decimal as a string. OMR uses 3 dp; AED and INR are rounded to 2 dp by the server.
+      pattern: '^-?\d{1,15}(\.\d{1,3})?$'
+      examples: ['283.500', '-0.190']
+    Quantity:
+      type: string
+      pattern: '^\d{1,11}(\.\d{1,3})?$'
+      description: Must be > 0 (US-10)
+    Rate:
+      type: string
+      pattern: '^\d{1,10}(\.\d{1,8})?$'
+      description: OMR per 1 unit of the currency
+    Percent:
+      type: string
+      pattern: '^\d{1,3}(\.\d{1,4})?$'
+    CurrencyCode:
+      type: string
+      enum: [OMR, AED, INR]
+    VatCategory:
+      type: string
+      enum: [standard, zero_rated, exempt]
+    Country:
+      type: string
+      pattern: '^[A-Z]{2}$'
+    IdRef:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string, format: uuid }
+    Lookup:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, readOnly: true }
+    PolymorphicRef:
+      type: object
+      required: [id, module]
+      properties:
+        id: { type: string, format: uuid }
+        module: { $ref: '#/components/schemas/ModuleName' }
+        name: { type: string, readOnly: true }
+
+    # ------------------------------------------------------------ metadata
+    ModuleMeta:
+      type: object
+      properties:
+        api_name: { $ref: '#/components/schemas/ModuleName' }
+        label_key: { type: string }
+        is_custom: { type: boolean }
+        visibility: { type: string, enum: [public, private] }
+    FieldMeta:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        api_name: { type: string }
+        label_key: { type: string }
+        data_type:
+          type: string
+          enum: [text, textarea, email, phone, url, picklist, multiselect, date, datetime, integer, decimal,
+                 currency, percent, boolean, lookup, user_lookup, autonumber]
+        is_system: { type: boolean }
+        required: { type: boolean }
+        is_unique: { type: boolean }
+        read_only: { type: boolean }
+        max_length: { type: [integer, 'null'] }
+        lookup_module: { oneOf: [ { $ref: '#/components/schemas/ModuleName' }, { type: 'null' } ] }
+        picklist_values:
+          type: array
+          items:
+            type: object
+            properties:
+              value: { type: string }
+              label_key: { type: string }
+              category: { type: [string, 'null'], enum: [open, won, lost, null] }
+              sort_order: { type: integer }
+        access: { type: string, enum: [read_write, read_only, hidden], description: For the caller's role }
+    LayoutMeta:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        is_default: { type: boolean }
+        sections:
+          type: array
+          items:
+            type: object
+            properties:
+              label_key: { type: string }
+              columns: { type: integer, enum: [1, 2] }
+              fields: { type: array, items: { type: string, description: field api_name } }
+    Pipeline:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        is_default: { type: boolean }
+        stages: { type: array, items: { $ref: '#/components/schemas/Stage' } }
+    Stage:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        api_value: { type: string }
+        name_key: { type: string }
+        sort_order: { type: integer }
+        probability: { type: integer, minimum: 0, maximum: 100 }
+        record_category: { type: string, enum: [open, closed_won, closed_lost] }
+        forecast_category: { $ref: '#/components/schemas/ForecastCategory' }
+    ForecastCategory:
+      type: string
+      enum: [Pipeline, Best_Case, Committed, Closed, Omitted]
+
+    # ------------------------------------------------------------ settings
+    OrgSettings:
+      type: object
+      properties:
+        legal_name: { type: string, maxLength: 200 }
+        address_line1: { type: string, maxLength: 250 }
+        address_line2: { type: string, maxLength: 250 }
+        city: { type: string, maxLength: 30 }
+        postal_code: { type: string, maxLength: 30 }
+        country: { $ref: '#/components/schemas/Country' }
+        vat_number: { type: [string, 'null'], maxLength: 20 }
+        base_currency: { type: string, const: OMR, readOnly: true }
+        fiscal_year_start_month: { type: integer, const: 1, readOnly: true }
+        share_link_ttl_days: { type: integer, minimum: 1, maximum: 30 }
+        smtp_host: { type: [string, 'null'] }
+        smtp_port: { type: [integer, 'null'], minimum: 1, maximum: 65535 }
+        smtp_username: { type: [string, 'null'] }
+        smtp_password:
+          type: string
+          writeOnly: true
+          description: Stored in the secrets manager; never returned.
+        smtp_from_email: { type: [string, 'null'], format: email }
+        smtp_from_name: { type: [string, 'null'] }
+        version: { type: integer }
+    Currency:
+      type: object
+      properties:
+        code: { $ref: '#/components/schemas/CurrencyCode' }
+        scale: { type: integer, enum: [2, 3] }
+        is_base: { type: boolean }
+        current_rate: { oneOf: [ { $ref: '#/components/schemas/Rate' }, { type: 'null' } ] }
+        current_rate_effective_from: { type: [string, 'null'], format: date }
+    ExchangeRate:
+      type: object
+      required: [currency, rate, effective_from]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        currency: { type: string, enum: [AED, INR] }
+        rate: { $ref: '#/components/schemas/Rate' }
+        effective_from: { type: string, format: date }
+        created_by: { allOf: [ { $ref: '#/components/schemas/Lookup' } ], readOnly: true }
+    VatRate:
+      type: object
+      required: [category, rate, effective_from]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        category: { type: string, enum: [standard, zero_rated] }
+        rate: { $ref: '#/components/schemas/Percent' }
+        effective_from: { type: string, format: date }
+    DocumentSequence:
+      type: object
+      required: [doc_type]
+      properties:
+        doc_type: { type: string, enum: [quote, sales_order, invoice] }
+        prefix: { type: string, maxLength: 20 }
+        padding: { type: integer, minimum: 1, maximum: 12 }
+        next_value: { type: integer, minimum: 1 }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string, format: email }
+        role: { $ref: '#/components/schemas/Role' }
+        manager: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+        status: { type: string, enum: [active, deactivated, invited] }
+
+    # ------------------------------------------------------------ records
+    RecordBase:
+      type: object
+      description: |
+        System fields on every record. Custom fields appear alongside as `additionalProperties`, keyed by
+        api_name; the server validates them against `/settings/fields`.
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        Owner: { $ref: '#/components/schemas/Lookup' }
+        Created_Time: { type: string, format: date-time, readOnly: true }
+        Modified_Time: { type: string, format: date-time, readOnly: true }
+        Created_By: { allOf: [ { $ref: '#/components/schemas/Lookup' } ], readOnly: true }
+        Modified_By: { allOf: [ { $ref: '#/components/schemas/Lookup' } ], readOnly: true }
+        version: { type: integer, minimum: 1, description: Required on PUT }
+      additionalProperties: true
+    AnyRecord:
+      oneOf:
+        - $ref: '#/components/schemas/Lead'
+        - $ref: '#/components/schemas/Account'
+        - $ref: '#/components/schemas/Contact'
+        - $ref: '#/components/schemas/Deal'
+        - $ref: '#/components/schemas/Product'
+        - $ref: '#/components/schemas/Quote'
+        - $ref: '#/components/schemas/SalesOrder'
+        - $ref: '#/components/schemas/Invoice'
+        - $ref: '#/components/schemas/Task'
+        - $ref: '#/components/schemas/Call'
+        - $ref: '#/components/schemas/Meeting'
+      description: The concrete schema is determined by the `{module}` path parameter.
+
+    Lead:
+      allOf:
+        - $ref: '#/components/schemas/RecordBase'
+        - type: object
+          required: [Last_Name, Company]
+          properties:
+            Salutation: { type: [string, 'null'], maxLength: 20 }
+            First_Name: { type: [string, 'null'], maxLength: 40 }
+            Last_Name: { type: string, minLength: 1, maxLength: 80 }
+            Company: { type: string, minLength: 1, maxLength: 100 }
+            Designation: { type: [string, 'null'], maxLength: 100 }
+            Email: { type: [string, 'null'], format: email, maxLength: 100 }
+            Secondary_Email: { type: [string, 'null'], format: email, maxLength: 100 }
+            Phone: { type: [string, 'null'], maxLength: 30 }
+            Mobile: { type: [string, 'null'], maxLength: 30 }
+            Fax: { type: [string, 'null'], maxLength: 30 }
+            Website: { type: [string, 'null'], format: uri, maxLength: 120 }
+            Lead_Source: { type: [string, 'null'] }
+            Lead_Status: { type: [string, 'null'] }
+            Industry: { type: [string, 'null'] }
+            Rating: { type: [string, 'null'] }
+            Annual_Revenue: { oneOf: [ { $ref: '#/components/schemas/Money' }, { type: 'null' } ] }
+            No_of_Employees: { type: [integer, 'null'], minimum: 0 }
+            Email_Opt_Out: { type: boolean }
+            Street: { type: [string, 'null'], maxLength: 250 }
+            City: { type: [string, 'null'], maxLength: 30 }
+            State: { type: [string, 'null'], maxLength: 30 }
+            Zip_Code: { type: [string, 'null'], maxLength: 30 }
+            Country: { oneOf: [ { $ref: '#/components/schemas/Country' }, { type: 'null' } ] }
+            Description: { type: [string, 'null'], maxLength: 32000 }
+            Converted__s: { type: boolean, readOnly: true }
+            Converted_Date_Time: { type: [string, 'null'], format: date-time, readOnly: true }
+
+    Account:
+      allOf:
+        - $ref: '#/components/schemas/RecordBase'
+        - type: object
+          required: [Account_Name]
+          properties:
+            Account_Name: { type: string, minLength: 1, maxLength: 100 }
+            Parent_Account: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+            Account_Number: { type: [string, 'null'], maxLength: 40 }
+            Account_Site: { type: [string, 'null'], maxLength: 80 }
+            Ticker_Symbol: { type: [string, 'null'], maxLength: 20 }
+            Account_Type: { type: [string, 'null'] }
+            Ownership: { type: [string, 'null'] }
+            Industry: { type: [string, 'null'] }
+            Rating: { type: [string, 'null'] }
+            Phone: { type: [string, 'null'], maxLength: 30 }
+            Fax: { type: [string, 'null'], maxLength: 30 }
+            Email: { type: [string, 'null'], format: email }
+            Website: { type: [string, 'null'], format: uri, maxLength: 120 }
+            Employees: { type: [integer, 'null'], minimum: 0 }
+            SIC_Code: { type: [integer, 'null'] }
+            Annual_Revenue: { oneOf: [ { $ref: '#/components/schemas/Money' }, { type: 'null' } ] }
+            VAT_Number: { type: [string, 'null'], maxLength: 20, description: 'Customer VATIN (US-06, US-12)' }
+            Billing_Street: { type: [string, 'null'], maxLength: 250 }
+            Billing_City: { type: [string, 'null'], maxLength: 30 }
+            Billing_State: { type: [string, 'null'], maxLength: 30 }
+            Billing_Code: { type: [string, 'null'], maxLength: 30 }
+            Billing_Country: { oneOf: [ { $ref: '#/components/schemas/Country' }, { type: 'null' } ] }
+            Shipping_Street: { type: [string, 'null'], maxLength: 250 }
+            Shipping_City: { type: [string, 'null'], maxLength: 30 }
+            Shipping_State: { type: [string, 'null'], maxLength: 30 }
+            Shipping_Code: { type: [string, 'null'], maxLength: 30 }
+            Shipping_Country: { oneOf: [ { $ref: '#/components/schemas/Country' }, { type: 'null' } ] }
+            Description: { type: [string, 'null'], maxLength: 32000 }
+
+    Contact:
+      allOf:
+        - $ref: '#/components/schemas/RecordBase'
+        - type: object
+          required: [Last_Name]
+          properties:
+            Account_Name: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+            Salutation: { type: [string, 'null'], maxLength: 20 }
+            First_Name: { type: [string, 'null'], maxLength: 40 }
+            Last_Name: { type: string, minLength: 1, maxLength: 80 }
+            Title: { type: [string, 'null'], maxLength: 100 }
+            Department: { type: [string, 'null'], maxLength: 100 }
+            Email: { type: [string, 'null'], format: email, maxLength: 100 }
+            Secondary_Email: { type: [string, 'null'], format: email, maxLength: 100 }
+            Phone: { type: [string, 'null'], maxLength: 30 }
+            Mobile:
+              type: [string, 'null']
+              maxLength: 30
+              description: Accepts national format when Mailing_Country is set; returned as E.164.
+            Home_Phone: { type: [string, 'null'], maxLength: 30 }
+            Other_Phone: { type: [string, 'null'], maxLength: 30 }
+            Fax: { type: [string, 'null'], maxLength: 30 }
+            Assistant: { type: [string, 'null'], maxLength: 80 }
+            Asst_Phone: { type: [string, 'null'], maxLength: 30 }
+            Date_of_Birth: { type: [string, 'null'], format: date }
+            Reporting_To: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+            Lead_Source: { type: [string, 'null'] }
+            Email_Opt_Out: { type: boolean }
+            Mailing_Street: { type: [string, 'null'], maxLength: 250 }
+            Mailing_City: { type: [string, 'null'], maxLength: 30 }
+            Mailing_State: { type: [string, 'null'], maxLength: 30 }
+            Mailing_Zip: { type: [string, 'null'], maxLength: 30 }
+            Mailing_Country: { oneOf: [ { $ref: '#/components/schemas/Country' }, { type: 'null' } ] }
+            Description: { type: [string, 'null'], maxLength: 32000 }
+
+    Deal:
+      allOf:
+        - $ref: '#/components/schemas/RecordBase'
+        - type: object
+          required: [Deal_Name, Account_Name, Closing_Date, Pipeline, Stage]
+          properties:
+            Deal_Name: { type: string, minLength: 1, maxLength: 120 }
+            Account_Name: { $ref: '#/components/schemas/Lookup' }
+            Contact_Name: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+            Contact_Role: { type: [string, 'null'] }
+            Type: { type: [string, 'null'], enum: [New Business, Existing Business, null] }
+            Lead_Source: { type: [string, 'null'] }
+            Amount: { oneOf: [ { $ref: '#/components/schemas/Money' }, { type: 'null' } ] }
+            Currency: { $ref: '#/components/schemas/CurrencyCode' }
+            Exchange_Rate: { allOf: [ { $ref: '#/components/schemas/Rate' } ], readOnly: true }
+            Amount_OMR: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+            Closing_Date: { type: string, format: date }
+            Pipeline: { $ref: '#/components/schemas/Lookup' }
+            Stage: { type: string, description: 'Stage api_value, e.g. "Proposal/Price Quote"' }
+            Probability: { type: integer, minimum: 0, maximum: 100, description: Defaults from Stage; editable }
+            Expected_Revenue: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+            Forecast_Category: { $ref: '#/components/schemas/ForecastCategory' }
+            Next_Step: { type: [string, 'null'], maxLength: 100 }
+            Reason_For_Loss__s: { type: [string, 'null'], description: Required when Stage is a Closed Lost stage }
+            Description: { type: [string, 'null'], maxLength: 32000 }
+
+    Product:
+      allOf:
+        - $ref: '#/components/schemas/RecordBase'
+        - type: object
+          required: [Product_Name, VAT_Category, Unit_Price]
+          properties:
+            Product_Name: { type: string, minLength: 1, maxLength: 120 }
+            Product_Code: { type: [string, 'null'], maxLength: 40 }
+            Product_Active: { type: boolean }
+            Product_Category: { type: [string, 'null'] }
+            VAT_Category: { $ref: '#/components/schemas/VatCategory' }
+            Unit_Price: { allOf: [ { $ref: '#/components/schemas/Money' } ], description: In OMR }
+            Usage_Unit: { type: [string, 'null'], maxLength: 30 }
+            Description: { type: [string, 'null'], maxLength: 32000 }
+
+    LineItem:
+      type: object
+      required: [Product, Quantity]
+      properties:
+        id: { type: string, format: uuid, readOnly: true }
+        Product: { $ref: '#/components/schemas/Lookup' }
+        Description: { type: [string, 'null'], maxLength: 2000 }
+        Quantity: { $ref: '#/components/schemas/Quantity' }
+        List_Price:
+          allOf: [ { $ref: '#/components/schemas/Money' } ]
+          description: |
+            Defaults to the product's unit price. On an AED or INR document it defaults to
+            OMR price ÷ rate, rounded to 2 dp.
+        Discount:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [type, value]
+              properties:
+                type: { type: string, enum: [percent, amount] }
+                value: { type: string, pattern: '^\d{1,15}(\.\d{1,4})?$' }
+        Amount: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+        Discount_Amount: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+        Net_Amount: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+        VAT_Category: { allOf: [ { $ref: '#/components/schemas/VatCategory' } ], readOnly: true }
+        VAT_Rate: { type: [string, 'null'], readOnly: true }
+        VAT_Amount: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+        Total: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+    VatSummaryRow:
+      type: object
+      readOnly: true
+      properties:
+        VAT_Category: { $ref: '#/components/schemas/VatCategory' }
+        VAT_Rate: { type: [string, 'null'] }
+        Base: { $ref: '#/components/schemas/Money' }
+        VAT: { $ref: '#/components/schemas/Money' }
+
+    DocumentBase:
+      allOf:
+        - $ref: '#/components/schemas/RecordBase'
+        - type: object
+          required: [Subject, Account_Name, Line_Items]
+          properties:
+            Subject: { type: string, minLength: 1, maxLength: 255 }
+            Account_Name: { $ref: '#/components/schemas/Lookup' }
+            Contact_Name: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+            Deal_Name: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+            Currency: { $ref: '#/components/schemas/CurrencyCode' }
+            Exchange_Rate: { allOf: [ { $ref: '#/components/schemas/Rate' } ], readOnly: true }
+            Line_Items: { type: array, minItems: 1, maxItems: 200, items: { $ref: '#/components/schemas/LineItem' } }
+            Adjustment: { allOf: [ { $ref: '#/components/schemas/Money' } ], description: Signed; carries no VAT (OQ-04) }
+            Sub_Total: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+            VAT_Total: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+            Grand_Total: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+            VAT_Total_OMR: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+            Grand_Total_OMR: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
+            VAT_Summary: { type: array, readOnly: true, items: { $ref: '#/components/schemas/VatSummaryRow' } }
+            Billing_Street: { type: [string, 'null'], maxLength: 250 }
+            Billing_City: { type: [string, 'null'], maxLength: 30 }
+            Billing_State: { type: [string, 'null'], maxLength: 30 }
+            Billing_Code: { type: [string, 'null'], maxLength: 30 }
+            Billing_Country: { oneOf: [ { $ref: '#/components/schemas/Country' }, { type: 'null' } ] }
+            Shipping_Street: { type: [string, 'null'], maxLength: 250 }
+            Shipping_City: { type: [string, 'null'], maxLength: 30 }
+            Shipping_State: { type: [string, 'null'], maxLength: 30 }
+            Shipping_Code: { type: [string, 'null'], maxLength: 30 }
+            Shipping_Country: { oneOf: [ { $ref: '#/components/schemas/Country' }, { type: 'null' } ] }
+            Terms_and_Conditions: { type: [string, 'null'], maxLength: 32000 }
+            Description: { type: [string, 'null'], maxLength: 32000 }
+
+    Quote:
+      allOf:
+        - $ref: '#/components/schemas/DocumentBase'
+        - type: object
+          properties:
+            Quote_Number: { type: string, readOnly: true }
+            Quote_Stage: { type: string, enum: [Draft, Negotiation, Delivered, On Hold, Confirmed, Closed Won, Closed Lost] }
+            Valid_Till: { type: [string, 'null'], format: date }
+
+    SalesOrder:
+      allOf:
+        - $ref: '#/components/schemas/DocumentBase'
+        - type: object
+          properties:
+            SO_Number: { type: string, readOnly: true }
+            Quote_Name: { allOf: [ { $ref: '#/components/schemas/Lookup' } ], readOnly: true }
+            Customer_No: { type: [string, 'null'], maxLength: 40 }
+            Purchase_Order: { type: [string, 'null'], maxLength: 60 }
+            Due_Date: { type: [string, 'null'], format: date }
+            Status: { type: string, enum: [Created, Approved, Delivered, Cancelled] }
+
+    Invoice:
+      allOf:
+        - $ref: '#/components/schemas/DocumentBase'
+        - type: object
+          description: Once issued, everything except status changes via actions is read-only (409 INVALID_STATE).
+          properties:
+            Invoice_Number: { type: [string, 'null'], readOnly: true, description: Assigned on issue }
+            Sales_Order: { allOf: [ { $ref: '#/components/schemas/Lookup' } ], readOnly: true }
+            Invoice_Date: { type: [string, 'null'], format: date, readOnly: true }
+            Due_Date: { type: [string, 'null'], format: date }
+            Customer_No: { type: [string, 'null'], maxLength: 40 }
+            Purchase_Order: { type: [string, 'null'], maxLength: 60 }
+            Status: { type: string, enum: [Draft, Issued, Paid, Cancelled], readOnly: true }
+            Issued_Time: { type: [string, 'null'], format: date-time, readOnly: true }
+            Paid_Time: { type: [string, 'null'], format: date-time, readOnly: true }
+            Cancelled_Time: { type: [string, 'null'], format: date-time, readOnly: true }
+            Cancel_Reason: { type: [string, 'null'], readOnly: true }
+
+    ActivityBase:
+      allOf:
+        - $ref: '#/components/schemas/RecordBase'
+        - type: object
+          required: [Subject]
+          properties:
+            Subject: { type: string, minLength: 1, maxLength: 255 }
+            Who_Id: { oneOf: [ { $ref: '#/components/schemas/PolymorphicRef' }, { type: 'null' } ], description: Lead or Contact }
+            What_Id: { oneOf: [ { $ref: '#/components/schemas/PolymorphicRef' }, { type: 'null' } ], description: 'Account, Deal, Quote, Sales Order or Invoice' }
+            Description: { type: [string, 'null'], maxLength: 32000 }
+            Closed_Time: { type: [string, 'null'], format: date-time, readOnly: true }
+    Task:
+      allOf:
+        - $ref: '#/components/schemas/ActivityBase'
+        - type: object
+          properties:
+            Due_Date: { type: [string, 'null'], format: date }
+            Status: { type: string, enum: [Not Started, Deferred, In Progress, Completed, Waiting for input] }
+            Priority: { type: string, enum: [Highest, High, Normal, Low, Lowest] }
+            Is_Overdue: { type: boolean, readOnly: true }
+    Call:
+      allOf:
+        - $ref: '#/components/schemas/ActivityBase'
+        - type: object
+          required: [Call_Type, Call_Start_Time, Call_Duration_Seconds]
+          properties:
+            Call_Type: { type: string, enum: [Inbound, Outbound, Missed] }
+            Call_Purpose: { type: [string, 'null'] }
+            Call_Start_Time: { type: string, format: date-time }
+            Call_Duration_Seconds: { type: integer, minimum: 0 }
+            Call_Result: { type: [string, 'null'] }
+    Meeting:
+      allOf:
+        - $ref: '#/components/schemas/ActivityBase'
+        - type: object
+          required: [Start_DateTime, End_DateTime]
+          properties:
+            Start_DateTime: { type: string, format: date-time }
+            End_DateTime: { type: string, format: date-time, description: Must be ≥ Start_DateTime }
+            All_day: { type: boolean }
+            Venue: { type: [string, 'null'], maxLength: 255 }
+
+    # ------------------------------------------------------------ timeline / sending / forecasts / imports
+    TimelineEvent:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        event_type: { type: string, examples: [updated, stage_changed, converted, email_sent, whatsapp_shared, invoice_issued] }
+        actor: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
+        occurred_at: { type: string, format: date-time }
+        changes:
+          type: object
+          description: '{api_name: [old, new]}'
+          additionalProperties: { type: array, minItems: 2, maxItems: 2 }
+        meta: { type: object }
+    ShareLink:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        file_id: { type: string, format: uuid }
+        expires_at: { type: string, format: date-time }
+        revoked_at: { type: [string, 'null'], format: date-time }
+        last_accessed_at: { type: [string, 'null'], format: date-time }
+        access_count: { type: integer, minimum: 0 }
+        created_by: { $ref: '#/components/schemas/Lookup' }
+        created_at: { type: string, format: date-time }
+    ForecastRow:
+      type: object
+      required: [target, achieved, committed, best_case, pipeline, gap]
+      properties:
+        user: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ], description: null for team_total }
+        target: { $ref: '#/components/schemas/Money' }
+        achieved: { $ref: '#/components/schemas/Money' }
+        committed: { $ref: '#/components/schemas/Money' }
+        best_case: { $ref: '#/components/schemas/Money' }
+        pipeline: { $ref: '#/components/schemas/Money' }
+        gap: { $ref: '#/components/schemas/Money' }
+    ImportJob:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        module: { type: string, enum: [Leads, Accounts, Contacts, Deals, Products] }
+        status: { type: string, enum: [uploaded, validating, validated, importing, done, failed, cancelled] }
+        total_rows: { type: integer }
+        valid_rows: { type: integer }
+        error_rows: { type: integer }
+        duplicate_rows: { type: integer, description: 'Matched on stored Zoho id; updated, not duplicated' }
+        flagged_rows: { type: integer, description: Owner email had no match; assigned to the importing Admin }
+        imported_rows: { type: integer }
+        row_errors:
+          type: array
+          description: First 100 errors; the full list is in GET /imports/{id}/errors
+          items:
+            type: object
+            properties:
+              row_no: { type: integer }
+              column: { type: string }
+              message: { type: string }
+        created_at: { type: string, format: date-time }
+        confirmed_at: { type: [string, 'null'], format: date-time }
+        finished_at: { type: [string, 'null'], format: date-time }
