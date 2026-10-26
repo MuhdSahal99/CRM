@@ -1,0 +1,30 @@
+# Dependencies and build output (any package in the monorepo)
+node_modules/
+.next/
+dist/
+build/
+out/
+coverage/
+.turbo/
+playwright-report/
+test-results/
+*.log
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor: keep only shared settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Claude / agents: personal settings only (settings.json, skills/ and CLAUDE.md stay tracked)
+.claude/settings.local.json
+.agents/

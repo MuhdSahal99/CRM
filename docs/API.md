@@ -1,0 +1,7 @@
+# API
+
+## Conventions
+
+## Endpoints
+
+## Errors
