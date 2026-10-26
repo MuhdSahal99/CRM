@@ -1,0 +1,197 @@
+{
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "retry": "Retry"
+  },
+  "theme": {
+    "label": "Color theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "stages": {
+    "qualification": "Qualification",
+    "needs_analysis": "Needs Analysis",
+    "proposal": "Proposal/Price Quote",
+    "negotiation": "Negotiation/Review",
+    "closed_won": "Closed Won",
+    "closed_lost": "Closed Lost"
+  },
+  "lineItems": {
+    "product": "Product",
+    "quantity": "Qty",
+    "listPrice": "List price",
+    "discount": "Discount %",
+    "vat": "VAT",
+    "lineTotal": "Line total",
+    "lineNo": "Line {n}:",
+    "removeLine": "Remove line {n}",
+    "addLine": "Add line",
+    "subTotal": "Sub Total",
+    "vatBase": "{category} base",
+    "noVat": "No VAT",
+    "vatTotal": "Total VAT",
+    "adjustment": "Adjustment",
+    "grandTotal": "Grand Total",
+    "vatInOmr": "VAT in OMR",
+    "vatCategory": {
+      "standard": "Standard {rate}%",
+      "zero_rated": "Zero-rated",
+      "exempt": "Exempt"
+    }
+  },
+  "charts": {
+    "showData": "Show data"
+  },
+  "design": {
+    "metaTitle": "Design system · Saqient CRM",
+    "title": "Design system",
+    "intro": "Tokens, components and patterns for the Saqient CRM. Every state in light and dark, with an RTL preview. Spec: docs/DESIGN_SYSTEM.md.",
+    "toc": "On this page",
+    "sections": {
+      "colors": "Color tokens",
+      "type": "Typography",
+      "space": "Spacing, radius, elevation",
+      "buttons": "Buttons",
+      "forms": "Form controls",
+      "badges": "Badges and status",
+      "money": "Money and numbers",
+      "table": "Data table",
+      "kanban": "Pipeline Kanban",
+      "lineItems": "Line items and totals",
+      "charts": "Charts",
+      "overlays": "Overlays and feedback",
+      "rtl": "RTL preview"
+    },
+    "colors": {
+      "note": "Contrast is measured against the token's own surface: text pairs need 4.5:1, control borders and focus rings 3:1.",
+      "contrast": "{light} light · {dark} dark",
+      "chartNote": "Chart slots are used in this fixed order. The ordinal ramp is for funnels and ordered stages."
+    },
+    "type": {
+      "sample": "Grand total OMR 358.000",
+      "arabicNote": "Arabic text falls back to IBM Plex Sans Arabic (sample data):"
+    },
+    "space": {
+      "radius": "Radius",
+      "shadow": "Shadow"
+    },
+    "states": {
+      "rest": "Rest",
+      "hover": "Hover",
+      "focus": "Focus",
+      "disabled": "Disabled",
+      "loading": "Loading",
+      "filled": "Filled",
+      "error": "Error",
+      "readOnly": "Read-only"
+    },
+    "buttons": {
+      "variant": "Variant",
+      "save": "Save",
+      "saving": "Saving…",
+      "icon": "Icon",
+      "next": "Next",
+      "back": "Back",
+      "delete": "Delete deal"
+    },
+    "forms": {
+      "dealName": "Deal name",
+      "dealNamePlaceholder": "e.g. Muscat fit-out",
+      "dealNameValue": "Muscat Port fit-out",
+      "lastName": "Last name",
+      "lastNameError": "Last name is required.",
+      "mobile": "Mobile",
+      "mobileHelp": "International format, e.g. +968 9123 4567.",
+      "vatNumber": "VAT number",
+      "notes": "Notes",
+      "stage": "Stage",
+      "currency": "Currency",
+      "emailOptOut": "Email opt-out",
+      "createDeal": "Create a deal on conversion",
+      "required": "Required",
+      "vatCategory": "VAT category"
+    },
+    "badges": {
+      "default": "Default",
+      "secondary": "Secondary",
+      "outline": "Outline",
+      "destructive": "Destructive",
+      "issued": "Issued",
+      "draft": "Draft",
+      "overdue": "Overdue",
+      "paid": "Paid",
+      "cancelled": "Cancelled"
+    },
+    "money": {
+      "rule": "Money is formatted from the server's decimal string, with the currency's scale, the ISO code, Latin digits and end alignment.",
+      "case": "Case",
+      "output": "Output",
+      "omr": "OMR, 3 decimals",
+      "aed": "AED, 2 decimals",
+      "inr": "INR, 2 decimals",
+      "negative": "Negative adjustment",
+      "zero": "Zero",
+      "large": "Large amount"
+    },
+    "table": {
+      "caption": "Deals",
+      "deal": "Deal",
+      "account": "Account",
+      "stage": "Stage",
+      "closing": "Closing date",
+      "amount": "Amount",
+      "ready": "Ready",
+      "loading": "Loading",
+      "empty": "Empty",
+      "error": "Error",
+      "emptyText": "No deals match these filters.",
+      "errorText": "Deals could not be loaded. Check your connection and try again."
+    },
+    "kanban": {
+      "label": "Deal pipeline",
+      "move": "Move to stage",
+      "moved": "{deal} moved to {stage}",
+      "note": "Columns scroll inside the board, not the page. Every card has a Move to stage menu, so dragging is never required."
+    },
+    "lineItems": {
+      "note": "The PRD US-10 worked example. All amounts come from the server pricing engine; the form only sends quantities, prices and discounts.",
+      "qtyError": "Quantity must be greater than 0."
+    },
+    "charts": {
+      "funnel": "Lead to deal funnel",
+      "funnelLabel": "{stage}: {count}",
+      "donut": "Pipeline by stage (OMR)",
+      "donutCenter": "OMR {amount}",
+      "gauge": "Q3 target attainment",
+      "gaugeValue": "{percent}%",
+      "achieved": "Achieved",
+      "target": "Target",
+      "leads": "Leads",
+      "qualified": "Qualified",
+      "proposals": "Proposals",
+      "negotiation": "Negotiation",
+      "won": "Won"
+    },
+    "overlays": {
+      "openDialog": "Open dialog",
+      "dialogTitle": "Close deal as lost",
+      "dialogDescription": "A reason for loss is required before the deal moves to Closed Lost.",
+      "reason": "Reason for loss",
+      "menu": "Actions",
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "tooltipTrigger": "Exchange rate",
+      "tooltip": "Rate stored when the quote was created: 1 AED = 0.10500000 OMR",
+      "toast": "Show toast",
+      "toastText": "Quote QT-000123 emailed to the customer.",
+      "skeleton": "Skeleton"
+    },
+    "rtl": {
+      "note": "dir=\"rtl\" with the Radix DirectionProvider. UI labels stay English until ar.json lands in Phase 2; record data is Arabic sample text. Icons that point a direction are mirrored, numbers and money stay LTR."
+    }
+  }
+}

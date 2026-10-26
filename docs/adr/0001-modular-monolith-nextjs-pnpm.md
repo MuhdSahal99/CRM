@@ -19,6 +19,7 @@ The team is small: 4 reps, 1 manager, and a small dev team. The MVP is 11 vertic
 - In Next.js 16, `middleware.ts` became `proxy.ts` (Node runtime only). We use it only for session cookie presence and locale. Authorization is enforced in the services and in the DB, never in the proxy.
 - Versions are pinned exactly in the lockfile. Baseline checked with `npm view` on 2026-10-27: next 16.4.x, react 19.3.x, typescript 7.0.x, zod 4.6.x, pnpm 12.x, vitest 5.0.x, playwright 1.64.x.
 - **TypeScript fallback.** TS 7 (the native compiler) is new. If any tool in the chain does not support it yet (Next.js type-check, drizzle-kit, ESLint typed rules, vitest), pin **TypeScript 5.9** for the whole workspace. Record the blocking tool in this ADR and upgrade when it gains support. We do not mix TS versions across packages.
+  - **2026-10-27: fallback taken.** `typescript-eslint` 8.72 (pulled in by `eslint-config-next` 16.4.3) refuses to load under TS 7.0 ("typescript-eslint does not support TS 7.0", tracking issue typescript-eslint#10940). The workspace pins **TypeScript 5.9.3**. Re-try TS 7 when typescript-eslint supports it.
 
 ## Alternatives considered
 - **NestJS API + separate React SPA** (reference §9). We would run two deployables and two routers, and still need SSR for fast first paint on phones. Rejected for MVP team size.

@@ -28,3 +28,7 @@ Thumbs.db
 # Claude / agents: personal settings only (settings.json, skills/ and CLAUDE.md stay tracked)
 .claude/settings.local.json
 .agents/
+
+# Next.js / TypeScript generated
+next-env.d.ts
+*.tsbuildinfo

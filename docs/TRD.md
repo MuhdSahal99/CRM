@@ -11,7 +11,7 @@ Versions were checked with `npm view` on 2026-10-27, and APIs were checked in Co
 
 | Layer | Choice | Version line | ADR |
 |---|---|---|---|
-| Language | TypeScript (strict) | 7.0.x. **Fallback is 5.9** for the whole workspace if any tool lacks TS 7 support | [0001](adr/0001-modular-monolith-nextjs-pnpm.md) |
+| Language | TypeScript (strict) | **5.9.3** (fallback taken 2026-10-27: typescript-eslint lacks TS 7 support; see ADR-0001). Target 7.0.x once supported | [0001](adr/0001-modular-monolith-nextjs-pnpm.md) |
 | Monorepo | pnpm workspaces | pnpm 12.x | [0001](adr/0001-modular-monolith-nextjs-pnpm.md) |
 | Web + API | Next.js App Router (React) | next 16.4.x, react 19.3.x | [0001](adr/0001-modular-monolith-nextjs-pnpm.md) |
 | Validation | Zod (shared client and server) | 4.6.x | [0015](adr/0015-rest-api-zoho-shape-openapi.md) |

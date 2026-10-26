@@ -1,0 +1,190 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Tokens and rules: docs/DESIGN_SYSTEM.md. Contrast pairs there are measured against these values. */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-latin), var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* CRM status tokens: text-safe on card (>= 4.5:1); use with icon + label, never color alone */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+
+  /* Categorical chart slots, fixed order (dataviz reference palette, validated on our surfaces) */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  /* Ordinal blue ramp for funnels / pipeline stages, lightest to darkest */
+  --color-ordinal-1: var(--ordinal-1);
+  --color-ordinal-2: var(--ordinal-2);
+  --color-ordinal-3: var(--ordinal-3);
+  --color-ordinal-4: var(--ordinal-4);
+  --color-ordinal-5: var(--ordinal-5);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 0.375rem;
+  --background: oklch(0.984 0.003 247.858); /* slate-50 */
+  --foreground: oklch(0.208 0.042 265.755); /* slate-900 */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.208 0.042 265.755);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.424 0.199 265.638); /* blue-800 #1E40AF */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896); /* slate-100 */
+  --muted-foreground: oklch(0.446 0.043 257.281); /* slate-600 */
+  --accent: oklch(0.932 0.032 255.585); /* blue-100 */
+  --accent-foreground: oklch(0.379 0.146 265.522);
+  --destructive: oklch(0.505 0.213 27.518); /* red-700 */
+  --border: oklch(0.929 0.013 255.508); /* slate-200, decorative dividers only */
+  --input: oklch(0.62 0.04 257); /* form-control boundary, >= 3:1 on card */
+  --ring: oklch(0.546 0.245 262.881); /* blue-600 */
+  --success: oklch(0.527 0.154 150.069);
+  --warning: oklch(0.555 0.163 48.998);
+  --info: oklch(0.5 0.134 242.749);
+  --highlight: oklch(0.769 0.188 70.08); /* amber-500, fills only */
+  --highlight-foreground: oklch(0.208 0.042 265.755);
+
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  --chart-7: #6250d6;
+  --chart-8: #e34948;
+  --ordinal-1: #86b6ef;
+  --ordinal-2: #5598e7;
+  --ordinal-3: #2a78d6;
+  --ordinal-4: #1c5cab;
+  --ordinal-5: #104281;
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695); /* slate-950 */
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755); /* slate-900 */
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.707 0.165 254.624); /* blue-400 */
+  --primary-foreground: oklch(0.129 0.042 264.695);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031); /* slate-800 */
+  --muted-foreground: oklch(0.704 0.04 256.788); /* slate-400 */
+  --accent: oklch(0.282 0.091 267.935);
+  --accent-foreground: oklch(0.932 0.032 255.585);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(0.554 0.046 257.417); /* slate-500 */
+  --ring: oklch(0.707 0.165 254.624);
+  --success: oklch(0.792 0.209 151.711);
+  --warning: oklch(0.828 0.189 84.429);
+  --info: oklch(0.746 0.16 232.661);
+  --highlight: oklch(0.769 0.188 70.08);
+  --highlight-foreground: oklch(0.129 0.042 264.695);
+
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
+  --chart-7: #9085e9;
+  --chart-8: #e66767;
+  --ordinal-1: #184f95;
+  --ordinal-2: #256abf;
+  --ordinal-3: #3987e5;
+  --ordinal-4: #6da7ec;
+  --ordinal-5: #9ec5f4;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground text-sm;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Unlayered on purpose: beats the outline-none utilities in shadcn components. 2px ring >= 3:1 in both modes. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* WCAG 2.5.8 / ADR-0016: 44px targets on touch screens; desktop keeps the dense sizes. */
+@media (pointer: coarse) {
+  [data-slot="button"],
+  [data-slot="select-trigger"],
+  [data-slot="input"],
+  [data-slot="tabs-trigger"] {
+    min-block-size: 44px;
+  }
+  [data-slot="button"][data-size^="icon"] {
+    min-inline-size: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
