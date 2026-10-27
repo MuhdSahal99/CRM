@@ -71,6 +71,13 @@
       "when": 1793106044081,
       "tag": "0009_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793106246732,
+      "tag": "0010_idempotency_keys",
+      "breakpoints": true
     }
   ]
 }

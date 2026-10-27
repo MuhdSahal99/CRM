@@ -196,7 +196,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: the catalog guard passes. The trigram index exists. `parent_account_id = id` is rejected.
 - **Done when:** the table matches SCHEMA §accounts.
 
-#### T2.02 Idempotency-Key support · M
+#### T2.02 Idempotency-Key support · M · ✅
 - **Files:** migration `idempotency_keys`, `packages/core/src/http/idempotency.ts`, wired into `apiRoute` as an option.
 - **Tests first:** I: a replay returns the stored response. **AC-28**: the same key with a different body → 422 `IDEMPOTENCY_KEY_REUSED`. A request still in flight → 409.
 - **Done when:** create, convert, issue, cancel, mark_paid, send_email and share-link create can opt in (ADR-0015).

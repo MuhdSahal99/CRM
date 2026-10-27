@@ -7,6 +7,7 @@ export { withTenant, type Role, type TenantContext, type Tx } from "./tenant.ts"
 export { roles, type Permission } from "./access.ts";
 export { errorResponse, type Envelope, type Info } from "./http/envelope.ts";
 export { ApiError, Conflict, Forbidden, NotFound, PayloadTooLarge, Unauthorized, readJsonBody, validationError } from "./http/errors.ts";
+export { idempotent, requestHash } from "./http/idempotency.ts";
 export { log } from "./log.ts";
 export { recordEvent, type TimelineEvent } from "./timeline.ts";
 export { buildRecordSchema, type FieldDef } from "./metadata/record-schema.ts";

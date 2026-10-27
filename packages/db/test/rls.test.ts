@@ -40,6 +40,7 @@ describe("tenant isolation (ADR-0003)", () => {
         INSERT INTO layout_fields (id, org_id, created_by, updated_by, section_id, field_id, sort_order) SELECT gen_random_uuid(), $1, $2, $2, s.id, f.id, 1 FROM s, f`, [org, manager]);
       // One row in each record table (slice 2).
       await queryAs(app, { org_id: org, user_id: manager }, `INSERT INTO accounts (id, org_id, owner_id, account_name) VALUES (gen_random_uuid(), $1, $2, 'A')`, [org, manager]);
+      await queryAs(app, { org_id: org }, `INSERT INTO idempotency_keys (org_id, user_id, key, request_hash, status) VALUES ($1, $2, 'k', decode('00', 'hex'), 'in_progress')`, [org, manager]);
     }
   });
   afterAll(() => Promise.all([app?.end(), auth?.end()]));

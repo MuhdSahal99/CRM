@@ -1,11 +1,14 @@
 import {
   type Envelope,
+  ApiError,
   errorResponse,
   Forbidden,
+  idempotent,
   log,
   NotFound,
   type Permission,
   readJsonBody,
+  requestHash,
   resolveContext,
   roles,
   type TenantContext,
@@ -27,8 +30,9 @@ type Handler<S extends z.ZodType> = (args: {
  * Every /api/v1 route handler goes through this (ADR-0015, TRD § Request lifecycle):
  * session → 401, role permission → 403, body cap → 413, Zod → 422 per field, then one withTenant transaction.
  * Input comes from the query string on GET/DELETE and from the JSON body otherwise; unknown keys are stripped.
+ * `idempotent` routes honour an Idempotency-Key header (ADR-0015).
  */
-export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission; status?: number }, handler: Handler<S>) {
+export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission; status?: number; idempotent?: true }, handler: Handler<S>) {
   return async (request: Request, route?: { params?: Promise<Record<string, string>> }): Promise<Response> => {
     const started = performance.now();
     let session: TenantContext | null = null;
@@ -46,8 +50,16 @@ export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: 
 
       const params = (await route?.params) ?? {}; // Next passes no params to a route without dynamic segments
       if (params.id !== undefined && !z.uuid().safeParse(params.id).success) throw new NotFound(); // never reaches SQL
-      const body = await withTenant(ctx, (tx) => handler({ ctx, input: parsed.data, params, tx }));
-      response = Response.json(body, { status: options.status ?? 200 });
+      const run = (tx: Tx) => handler({ ctx, input: parsed.data, params, tx });
+      const status = options.status ?? 200;
+      const key = options.idempotent && request.headers.get("idempotency-key");
+      if (key && (key.length < 8 || key.length > 255)) {
+        throw new ApiError(422, "INVALID_DATA", "Idempotency-Key must be 8 to 255 characters.", { api_name: "Idempotency-Key" });
+      }
+      const result = key
+        ? await idempotent(ctx, key, requestHash(request.method, new URL(request.url).pathname, raw), status, run)
+        : { status, body: await withTenant(ctx, run) };
+      response = Response.json(result.body, { status: result.status });
     } catch (error) {
       response = errorResponse(error);
     }

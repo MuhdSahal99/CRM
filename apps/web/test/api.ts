@@ -21,8 +21,8 @@ export async function signIn(email: string, password = TEST_SEED_PASSWORD): Prom
 }
 
 /** Calls a route handler in-process, as Next would: `path` is the /api/v1 path with its params filled in. */
-export async function call(mod: RouteModule, method: string, path: string, { cookie, params, body }: { cookie: string; params?: Record<string, string>; body?: unknown }) {
-  const init = { method, headers: { cookie, "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) };
+export async function call(mod: RouteModule, method: string, path: string, { cookie, params, body, headers }: { cookie: string; params?: Record<string, string>; body?: unknown; headers?: Record<string, string> }) {
+  const init = { method, headers: { cookie, "content-type": "application/json", ...headers }, body: body === undefined ? undefined : JSON.stringify(body) };
   // Like Next: a route without dynamic segments gets no params at all.
   const res = await mod[method]!(new Request(BASE + "/api/v1" + path, init), params ? { params: Promise.resolve(params) } : undefined);
   const text = await res.text();

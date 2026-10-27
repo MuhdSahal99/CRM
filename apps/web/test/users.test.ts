@@ -50,6 +50,16 @@ describe("users API (T1.20)", () => {
     expect(list.json().data).toContainEqual(expect.objectContaining({ email: "new.rep@saqient.test", status: "invited" }));
   });
 
+  it("T2.02: an invite retried with the same Idempotency-Key replays the first answer", async () => {
+    const send = (name: string) =>
+      call(usersRoute, "POST", "/users", { cookie: admin, headers: { "idempotency-key": "invite-retry-0001" }, body: { data: [{ email: "retry@saqient.test", name, role: "rep" }] } });
+    const first = await send("Retry");
+    const again = await send("Retry");
+    expect(first.status).toBe(201);
+    expect(again).toMatchObject({ status: 201, body: first.body });
+    expect((await send("Changed")).json()).toMatchObject({ code: "IDEMPOTENCY_KEY_REUSED" });
+  });
+
   it("an invite for an existing member's email or with a foreign manager is refused per person", async () => {
     expect((await invite(admin, { email: "rep.b@saqient.test", name: "B", role: "rep" })).json().data[0].code).toBe("DUPLICATE_DATA");
     expect((await invite(admin, { email: "y@saqient.test", name: "Y", role: "rep", manager_id: ids["admin@demo.test"] })).json().data[0].code).toBe("INVALID_DATA");
