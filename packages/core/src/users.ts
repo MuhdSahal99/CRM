@@ -1,7 +1,8 @@
-import { newId, schema } from "@crm/db";
+import { type Db, newId, schema } from "@crm/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
-import { ApiError, NotFound } from "./http/errors.ts";
+import { getAuthDb } from "./auth.ts";
+import { ApiError, Conflict, NotFound } from "./http/errors.ts";
 import type { TenantContext, Tx } from "./tenant.ts";
 import { recordEvent } from "./timeline.ts";
 
@@ -98,5 +99,26 @@ export async function updateUser(tx: Tx, id: string, input: z.infer<typeof Updat
     (["role", "manager_id"] as const).filter((k) => after[k] !== before[k]).map((k) => [k, [before[k], after[k]] as [unknown, unknown]]),
   );
   if (Object.keys(changes).length > 0) await recordEvent(tx, { recordType: "user", recordId: id, eventType: "role_changed", changes });
+  return [{ code: "SUCCESS", status: "success", details: { id } }];
+}
+
+/**
+ * POST /users/{id}/actions/deactivate (Admin, US-01/US-03). The membership change and its timeline event are in the
+ * tenant transaction; the ban and session revocation go through crm_auth last, so if they fail the whole call rolls
+ * back. Their records keep their owner until an Admin transfers them (T5.10).
+ */
+export async function deactivateUser(tx: Tx, ctx: TenantContext, id: string, authDb: Db = getAuthDb()) {
+  const { rows } = await tx.execute<{ status: string }>(sql`SELECT status FROM member WHERE user_id = ${id} FOR UPDATE`);
+  if (rows.length === 0) throw new NotFound();
+  if (id === ctx.userId) throw new Conflict("INVALID_STATE", "You cannot deactivate yourself.");
+  if (rows[0]!.status === "deactivated") throw new Conflict("INVALID_STATE", "This user is already deactivated.");
+
+  await tx.execute(sql`UPDATE member SET status = 'deactivated' WHERE user_id = ${id}`);
+  await recordEvent(tx, { recordType: "user", recordId: id, eventType: "user_deactivated", changes: { status: ["active", "deactivated"] } });
+  // shortcut: one org per user in the MVP, so the ban is global; with several memberships, ban only on the last one.
+  await authDb.transaction(async (auth) => {
+    await auth.execute(sql`UPDATE "user" SET banned = true, ban_reason = 'deactivated' WHERE id = ${id}`);
+    await auth.execute(sql`DELETE FROM session WHERE user_id = ${id}`);
+  });
   return [{ code: "SUCCESS", status: "success", details: { id } }];
 }

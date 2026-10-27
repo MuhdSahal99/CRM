@@ -1,5 +1,6 @@
 import { getAuth } from "@crm/core";
-import { TEST_SEED_PASSWORD } from "@crm/db/testing";
+import { type connectAsAuth, createMember, TEST_SEED_PASSWORD } from "@crm/db/testing";
+import { hashPassword } from "better-auth/crypto";
 import { expect } from "vitest";
 import { BASE } from "./env.ts";
 
@@ -25,4 +26,16 @@ export async function call(mod: RouteModule, method: string, path: string, { coo
   const res = await mod[method]!(new Request(BASE + "/api/v1" + path, init), { params: Promise.resolve(params) });
   const text = await res.text();
   return { status: res.status, body: text, json: () => JSON.parse(text) };
+}
+
+/** A new member of `orgId` who can sign in with the seed password, for tests that change a user. */
+export async function createSignInUser(auth: Awaited<ReturnType<typeof connectAsAuth>>, orgId: string, role = "rep"): Promise<{ id: string; email: string }> {
+  const id = await createMember(auth, orgId, role);
+  const { rows } = await auth.query(`UPDATE "user" SET email = 'u-' || id || '@example.test' WHERE id = $1 RETURNING email`, [id]);
+  await auth.query(
+    `INSERT INTO account (id, user_id, account_id, provider_id, password, created_at, updated_at)
+     VALUES (gen_random_uuid(), $1::uuid, $1::text, 'credential', $2, now(), now())`,
+    [id, await hashPassword(TEST_SEED_PASSWORD)],
+  );
+  return { id, email: rows[0].email };
 }

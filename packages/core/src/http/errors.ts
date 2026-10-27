@@ -70,6 +70,7 @@ export async function readJsonBody(request: Request, maxBytes = MAX_JSON_BYTES):
     }
     chunks.push(r.value);
   }
+  if (size === 0) return {}; // actions such as deactivate take no body
   try {
     return JSON.parse(Buffer.concat(chunks).toString("utf8"));
   } catch {

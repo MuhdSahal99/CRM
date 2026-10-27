@@ -1,9 +1,8 @@
-import { connectAsApp, connectAsAuth, createMember, createOrg, queryAs, TEST_SEED_PASSWORD } from "@crm/db/testing";
-import { hashPassword } from "better-auth/crypto";
+import { connectAsApp, connectAsAuth, createOrg, queryAs } from "@crm/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as fieldsRoute from "../app/api/v1/settings/fields/route";
 import * as modulesRoute from "../app/api/v1/settings/modules/route";
-import { call, signIn } from "./api.ts";
+import { call, createSignInUser, signIn } from "./api.ts";
 
 // T1.19: GET /settings/modules and /settings/fields, scoped to the caller's org.
 describe("settings metadata endpoints (T1.19)", () => {
@@ -59,12 +58,8 @@ describe("settings metadata endpoints (T1.19)", () => {
 
   it("a module that exists only in another org returns 404", async () => {
     // A bare org (no provisioning) whose user can sign in: Leads exists in Saqient and Demo, not here.
-    const org = await createOrg(auth);
-    const userId = await createMember(auth, org, "admin");
-    const { rows } = await auth.query(`UPDATE "user" SET email = 'bare-' || id || '@example.test' WHERE id = $1 RETURNING email`, [userId]);
-    await auth.query(`INSERT INTO account (id, user_id, account_id, provider_id, password, created_at, updated_at)
-      VALUES (gen_random_uuid(), $1::uuid, $1::text, 'credential', $2, now(), now())`, [userId, await hashPassword(TEST_SEED_PASSWORD)]);
-    const res = await call(fieldsRoute, "GET", "/settings/fields?module=Leads", { cookie: await signIn(rows[0].email) });
+    const { email } = await createSignInUser(auth, await createOrg(auth), "admin");
+    const res = await call(fieldsRoute, "GET", "/settings/fields?module=Leads", { cookie: await signIn(email) });
     expect(res.status).toBe(404);
   });
 
