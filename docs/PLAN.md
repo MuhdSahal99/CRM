@@ -221,7 +221,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** U: Zoho syntax → AST. Unknown fields and operators are rejected. **AC-36**: `((Email:equals:x') or 1=1--))` → error. **AC-34**: 50 levels of nesting → error. Values become bind parameters only.
 - **Done when:** the parser has no path that concatenates strings into SQL.
 
-#### T2.07 Search endpoint · S
+#### T2.07 Search endpoint · S · ✅
 - **Files:** `apps/web/app/api/v1/[module]/search/route.ts`, `packages/core/src/search/run.ts`.
 - **Tests first:** I: `word`, `email`, `phone` and `criteria` all work on Accounts. Rep B finds rep A's account (**US-02**). Results go through the same visibility path as lists.
 - **Done when:** private modules reuse this unchanged (AC-11 is completed in T5.04).

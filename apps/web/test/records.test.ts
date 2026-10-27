@@ -2,6 +2,7 @@ import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as recordRoute from "../app/api/v1/[module]/[id]/route";
 import * as moduleRoute from "../app/api/v1/[module]/route";
+import * as searchRoute from "../app/api/v1/[module]/search/route";
 import { call, signIn } from "./api.ts";
 
 // T2.03: generic create/read through the module registry. Cross-org ids are covered by the visibility matrix.
@@ -150,6 +151,42 @@ describe("records API: create and read (T2.03)", () => {
       expect(listed.map((r: { id: string }) => r.id)).not.toContain(id);
       expect((await del(id)).status).toBe(404);
       expect((await put(id, { Account_Name: "Zombie", version: 2 })).status).toBe(404);
+    });
+  });
+
+  describe("search (T2.07)", () => {
+    const search = async (query: string, cookie = repA) => {
+      const res = await call(searchRoute, "GET", `/Accounts/search?${query}`, { cookie, params: { module: "Accounts" } });
+      return { status: res.status, body: res.json() };
+    };
+    let id: string;
+    beforeAll(async () => {
+      id = (await create({ Account_Name: "Zubair Searchable Holdings", Email: "Info@Zubair-Search.om", Phone: "+968 2412 3456", Employees: 42 })).json().data[0].details.id;
+    });
+    const ids = (body: { data: { id: string }[] }) => body.data.map((r) => r.id);
+
+    it("word, email, phone and criteria each find the account; rep B finds rep A's account (US-02)", async () => {
+      const repB = await signIn("rep.b@saqient.test");
+      expect(ids((await search("word=searchable", repB)).body)).toEqual([id]);
+      expect(ids((await search("email=info@zubair-search.om")).body)).toEqual([id]);
+      expect(ids((await search("phone=24123456")).body)).toEqual([id]);
+      const criteria = encodeURIComponent("((Account_Name:starts_with:zubair)and(Employees:between:40,50))");
+      expect(ids((await search(`criteria=${criteria}`)).body)).toEqual([id]);
+    });
+
+    it("needs exactly one of criteria, word, email or phone", async () => {
+      expect((await search("")).status).toBe(422);
+      expect((await search("word=ab&email=a@b.om")).status).toBe(422);
+    });
+
+    it("bad criteria and a value of the wrong type are 422s, not 500s", async () => {
+      expect((await search(`criteria=${encodeURIComponent("((Email:equals:x') or 1=1--))")}`)).status).toBe(422);
+      expect((await search(`criteria=${encodeURIComponent("(Employees:equals:many)")}`)).status).toBe(422);
+    });
+
+    it("deleted records are not found", async () => {
+      await call(recordRoute, "DELETE", `/Accounts/${id}`, { cookie: repA, params: { module: "Accounts", id } });
+      expect((await search("word=searchable")).body.data).toEqual([]);
     });
   });
 });

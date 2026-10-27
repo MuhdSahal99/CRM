@@ -18,3 +18,4 @@ export { deactivateUser, getMe, getUser, InviteUsersInput, inviteUsers, ListUser
 export { RECORD_MODULES } from "./modules/registry.ts";
 export { CreateRecordsInput, createRecords, deleteRecord, UpdateRecordInput, updateRecord } from "./modules/write.ts";
 export { getRecord, ListRecordsInput, listRecords } from "./modules/list.ts";
+export { SearchInput, searchRecords } from "./search/run.ts";
