@@ -10,7 +10,8 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "vitest run",
-    "migrate": "node --env-file-if-exists=../../.env.local src/migrate.ts"
+    "migrate": "node --env-file-if-exists=../../.env.local src/migrate.ts",
+    "seed": "node --env-file-if-exists=../../.env.local src/seed.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
@@ -20,6 +21,7 @@
     "vitest": "^5.0.5"
   },
   "dependencies": {
+    "better-auth": "1.7.7",
     "drizzle-orm": "0.45.4",
     "pg": "8.23.1"
   }
