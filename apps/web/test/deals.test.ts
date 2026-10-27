@@ -130,6 +130,11 @@ describe("Deals API", () => {
     await set("hidden");
     try {
       expect((await board()).every((c) => c.sum_amount_omr === null)).toBe(true);
+      const id = (await call(moduleRoute, "GET", "/Deals", { cookie: repA, params: { module: "Deals" } })).json().data[0];
+      expect(Object.keys(id)).not.toContain("Amount");
+      expect(Object.keys(id)).not.toContain("Expected_Revenue"); // derived from Amount
+      const kanban = (await call(kanbanRoute, "GET", `/Deals/kanban?pipeline_id=${pipeline.id}`, { cookie: repA })).json().data as { deals: object[] }[];
+      expect(kanban.flatMap((c) => c.deals).every((d) => !("Expected_Revenue" in d) && !("Amount" in d))).toBe(true);
     } finally {
       await set("read_write");
       await app.end();
