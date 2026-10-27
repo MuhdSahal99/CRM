@@ -14,6 +14,13 @@ export function createLogger(destination?: DestinationStream) {
       serializers: {
         // Method and path only: no headers (cookies, auth) and no query string (may carry PII).
         req: (req: Request) => ({ method: req.method, path: redactPath(new URL(req.url).pathname) }),
+        // Never the message: Drizzle puts query params there, and pg messages and details can quote values (PII).
+        err: (err: Error & { code?: string; constraint?: string; cause?: { code?: string; constraint?: string } }) => ({
+          type: err.constructor?.name,
+          code: err.code ?? err.cause?.code,
+          constraint: err.constraint ?? err.cause?.constraint,
+          stack: err.stack?.split("\n").filter((line) => line.startsWith("    at ")).join("\n"),
+        }),
       },
     },
     destination,

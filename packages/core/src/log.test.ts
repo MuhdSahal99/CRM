@@ -26,6 +26,21 @@ describe("logger redaction (T1.14, ADR-0014)", () => {
     expect(JSON.parse(lines[0]!)).toMatchObject({ password: "[redacted]", user: { email: "[redacted]" }, headers: { cookie: "[redacted]" } });
   });
 
+  it("logs a failed query without its message, params or detail", () => {
+    const cause = Object.assign(new Error('duplicate key value violates unique constraint "contacts_email"'), {
+      code: "23505",
+      constraint: "contacts_email",
+      detail: "Key (email)=(someone@customer.om) already exists.",
+    });
+    const err = Object.assign(new Error("Failed query: insert into contacts\nparams: someone@customer.om,+96890000000"), { params: ["someone@customer.om"], cause });
+    const { logger, lines } = capture();
+
+    logger.error({ err }, "unhandled error");
+
+    expect(lines[0]).not.toMatch(/customer\.om|\+968|Failed query/);
+    expect(JSON.parse(lines[0]!)).toMatchObject({ err: { type: "Error", code: "23505", constraint: "contacts_email", stack: expect.stringContaining("at ") } });
+  });
+
   it("leaves other paths alone", () => {
     expect(redactPath("/api/v1/Leads/123")).toBe("/api/v1/Leads/123");
     expect(redactPath("/settings/x")).toBe("/settings/x");
