@@ -2,7 +2,7 @@ import { newId } from "@crm/db";
 import { getTableName, sql } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { z } from "zod";
-import { ApiError, validationError } from "../http/errors.ts";
+import { ApiError, Conflict, NotFound, validationError } from "../http/errors.ts";
 import { buildRecordSchema } from "../metadata/record-schema.ts";
 import type { TenantContext, Tx } from "../tenant.ts";
 import { recordEvent } from "../timeline.ts";
@@ -11,6 +11,7 @@ import { type Field, loadFields, moduleDef } from "./registry.ts";
 // Records are checked against the module's metadata in the service (ADR-0006); the route only checks the envelope.
 const record = z.record(z.string(), z.unknown());
 export const CreateRecordsInput = z.object({ data: z.array(record).min(1).max(100), trigger: z.array(z.string()).optional() });
+export const UpdateRecordInput = z.object({ data: z.array(record).length(1) });
 
 /** Parses one record with the metadata-built schema, then the module's normalisation, as a row of column → value. */
 function parse(fields: Field[], module: string, input: Record<string, unknown>, partial = false) {
@@ -52,4 +53,44 @@ export async function createRecords(tx: Tx, ctx: TenantContext, module: string, 
     outcomes.push({ code: "SUCCESS", status: "success", details: { id, version: 1 } });
   }
   return outcomes;
+}
+
+type Row = Record<string, unknown> & { version: number; custom: Record<string, unknown> };
+const VersionInput = z.object({ version: z.int().min(1) });
+
+/** PUT /{module}/{id}: partial update at the client's version (409 if stale); logs `updated` with {api_name: [old, new]}. */
+export async function updateRecord(tx: Tx, module: string, id: string, input: z.infer<typeof UpdateRecordInput>) {
+  const def = moduleDef(module);
+  const fields = await loadFields(tx, module);
+  const { version, ...changes } = input.data[0]!;
+  const v = VersionInput.safeParse({ version });
+  if (!v.success) throw validationError(v.error, { version });
+  const row = parse(fields, module, changes, true);
+
+  const before = (await tx.execute<Row>(sql`SELECT * FROM ${def.table} WHERE id = ${id} AND deleted_at IS NULL FOR UPDATE`)).rows[0];
+  if (!before) throw new NotFound();
+  if (before.version !== v.data.version) throw new Conflict("VERSION_CONFLICT", "This record was changed by someone else. Reload it and try again.");
+  if (row.custom) row.custom = { ...before.custom, ...(row.custom as object) };
+
+  const set = sql.join([...Object.entries(row).map(([c, val]) => sql`${sql.identifier(c)} = ${value(c, val)}`), sql`version = version + 1`], sql`, `);
+  const after = (await tx.execute<Row>(sql`UPDATE ${def.table} SET ${set} WHERE id = ${id} RETURNING *`).catch((e) => dbError(e, def.table, fields))).rows[0]!;
+
+  const read = (f: Field, r: Row) => (f.isSystem ? r[f.columnName!] : r.custom[f.apiName]) ?? null;
+  const diff = fields.filter((f) => f.apiName in changes && JSON.stringify(read(f, before)) !== JSON.stringify(read(f, after)));
+  if (diff.length > 0) {
+    const changed = Object.fromEntries(diff.map((f) => [f.apiName, [read(f, before), read(f, after)] as [unknown, unknown]]));
+    await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "updated", changes: changed });
+  }
+  return [{ code: "SUCCESS", status: "success", details: { id, version: after.version } }];
+}
+
+/** DELETE /{module}/{id}: soft delete (SCHEMA § SOFT); the record leaves every list and read. Logs `deleted`. */
+export async function deleteRecord(tx: Tx, module: string, id: string) {
+  const def = moduleDef(module);
+  const { rows } = await tx.execute(sql`
+    UPDATE ${def.table} SET deleted_at = now(), deleted_by = NULLIF(current_setting('app.user_id', true), '')::uuid, version = version + 1
+    WHERE id = ${id} AND deleted_at IS NULL RETURNING id`);
+  if (rows.length === 0) throw new NotFound();
+  await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "deleted" });
+  return [{ code: "SUCCESS", status: "success", details: { id } }];
 }

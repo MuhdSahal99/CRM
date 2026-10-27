@@ -211,7 +211,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-34**: `per_page=100000` → 422. **AC-36** part: `sort_by=amount;drop table` → 422 with no SQL text. **US-02**: rep B lists the account rep A created.
 - **Done when:** `info.more_records` is correct, and sorting is allowlisted.
 
-#### T2.05 Account update and soft delete · S
+#### T2.05 Account update and soft delete · S · ✅
 - **Files:** `[module]/[id]/route.ts` (PUT, DELETE), `packages/core/src/modules/write.ts`.
 - **Tests first:** I: a stale `version` → 409. The `updated` event carries `{api_name:[old,new]}`. Soft delete hides the record from lists, and its GET returns 404.
 - **Done when:** PUT works as a partial update (ADR-0015).

@@ -113,4 +113,43 @@ describe("records API: create and read (T2.03)", () => {
       expect(last.info).toMatchObject({ count: 1, more_records: false });
     });
   });
+
+  describe("update and soft delete (T2.05)", () => {
+    const put = (id: string, record: Record<string, unknown>) =>
+      call(recordRoute, "PUT", `/Accounts/${id}`, { cookie: repA, params: { module: "Accounts", id }, body: { data: [record] } });
+    const del = (id: string) => call(recordRoute, "DELETE", `/Accounts/${id}`, { cookie: repA, params: { module: "Accounts", id } });
+    const newAccount = async (name: string) => (await create({ Account_Name: name, Phone: "24000001" })).json().data[0].details.id as string;
+
+    it("is a partial update that bumps version and logs {api_name: [old, new]}", async () => {
+      const id = await newAccount("Before Name");
+      const res = await put(id, { Account_Name: "After Name", version: 1 });
+      expect(res.status).toBe(200);
+      expect(res.json().data[0]).toMatchObject({ code: "SUCCESS", details: { id, version: 2 } });
+      const [record] = (await get(id)).json().data;
+      expect(record).toMatchObject({ Account_Name: "After Name", Phone: "24000001", version: 2 });
+      const events = await queryAs(app, { org_id: saqient, role: "admin", see_all: "on" },
+        "SELECT changes FROM timeline_events WHERE record_id = $1 AND event_type = 'updated'", [id]);
+      expect(events).toEqual([{ changes: { Account_Name: ["Before Name", "After Name"] } }]);
+    });
+
+    it("a stale version is a 409 and changes nothing; a missing version is a 422", async () => {
+      const id = await newAccount("Versioned");
+      await put(id, { Account_Name: "Versioned 2", version: 1 });
+      const stale = await put(id, { Account_Name: "Lost Update", version: 1 });
+      expect(stale.status).toBe(409);
+      expect(stale.json()).toMatchObject({ code: "VERSION_CONFLICT" });
+      expect((await get(id)).json().data[0].Account_Name).toBe("Versioned 2");
+      expect((await put(id, { Account_Name: "No Version" })).json()).toMatchObject({ details: { api_name: "version" } });
+    });
+
+    it("soft delete hides the record from lists and its GET is a 404", async () => {
+      const id = await newAccount("To Be Deleted");
+      expect((await del(id)).status).toBe(200);
+      expect((await get(id)).status).toBe(404);
+      const listed = (await call(moduleRoute, "GET", "/Accounts?per_page=200", { cookie: repA, params: { module: "Accounts" } })).json().data;
+      expect(listed.map((r: { id: string }) => r.id)).not.toContain(id);
+      expect((await del(id)).status).toBe(404);
+      expect((await put(id, { Account_Name: "Zombie", version: 2 })).status).toBe(404);
+    });
+  });
 });
