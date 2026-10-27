@@ -8,6 +8,20 @@
       "when": 1793079156291,
       "tag": "0000_extensions_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793081018785,
+      "tag": "0001_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793081036577,
+      "tag": "0002_auth_grants_rls",
+      "breakpoints": true
     }
   ]
 }

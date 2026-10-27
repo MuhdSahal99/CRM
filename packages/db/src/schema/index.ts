@@ -1,2 +1,2 @@
-// Drizzle table definitions; one file per area, added from T1.04.
-export {};
+// Drizzle table definitions; one file per area.
+export * from "./auth";

@@ -140,7 +140,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Done when:** responses match `openapi.yaml`.
 
 #### T1.20 Users API: list, invite, read/update role and manager · M
-- **Files:** `apps/web/app/api/v1/users/route.ts`, `users/[id]/route.ts`, `packages/core/src/users.ts`.
+- **Files:** `apps/web/app/api/v1/users/route.ts`, `users/[id]/route.ts`, `packages/core/src/users.ts`, migration for the `org_users` view (moved here from T1.04: this is its first consumer).
 - **Tests first:** I: **AC-35** part: a rep `POST /users` gets 403. An admin invite creates an `invitation` and returns the accept link. Changing a role or manager writes `role_changed` to the timeline. A cross-org id returns 404.
 - **Done when:** these satisfy **US-03** (invite, role, manager). Email delivery comes in T9.04.
 
