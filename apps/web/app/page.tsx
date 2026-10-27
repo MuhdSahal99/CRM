@@ -1,7 +1,6 @@
 import "./_landing/landing.css";
 import type { CSSProperties, ReactNode } from "react";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { LockIcon, MailIcon, MessageCircleIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -10,10 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Cycle } from "./_landing/cycle";
-import { DocSheet } from "./_landing/doc-sheet";
 import { Documents } from "./_landing/documents";
-import corniche from "@/public/landing/muttrah-corniche.jpg";
-import port from "@/public/landing/muttrah-port.jpg";
+import { ProductPreview } from "./_landing/product-preview";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("landing");
@@ -62,7 +59,7 @@ export default async function LandingPage() {
       </header>
 
       <main>
-        {/* Hero: the card on one side, the live tax invoice on the other. */}
+        {/* Hero: the pitch on one side, the product itself (drawn with the design system) on the other. */}
         <section className="grid gap-3 px-4 sm:px-6 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-2 lg:pb-6">
           <div className="flex min-w-0 flex-col justify-between gap-12 rounded-lg bg-card p-6 sm:p-10 lg:p-12">
             <div>
@@ -88,10 +85,9 @@ export default async function LandingPage() {
               ))}
             </dl>
           </div>
-          <figure className="relative flex min-w-0 flex-col overflow-hidden rounded-lg bg-muted p-3 sm:p-10 lg:max-h-[calc(100svh-5.5rem)] lg:ps-14 lg:pt-14">
-            <figcaption className="mb-6 max-w-[48ch] text-muted-foreground">{t("sheet.caption")}</figcaption>
-            <DocSheet kind="taxInvoice" live />
-          </figure>
+          <div className="flex min-w-0 flex-col justify-center rounded-lg bg-muted p-3 sm:p-8 lg:p-10">
+            <ProductPreview />
+          </div>
         </section>
 
         <section id="documents" className="scroll-mt-4 px-4 py-24 sm:px-6 lg:py-32">
@@ -157,14 +153,10 @@ export default async function LandingPage() {
 
       </main>
 
-      <footer className="grid lg:min-h-svh lg:grid-cols-2">
-        <div className="relative min-h-[50svh] overflow-hidden">
-          <Image src={corniche} alt={t("footer.photoAlt")} fill sizes="(min-width: 1024px) 50vw, 100vw" className="landing-drift object-cover" />
-          <Image src={port} alt={t("footer.photoAlt2")} fill sizes="(min-width: 1024px) 50vw, 100vw" className="landing-xfade object-cover" />
-        </div>
-        <div className="flex flex-col gap-16 bg-muted px-4 py-16 sm:px-10 lg:p-16 lg:pt-20">
-          <p className="font-semibold">{t("footer.title")}</p>
-          <nav aria-label={t("footer.menuLabel")}>
+      <footer className="bg-muted">
+        <div className="grid gap-16 px-4 py-16 sm:px-10 lg:grid-cols-2 lg:p-16 lg:pt-20">
+          <nav aria-label={t("footer.menuLabel")} className="flex flex-col gap-16">
+            <p className="font-semibold">{t("footer.title")}</p>
             <ul className="flex flex-col gap-5 lg:gap-7">
               {[...NAV.map((id) => [`#${id}`, t(`nav.${id}`)] as const), [LOGIN, t("nav.signIn")] as const].map(([href, label]) => (
                 <li key={href}>
@@ -175,7 +167,7 @@ export default async function LandingPage() {
               ))}
             </ul>
           </nav>
-          <div className="mt-auto flex flex-col gap-6 text-sm">
+          <div className="flex flex-col gap-6 self-end text-sm">
             <div>
               <h2 className="font-semibold">{t("footer.contactTitle")}</h2>
               <p className="mt-1">
@@ -183,12 +175,6 @@ export default async function LandingPage() {
               </p>
               <p>{t("footer.place")}</p>
             </div>
-            <p>
-              {t("footer.creditsLabel")}{" "}
-              <a className="underline underline-offset-4" href="https://commons.wikimedia.org/wiki/File:Muttrah_Muscat_Oman_2011.jpg">{t("footer.credit1")}</a>;{" "}
-              <a className="underline underline-offset-4" href="https://commons.wikimedia.org/wiki/File:Oman-Muscat-Muttrah-21-Marina.JPG">{t("footer.credit2")}</a>;{" "}
-              {t("footer.creditsVia")}
-            </p>
             <p className="text-muted-foreground">{t("footer.legal")}</p>
           </div>
         </div>

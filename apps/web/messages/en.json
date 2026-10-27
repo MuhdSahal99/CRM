@@ -408,15 +408,13 @@
     "footer": {
       "title": "Saqient CRM",
       "menuLabel": "Footer",
-      "photoAlt": "Muttrah Corniche in Muscat, with the fort on the hill and gulls over the water",
-      "photoAlt2": "Muttrah harbour and the Hajar mountains, seen from above the fish market",
       "contactTitle": "Contact",
       "place": "Muscat, Sultanate of Oman",
-      "legal": "© 2026 Saqient. All rights reserved.",
-      "creditsLabel": "Photographs:",
-      "credit1": "“Muttrah Muscat Oman 2011” by Bilal Sarwar, CC BY 2.0",
-      "credit2": "“Oman-Muscat-Muttrah-21-Marina” by Ian Sewell, CC BY 2.5",
-      "creditsVia": "via Wikimedia Commons."
+      "legal": "© 2026 Saqient. All rights reserved."
+    },
+    "preview": {
+      "label": "Saqient CRM preview: the Deals board and a tax invoice",
+      "board": "Deals by stage"
     }
   },
   "login": {
@@ -435,7 +433,7 @@
       "deactivated": "This account has been deactivated. Ask your admin.",
       "unavailable": "Sign-in is not available right now. Try again in a few minutes."
     },
-    "photoAlt": "Muttrah Corniche in Muscat, with the fort on the hill and gulls over the water"
+    "tagline": "From lead to tax invoice, in OMR, built for sales teams in Oman."
   },
   "app": {
     "metaTitle": "Home · Saqient CRM",

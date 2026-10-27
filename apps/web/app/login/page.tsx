@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import corniche from "@/public/landing/muttrah-corniche.jpg";
+import "../_landing/landing.css";
 import { LoginForm } from "./login-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,9 +25,11 @@ export default async function LoginPage() {
           <LoginForm />
         </div>
       </main>
-      <div className="relative hidden p-3 ps-0 lg:block">
-        <div className="relative h-full overflow-hidden rounded-lg">
-          <Image src={corniche} alt={t("photoAlt")} fill priority sizes="50vw" className="object-cover" />
+      {/* Brand panel: tokens only (a dot grid over the primary colour), no photograph; desktop only. */}
+      <div className="hidden p-3 ps-0 lg:block">
+        <div className="login-brand flex h-full flex-col justify-end gap-3 rounded-lg p-12">
+          <p className="text-[2.5rem] leading-tight font-semibold tracking-tight">{tBrand("name")}</p>
+          <p className="max-w-[36ch] text-lg opacity-80">{t("tagline")}</p>
         </div>
       </div>
     </div>

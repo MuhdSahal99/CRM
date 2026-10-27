@@ -17,14 +17,20 @@
   transform: scale(0.97);
 }
 
-/* Footer photographs: the second slowly crossfades over the first (the page's signature move). */
-.landing-xfade {
-  animation: landing-xfade 16s ease-in-out infinite;
+/* Login brand panel: a quiet dot grid over the brand colour, from tokens. Dark mode keeps it a calm card with a
+   primary glow instead of a large light-blue block. */
+.login-brand {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  background-image: radial-gradient(color-mix(in oklch, var(--primary-foreground) 16%, transparent) 1px, transparent 1.5px),
+    linear-gradient(to bottom, transparent, color-mix(in oklch, var(--foreground) 18%, transparent));
+  background-size: 22px 22px, 100% 100%;
 }
-@keyframes landing-xfade {
-  0%, 40% { opacity: 0; }
-  50%, 90% { opacity: 1; }
-  100% { opacity: 0; }
+.dark .login-brand {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  background-image: radial-gradient(color-mix(in oklch, var(--primary) 30%, transparent) 1px, transparent 1.5px),
+    linear-gradient(to top, color-mix(in oklch, var(--primary) 28%, transparent), transparent 70%);
 }
 
 /* Stage slider: solid 8px track, passed part in ink, square thumb in the accent. */
@@ -89,20 +95,5 @@
         transform: translateY(32px);
       }
     }
-  }
-  .landing-drift {
-    animation: landing-drift 24s ease-in-out infinite alternate;
-  }
-  @keyframes landing-drift {
-    to {
-      transform: scale(1.06);
-    }
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-xfade {
-    animation: none;
-    opacity: 0;
   }
 }
