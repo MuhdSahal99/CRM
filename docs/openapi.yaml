@@ -886,7 +886,7 @@ paths:
                       properties:
                         stage: { $ref: '#/components/schemas/Stage' }
                         count: { type: integer, minimum: 0 }
-                        sum_amount_omr: { $ref: '#/components/schemas/Money' }
+                        sum_amount_omr: { oneOf: [ { $ref: '#/components/schemas/Money' }, { type: 'null' } ], description: null when the role cannot see Amount }
                         deals: { type: array, items: { $ref: '#/components/schemas/Deal' } }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '422': { $ref: '#/components/responses/ValidationError' }

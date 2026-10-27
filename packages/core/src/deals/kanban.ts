@@ -25,12 +25,14 @@ export async function getKanban(tx: Tx, input: z.infer<typeof KanbanInput>) {
     SELECT stage_id, count(*)::int AS n, COALESCE(sum(amount_omr), 0)::numeric(18,3)::text AS total FROM deals
     WHERE pipeline_id = ${input.pipeline_id} AND deleted_at IS NULL GROUP BY stage_id`)).rows.map((r) => [r.stage_id, r]));
   const fields = await loadFields(tx, "Deals");
+  // A sum of Amount would leak the hidden field, so a role without access gets null.
+  const seesAmount = fields.some((f) => f.apiName === "Amount");
   const columns = [];
   for (const stage of stages) {
     const { rows } = await tx.execute(sql`
       SELECT * FROM deals WHERE stage_id = ${stage.id} AND deleted_at IS NULL ORDER BY updated_at DESC, id LIMIT ${input.per_column}`);
     const t = totals.get(stage.id);
-    columns.push({ stage, count: t?.n ?? 0, sum_amount_omr: t?.total ?? "0.000", deals: await toApi(tx, fields, rows as Parameters<typeof toApi>[2]) });
+    columns.push({ stage, count: t?.n ?? 0, sum_amount_omr: seesAmount ? (t?.total ?? "0.000") : null, deals: await toApi(tx, fields, rows as Parameters<typeof toApi>[2]) });
   }
   return columns;
 }

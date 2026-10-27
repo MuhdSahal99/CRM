@@ -1,3 +1,4 @@
+import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { beforeAll, describe, expect, it } from "vitest";
 import * as recordRoute from "../app/api/v1/[module]/[id]/route";
 import * as relatedRoute from "../app/api/v1/[module]/[id]/[related_list]/route";
@@ -115,5 +116,24 @@ describe("Deals API", () => {
     expect((await related(repB)).json()).toMatchObject({ data: [], info: { count: 0 } });
     expect((await related(repA)).json().data.map((d: { id: string }) => d.id)).toEqual([id]);
     expect((await related(manager)).json().data).toHaveLength(1);
+  });
+
+  it("the Kanban total is null for a role that cannot see Amount", async () => {
+    const [auth, app] = [await connectAsAuth(), await connectAsApp()];
+    const { rows } = await auth.query(`SELECT user_id, org_id FROM member WHERE role = 'admin' AND org_id = (SELECT org_id FROM member m JOIN "user" u ON u.id = m.user_id WHERE u.email = 'admin@saqient.test') LIMIT 1`);
+    await auth.end();
+    const admin = { org_id: rows[0].org_id, user_id: rows[0].user_id, role: "admin", see_all: "on" };
+    const set = (access: string) => queryAs(app, admin, `INSERT INTO field_permissions (org_id, field_id, role, access)
+      SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = 'Deals' AND f.api_name = 'Amount'
+      ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access]);
+    const board = async () => (await call(kanbanRoute, "GET", `/Deals/kanban?pipeline_id=${pipeline.id}`, { cookie: repA })).json().data as { sum_amount_omr: string | null }[];
+    await set("hidden");
+    try {
+      expect((await board()).every((c) => c.sum_amount_omr === null)).toBe(true);
+    } finally {
+      await set("read_write");
+      await app.end();
+    }
+    expect((await board()).every((c) => c.sum_amount_omr !== null)).toBe(true);
   });
 });
