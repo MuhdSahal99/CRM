@@ -441,5 +441,24 @@
     "metaTitle": "Home · Saqient CRM",
     "title": "Welcome to Saqient CRM",
     "lead": "Your leads, deals and documents will appear here."
+  },
+  "shell": {
+    "nav": "Main",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "home": "Home"
+  },
+  "modules": {
+    "Leads": "Leads",
+    "Accounts": "Accounts",
+    "Contacts": "Contacts",
+    "Deals": "Deals",
+    "Products": "Products",
+    "Quotes": "Quotes",
+    "Sales_Orders": "Sales Orders",
+    "Invoices": "Invoices",
+    "Tasks": "Tasks",
+    "Calls": "Calls",
+    "Meetings": "Meetings"
   }
 }
