@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { noPageScroll, phoneAndDesktop, signInToApp } from "./helpers";
+import { createDisposableRep, noPageScroll, phoneAndDesktop, signIn, signInToApp } from "./helpers";
 
 phoneAndDesktop();
 
@@ -42,4 +42,31 @@ test("T1.25: a rep gets 404 on the users page", async ({ page }) => {
   await signInToApp(page, "rep.a@saqient.test");
   const res = await page.goto("/app/settings/users");
   expect(res?.status()).toBe(404);
+});
+
+test("T1.26: an admin changes a user's manager, then deactivates them after confirming; their sign-in then fails", async ({ page, browser }) => {
+  const leaver = await createDisposableRep();
+  await signInToApp(page, "admin@saqient.test");
+  await page.goto(`/app/settings/users/${leaver.id}`);
+  await expect(page.getByRole("heading", { level: 1, name: "E2E Rep" })).toBeVisible();
+  await noPageScroll(page);
+
+  await page.getByLabel("Reports to").click();
+  await page.getByRole("option", { name: "Saqient Admin" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Changes saved.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Reports to")).toHaveText("Saqient Admin");
+
+  await page.getByRole("button", { name: "Deactivate" }).click();
+  const confirm = page.getByRole("dialog", { name: "Deactivate E2E Rep?" });
+  await confirm.getByRole("button", { name: "Deactivate" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(page.getByText("Deactivated", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Deactivate" })).toBeHidden();
+
+  const other = await browser.newPage({ extraHTTPHeaders: { "x-forwarded-for": "10.26.0.1" } });
+  await signIn(other, leaver.email);
+  await expect(other.locator("#login-error")).toHaveText("This account has been deactivated. Ask your admin.");
+  await other.close();
 });

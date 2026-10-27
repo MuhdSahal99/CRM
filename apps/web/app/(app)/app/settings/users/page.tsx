@@ -1,5 +1,6 @@
 import { listUsers, withTenant } from "@crm/core";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { type Column, DataTable } from "@/components/patterns/data-table";
@@ -25,7 +26,12 @@ export default async function UsersPage() {
   const managers = users.filter((u) => u.status === "active" && u.role !== "rep").map((u) => ({ id: u.id, name: u.name }));
 
   const columns: Column<UserRow>[] = [
-    { key: "name", header: t("name"), cell: (u) => u.name },
+    {
+      key: "name",
+      header: t("name"),
+      // Invitations have no member page yet; members open their edit page through a real link (DESIGN_SYSTEM § Data table).
+      cell: (u) => (u.status === "invited" ? u.name : <Link href={`/app/settings/users/${u.id}`} className="font-medium hover:underline">{u.name}</Link>),
+    },
     { key: "email", header: t("email"), cell: (u) => <bdi>{u.email}</bdi> },
     { key: "role", header: t("role"), cell: (u) => t(`roles.${u.role}`) },
     { key: "manager", header: t("manager"), cell: (u) => u.manager?.name ?? t("noManager") },

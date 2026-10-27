@@ -492,6 +492,15 @@
     "invitedDescription": "Invitation created. Send this link to the person you invited; it works for 7 days.",
     "acceptLink": "Invitation link",
     "sendInvite": "Send invite",
-    "inviting": "Inviting…"
+    "inviting": "Inviting…",
+    "backToUsers": "All users",
+    "saving": "Saving…",
+    "saved": "Changes saved.",
+    "deactivateTitle": "Deactivate this user",
+    "deactivateHelp": "They can no longer sign in, and their sessions end now. Their records stay as they are until you transfer them.",
+    "deactivate": "Deactivate",
+    "confirmTitle": "Deactivate {name}?",
+    "confirmDescription": "They are signed out everywhere and cannot sign in again. You can't undo this from here.",
+    "deactivated": "{name} has been deactivated."
   }
 }
