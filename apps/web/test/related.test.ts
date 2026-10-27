@@ -20,13 +20,16 @@ describe("related lists and layouts (T2.10)", () => {
     const res = await call(relatedRoute, "GET", `/Accounts/${mine}/Contacts`, { cookie: rep, params });
     expect(res.status).toBe(200);
     expect(res.json()).toMatchObject({ data: [{ id: ahmed, Last_Name: "Related One" }], info: { count: 1, more_records: false } });
-    expect((await call(relatedRoute, "GET", `/Accounts/${mine}/Deals`, { cookie: rep, params: { ...params, related_list: "Deals" } })).status).toBe(404);
+    expect((await call(relatedRoute, "GET", `/Accounts/${mine}/Quotes`, { cookie: rep, params: { ...params, related_list: "Quotes" } })).status).toBe(404);
   });
 
   it("settings list the related lists and the default layout of a module", async () => {
     const rep = await signIn("rep.b@saqient.test");
     const lists = await call(relatedListsRoute, "GET", "/settings/related_lists?module=Accounts", { cookie: rep });
-    expect(lists.json().data).toEqual([{ api_name: "Contacts", module: "Contacts", label_key: "related.Contacts" }]);
+    expect(lists.json().data).toEqual([
+      { api_name: "Contacts", module: "Contacts", label_key: "related.Contacts" },
+      { api_name: "Deals", module: "Deals", label_key: "related.Deals" },
+    ]);
 
     const layouts = (await call(layoutsRoute, "GET", "/settings/layouts?module=Accounts", { cookie: rep })).json().data;
     expect(layouts).toHaveLength(1);

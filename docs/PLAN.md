@@ -342,32 +342,32 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 5: Deals, pipeline, Kanban (US-07, US-02 private rule, US-03 transfer)
 
-#### T5.01 Pipelines, stages and the settings endpoint · S
+#### T5.01 Pipelines, stages and the settings endpoint · S · ✅
 - **Files:** schema and migration for `pipelines` and `stages`, seeded from reference §2.7 (read that section only), `apps/web/app/api/v1/settings/pipeline/route.ts`.
 - **Tests first:** I: one default pipeline per org. Proposal/Price Quote has probability 75. Stage names are i18n keys.
 - **Done when:** **US-07** has the single seeded pipeline it needs (⚠ the stage editor is Phase 2).
 
-#### T5.02 Currencies, deals and stage history tables · M
+#### T5.02 Currencies, deals and stage history tables · M · ✅
 - **Files:** migration and schema for `currencies` (seeded OMR 3 base, AED 2, INR 2), `deals` (generated `amount_omr` and `expected_revenue`), `deal_stage_history`; `app.can_see()` extended to deal.
 - **Tests first:** I: `amount_omr` for OMR equals `amount`. `expected_revenue` rounds half-up to the currency scale. The catalog guard passes.
 - **Done when:** the tables match SCHEMA. Only OMR deals can be created until T6.04.
 
-#### T5.03 Stage rules trigger · M
+#### T5.03 Stage rules trigger · M · ✅
 - **Files:** migration `deals_stage_rules`.
 - **Tests first:** I: moving Qualification → Proposal sets probability 75 and Expected Revenue 7,500.000, and writes a history row. Closed Lost without a reason raises. Closed Won sets 100 and forecast category `closed`, and sets `closed_at` (**US-07**).
 - **Done when:** the service and the trigger agree. The service checks first so the user gets a field-level 422.
 
-#### T5.04 Deals API and private visibility · M
+#### T5.04 Deals API and private visibility · M · ✅
 - **Files:** `packages/core/src/modules/deals.ts`.
 - **Tests first:** I: rep B's list excludes deal D, and GET D → 404. The manager's GET D → 200. **AC-11**: rep B's search by deal name returns nothing, while Accounts are still found. **AC-13**: an account from another org → 422/404. A `stage_changed` event is written.
 - **Done when:** **US-02** (private rule) is met for Deals.
 
-#### T5.05 Kanban endpoint · S
+#### T5.05 Kanban endpoint · S · ✅
 - **Files:** `apps/web/app/api/v1/Deals/kanban/route.ts`.
 - **Tests first:** I: per stage, count and Σ `amount_omr`, filtered by visibility (the manager sees the team, a rep sees their own).
 - **Done when:** totals come only from the server (DESIGN_SYSTEM principle 2).
 
-#### T5.06 Related deals lists · XS
+#### T5.06 Related deals lists · XS · ✅
 - **Files:** registry entries Account → Deals and Contact → Deals.
 - **Tests first:** I: **AC-17**: rep B listing `/Accounts/{X}/Deals`, where the deals are rep A's, gets an empty list.
 - **Done when:** **US-06** related lists are filtered by visibility.

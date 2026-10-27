@@ -8,7 +8,7 @@ import type { Tx } from "./tenant.ts";
 import { recordEvent } from "./timeline.ts";
 
 // Notes (US-05): a related list `Notes` on the records that have one. A later slice adds its module here (Leads, Deals…).
-const NOTE_PARENTS = ["Accounts", "Contacts", "Leads"];
+const NOTE_PARENTS = ["Accounts", "Contacts", "Leads", "Deals"];
 
 export const NoteInput = z.object({ data: z.array(z.strictObject({ Note_Content: z.string().trim().min(1).max(32000) })).length(1) });
 

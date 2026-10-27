@@ -25,6 +25,8 @@ export type ModuleDef = {
   /** Columns metadata may write (buildRecordSchema's allowlist): never tenancy, audit, soft-delete or import columns. */
   writable: PgColumn[];
   /** Server-side normalisation of a parsed record (api_name keys) before it is stored; `before` is the row on update. */
+  /** Service-side rules that need the database, run on the parsed row before it is written; `before` is the row on update. */
+  check?: (tx: Tx, row: Record<string, unknown>, before?: Record<string, unknown>) => Promise<void>;
   normalise?: (record: Record<string, unknown>, before?: Record<string, unknown>) => Record<string, unknown>;
 };
 
@@ -51,6 +53,21 @@ const mobileIn = (field: string, column: string) => (record: Record<string, unkn
   return { ...record, Mobile: mobile };
 };
 
+/** T5.03: field-level 422s before the database trigger would raise them (US-07). Stage is only checked when it is being set. */
+async function dealChecks(tx: Tx, row: Record<string, unknown>, before?: Record<string, unknown>) {
+  if (!row.stage_id) return;
+  const stage = (await tx.execute<{ record_category: string }>(sql`SELECT record_category FROM stages WHERE id = ${row.stage_id as string} AND is_active`)).rows[0];
+  if (!stage) throw new ApiError(422, "INVALID_DATA", "The stage does not exist.", { api_name: "Stage" });
+  const reason = "reason_for_loss" in row ? row.reason_for_loss : before?.reason_for_loss;
+  if (stage.record_category === "closed_lost" && !reason) throw new ApiError(422, "MANDATORY_NOT_FOUND", "Choose a reason for the loss.", { api_name: "Reason_For_Loss" });
+}
+
+/** Lookups into pipeline set-up, which is not a module: api_name → the table and the text shown for a row. */
+export const SETUP_LOOKUPS: Record<string, { table: PgTable; name: SQL }> = {
+  Pipeline: { table: schema.pipelines, name: sql`name` },
+  Stage: { table: schema.stages, name: sql`api_value` },
+};
+
 /** Tasks, Calls and Meetings: one table, one module each (SCHEMA § activities). */
 const activity = (type: string) => entry(schema.activities, "activity", sql`subject`, ["Subject"], { scope: sql`type = ${type}`, fixed: { type } });
 
@@ -60,6 +77,12 @@ const MODULES = new Map<string, ModuleDef>([
   ["Accounts", entry(schema.accounts, "account", sql`account_name`, ["Account_Name"])],
     // Same expression as contacts_name_trgm_idx, so word search can use the index.
   ["Contacts", entry(schema.contacts, "contact", sql`(coalesce(first_name, '') || ' ' || last_name)`, ["First_Name", "Last_Name"], { normalise: mobileIn("Mailing_Country", "mailing_country") })],
+  // OMR only until T6.04: the currency columns are fixed at create, so a client cannot choose them.
+  ["Deals", entry(schema.deals, "deal", sql`deal_name`, ["Deal_Name"], {
+    fixed: { currency: "OMR", currency_scale: 3, exchange_rate: "1" },
+    check: dealChecks,
+    writable: Object.values(getTableColumns(schema.deals)).filter((c) => c.name === "type" || !SERVER_COLUMNS.has(c.name)), // deals.type is a real field; SERVER_COLUMNS' `type` is the activity kind
+  })],
   ["Tasks", activity("task")],
   ["Calls", activity("call")],
   ["Meetings", activity("meeting")],
@@ -111,7 +134,10 @@ export async function toApi(tx: Tx, fields: Field[], rows: Row[]) {
     want("", r.updated_by);
     for (const f of fields) {
       if (f.dataType === "user_lookup") want("", value(f, r));
-      if (f.dataType === "lookup" && f.lookupModule) want(f.lookupModule, value(f, r));
+      if (f.dataType === "lookup") {
+        const target = f.lookupModule ?? (f.apiName in SETUP_LOOKUPS ? `setup:${f.apiName}` : null);
+        if (target) want(target, value(f, r));
+      }
       if (f.dataType === "polymorphic") {
         const module = linkModule(f, r);
         if (module && MODULES.has(module)) want(module, value(f, r));
@@ -120,11 +146,12 @@ export async function toApi(tx: Tx, fields: Field[], rows: Row[]) {
   }
   for (const [module, ids] of lookups) {
     // A name built from fields the caller's role has hidden stays null, like any hidden value.
-    if (module) {
+    const setup = module.startsWith("setup:") ? SETUP_LOOKUPS[module.slice(6)] : undefined;
+    if (module && !setup) {
       const visible = new Set((await loadFields(tx, module)).map((f) => f.apiName));
       if (!moduleDef(module).nameFields.every((api) => visible.has(api))) continue;
     }
-    const source = module ? sql`SELECT id, ${moduleDef(module).name} AS name FROM ${moduleDef(module).table}` : sql`SELECT id, name FROM org_users`;
+    const source = setup ? sql`SELECT id, ${setup.name} AS name FROM ${setup.table}` : module ? sql`SELECT id, ${moduleDef(module).name} AS name FROM ${moduleDef(module).table}` : sql`SELECT id, name FROM org_users`;
     const found = await tx.execute<{ id: string; name: string }>(sql`SELECT * FROM (${source}) s WHERE id IN ${[...ids]}`);
     for (const n of found.rows) names.set(n.id, n.name?.trim() ?? null);
   }

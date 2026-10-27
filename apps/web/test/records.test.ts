@@ -80,7 +80,7 @@ describe("records API: create and read (T2.03)", () => {
   });
 
   it("a module without a registry entry, or no module at all, is a 404", async () => {
-    expect((await create({ Deal_Name: "x" }, "Deals")).status).toBe(404);
+    expect((await create({ Deal_Name: "x" }, "Quotes")).status).toBe(404);
     expect((await get(crypto.randomUUID(), "Nope")).status).toBe(404);
   });
 

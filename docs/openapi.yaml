@@ -1663,7 +1663,7 @@ components:
         forecast_category: { $ref: '#/components/schemas/ForecastCategory' }
     ForecastCategory:
       type: string
-      enum: [Pipeline, Best_Case, Committed, Closed, Omitted]
+      enum: [pipeline, best_case, committed, closed, omitted]
 
     # ------------------------------------------------------------ settings
     OrgSettings:
@@ -1883,8 +1883,8 @@ components:
             Exchange_Rate: { allOf: [ { $ref: '#/components/schemas/Rate' } ], readOnly: true }
             Amount_OMR: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
             Closing_Date: { type: string, format: date }
-            Pipeline: { $ref: '#/components/schemas/Lookup' }
-            Stage: { type: string, description: 'Stage api_value, e.g. "Proposal/Price Quote"' }
+            Pipeline: { allOf: [ { $ref: '#/components/schemas/Lookup' } ], readOnly: true }
+            Stage: { $ref: '#/components/schemas/Lookup', description: 'Lookup {id, name}; name is the stage api_value, e.g. "Proposal/Price Quote". The pipeline follows the stage.' }
             Probability: { type: integer, minimum: 0, maximum: 100, description: Defaults from Stage; editable }
             Expected_Revenue: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
             Forecast_Category: { $ref: '#/components/schemas/ForecastCategory' }

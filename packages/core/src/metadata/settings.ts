@@ -49,3 +49,14 @@ export async function listLayouts(tx: Tx, module: z.infer<typeof ModuleName>) {
     ORDER BY l.is_default DESC, l.name`);
   return rows;
 }
+
+/** GET /settings/pipeline: the org's pipelines with their active stages in order (US-07). Stage names are i18n keys. */
+export async function listPipelines(tx: Tx) {
+  const { rows } = await tx.execute(sql`
+    SELECT p.id, p.name, p.is_default,
+      COALESCE((SELECT json_agg(json_build_object('id', s.id, 'api_value', s.api_value, 'name_key', s.name_key, 'sort_order', s.sort_order,
+        'probability', s.probability, 'record_category', s.record_category, 'forecast_category', s.forecast_category) ORDER BY s.sort_order)
+        FROM stages s WHERE s.pipeline_id = p.id AND s.is_active), '[]') AS stages
+    FROM pipelines p ORDER BY p.is_default DESC, p.name`);
+  return rows;
+}

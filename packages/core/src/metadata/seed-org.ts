@@ -18,6 +18,23 @@ export const SYSTEM_MODULES = [
   { apiName: "Meetings", visibility: "private" },
 ] as const;
 
+/** Reference §2.7 (the (verify) probabilities are as listed there): api_value, probability, record category, forecast category. */
+const STAGES = [
+  ["Qualification", 10, "open", "pipeline"],
+  ["Needs Analysis", 20, "open", "pipeline"],
+  ["Value Proposition", 40, "open", "pipeline"],
+  ["Identify Decision Makers", 60, "open", "pipeline"],
+  ["Perception Analysis", 70, "open", "best_case"],
+  ["Proposal/Price Quote", 75, "open", "best_case"],
+  ["Negotiation/Review", 90, "open", "committed"],
+  ["Closed Won", 100, "closed_won", "closed"],
+  ["Closed Lost", 0, "closed_lost", "omitted"],
+  ["Closed Lost to Competition", 0, "closed_lost", "omitted"],
+] as const;
+
+/** OMR is the base currency; only OMR deals can be created until T6.04. */
+const CURRENCIES = [["OMR", 3, true], ["AED", 2, false], ["INR", 2, false]] as const;
+
 /**
  * Gives the current org its system metadata. Runs inside withTenant as an admin (metadata writes are admin-only
  * under RLS) and is idempotent, so the seed and tenant onboarding can both call it: rows that exist are left as they are.
@@ -57,6 +74,7 @@ export async function provisionOrg(tx: Tx): Promise<void> {
         isSystem: true,
         columnName: f.col,
         required: Boolean(f.req),
+        readOnly: Boolean(f.ro),
         maxLength: f.max ?? null,
         scale: f.type === "currency" ? 3 : null,
         picklistId: f.type === "picklist" ? picklistId.get(f.list ?? f.api)! : null,
@@ -74,4 +92,15 @@ export async function provisionOrg(tx: Tx): Promise<void> {
     await tx.insert(schema.layoutFields).values(sections.flatMap((s, i) =>
       s.fields.map((f, j) => ({ id: newId(), orgId, sectionId: sectionRows[i]!.id, fieldId: fieldId.get(f.api)!, sortOrder: j + 1 }))));
   }
+
+  // One default pipeline with the reference stages (US-07); the stage editor is Phase 2.
+  await tx.insert(schema.pipelines).values({ id: newId(), orgId, name: "Standard", isDefault: true }).onConflictDoNothing();
+  const [pipeline] = await tx.select({ id: schema.pipelines.id }).from(schema.pipelines).where(eq(schema.pipelines.isDefault, true));
+  await tx
+    .insert(schema.stages)
+    .values(STAGES.map(([apiValue, probability, recordCategory, forecastCategory], i) => ({
+      id: newId(), orgId, pipelineId: pipeline!.id, nameKey: `stages.${slug(apiValue)}`, apiValue, sortOrder: i + 1, probability, recordCategory, forecastCategory,
+    })))
+    .onConflictDoNothing();
+  await tx.insert(schema.currencies).values(CURRENCIES.map(([code, scale, isBase]) => ({ orgId, code, scale, isBase }))).onConflictDoNothing();
 }

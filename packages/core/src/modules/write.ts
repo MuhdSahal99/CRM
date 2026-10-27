@@ -58,7 +58,9 @@ export async function createRecords(tx: Tx, ctx: TenantContext, module: string, 
   for (const [i, record] of input.data.entries()) {
     try {
       const id = newId();
-      const row: Record<string, unknown> = { id, owner_id: ctx.userId, ...parse(fields, module, record), ...def.fixed };
+      const parsed = parse(fields, module, record);
+      await def.check?.(tx, parsed);
+      const row: Record<string, unknown> = { id, owner_id: ctx.userId, ...parsed, ...def.fixed };
       if (row.owner_id === null) row.owner_id = ctx.userId;
       const values = sql.join(Object.entries(row).map(([c, v]) => value(c, v)), sql`, `);
       await tx.execute(sql`INSERT INTO ${def.table} (org_id, ${columns(row)}) VALUES (app.org_id(), ${values})`).catch((e) => dbError(e, def.table, fields));
@@ -86,6 +88,7 @@ export async function updateRecord(tx: Tx, module: string, id: string, input: z.
   if (before.is_converted) throw new Conflict("INVALID_STATE", "This lead is converted and read-only."); // AC-24: checked first, whatever version the client sent
   if (before.version !== v.data.version) throw new Conflict("VERSION_CONFLICT", "This record was changed by someone else. Reload it and try again.");
   const row = parse(fields, module, changes, before);
+  await def.check?.(tx, row, before);
   if (row.custom) row.custom = { ...before.custom, ...(row.custom as object) };
 
   const set = sql.join([...Object.entries(row).map(([c, val]) => sql`${sql.identifier(c)} = ${value(c, val)}`), sql`version = version + 1`], sql`, `);
@@ -95,7 +98,7 @@ export async function updateRecord(tx: Tx, module: string, id: string, input: z.
   const diff = fields.filter((f) => f.apiName in changes && JSON.stringify(read(f, before)) !== JSON.stringify(read(f, after)));
   if (diff.length > 0) {
     const changed = Object.fromEntries(diff.map((f) => [f.apiName, [read(f, before), read(f, after)] as [unknown, unknown]]));
-    await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "updated", changes: changed });
+    await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "Stage" in changed ? "stage_changed" : "updated", changes: changed });
   }
   return [{ code: "SUCCESS", status: "success", details: { id, version: after.version } }];
 }

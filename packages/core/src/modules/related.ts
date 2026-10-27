@@ -9,7 +9,8 @@ import { loadFields, moduleDef, toApi } from "./registry.ts";
 // Related lists on a detail page (US-06). Later slices add Deals, Quotes, Notes… as entries here.
 type RelatedList = { api_name: string; module: string; column: string };
 const RELATED: Record<string, RelatedList[]> = {
-  Accounts: [{ api_name: "Contacts", module: "Contacts", column: "account_id" }],
+  Accounts: [{ api_name: "Contacts", module: "Contacts", column: "account_id" }, { api_name: "Deals", module: "Deals", column: "account_id" }],
+  Contacts: [{ api_name: "Deals", module: "Deals", column: "contact_id" }],
 };
 
 /** GET /settings/related_lists. */

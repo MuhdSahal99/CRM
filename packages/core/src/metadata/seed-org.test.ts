@@ -43,6 +43,20 @@ describe("provisionOrg (T1.18)", () => {
     expect(values.map((v) => v.value)).toContain("Customer");
   });
 
+  it("T5.01: seeds exactly one default pipeline whose stages are i18n keys; Proposal/Price Quote is 75; OMR is the base currency", async () => {
+    await withTenant(admin, provisionOrg, db);
+    const [pipelines, stages, base] = await withTenant(rep, async (tx) => [
+      (await tx.execute(sql`SELECT count(*)::int AS n FROM pipelines WHERE is_default`)).rows[0]!.n,
+      (await tx.execute<{ api_value: string; name_key: string; probability: number }>(sql`SELECT api_value, name_key, probability FROM stages ORDER BY sort_order`)).rows,
+      (await tx.execute(sql`SELECT code FROM currencies WHERE is_base`)).rows[0]!.code,
+    ], db);
+    expect(pipelines).toBe(1);
+    expect(stages).toHaveLength(10);
+    expect(stages.every((s) => /^stages\.[a-z_]+$/.test(s.name_key))).toBe(true);
+    expect(stages.find((s) => s.api_value === "Proposal/Price Quote")!.probability).toBe(75);
+    expect(base).toBe("OMR");
+  });
+
   it("is refused for a non-admin (metadata writes are admin-only)", async () => {
     await expect(withTenant(rep, provisionOrg, db)).rejects.toMatchObject({ cause: { message: expect.stringMatching(/row-level security/) } });
   });

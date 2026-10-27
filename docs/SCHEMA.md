@@ -279,7 +279,7 @@ A missing row means `read_write`.
   - `(org_id, lower(email))`
   - GIN trigram on `(company || ' ' || last_name)`
 - **Trigger:** `leads_converted_readonly` blocks UPDATEs of a converted lead (US-05).
-- `converted_deal_id` has no FK until `deals` exists (T5.02).
+- `converted_deal_id` → deals (composite FK, RESTRICT; migration 0017).
 
 #### `accounts` (REC, ZOHO), public in org
 | Column | Type | Constraints |
@@ -657,3 +657,4 @@ Re-importing the same file creates no duplicates. Rows are upserted on `UNIQUE (
 | 0011 | 2026-10-27 | `contacts`: REC + ZOHO columns, mailing/other address groups, CHECK `mobile ~ '^[+][1-9][0-9]{6,14}$'` (E.164), CHECKs on email length, reporting_to ≠ id and description; hand-written composite `contacts_account_fk` and `contacts_reporting_to_fk` ON DELETE SET NULL (column); list/email/account/trigram (`coalesce(first_name,'') \|\| ' ' \|\| last_name`) indexes, partial unique `zoho_id`; audit trigger; `crm_app` SELECT/INSERT/UPDATE; RLS + FORCE + `tenant_isolation` (public in org); `app.can_see` gains `contact`. `converted_from_lead_id` has no FK until `leads` exists (slice 4) | 2 |
 | 0015 | 2026-10-28 | `invitation_token`: `invitation.token_hash` (SHA-256 of the random accept token) with a UNIQUE index | 4 |
 | 0016 | 2026-10-28 | `leads`: REC + ZOHO columns, converted_* composite FKs (RESTRICT), `contacts_converted_from_lead_fk`, trigger `leads_converted_readonly` (restrict_violation), RLS `tenant_isolation` + restrictive `owner_visibility`, `app.can_see` knows `lead` | 4 |
+| 0017 | 2026-10-28 | `pipelines`, `stages`, `currencies`, `deals`, `deal_stage_history`; enums `stage_category`, `forecast_category`; generated `amount_omr` and `expected_revenue`; composite FKs (deal contact SET NULL (contact_id)); `leads_converted_deal_fk`; triggers `deals_stage_rules` (BEFORE: probability, forecast category, pipeline, closed_at, Closed Lost needs a reason) and `deals_stage_history` (AFTER: history row); RLS `tenant_isolation`, admin-only writes on pipelines/stages/currencies, restrictive `owner_visibility` on deals and `parent_visibility` on the history; `app.can_see` knows `deal`. The history id is `gen_random_uuid()` (written by the trigger, not the app) | 5 |

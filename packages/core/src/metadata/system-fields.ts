@@ -4,7 +4,7 @@ import type { schema } from "@crm/db";
 // them as `fields` rows (is_system, column_name) plus one default layout; label keys are fields.<Module>.<api_name>.
 
 type FieldType = (typeof schema.fieldType.enumValues)[number];
-type Spec = { api: string; type: FieldType; col: string; req?: true; max?: number; lookup?: string; list?: string };
+type Spec = { api: string; type: FieldType; col: string; req?: true; ro?: true; max?: number; lookup?: string; list?: string };
 type Section = { label: string; columns?: 1; fields: Spec[] };
 
 const text = (api: string, col: string, max: number, req?: true): Spec => ({ api, type: "text", col, max, req });
@@ -32,6 +32,9 @@ export const SYSTEM_PICKLISTS: Record<string, string[]> = {
   Call_Status: ["Planned", "Held", "Cancelled"],
   Meeting_Status: ["Planned", "Held", "Cancelled"],
   Call_Type: ["Inbound", "Outbound", "Missed"],
+  Deal_Type: ["New Business", "Existing Business"],
+  Reason_For_Loss: ["Price", "Competitor", "No Budget", "No Decision", "Other"],
+  Forecast_Category: ["pipeline", "best_case", "committed", "closed", "omitted"], // the forecast_category enum, in order
   Lead_Status: ["Not Contacted", "Attempted to Contact", "Contact in Future", "Contacted", "Pre-Qualified", "Not Qualified", "Junk Lead", "Lost Lead"],
   Lead_Source: ["Advertisement", "Cold Call", "Employee Referral", "External Referral", "Online Store", "Partner", "Public Relations",
     "Sales Email Alias", "Seminar Partner", "Internal Seminar", "Trade Show", "Web Download", "Web Research", "Chat"],
@@ -69,6 +72,31 @@ export const SYSTEM_FIELDS: Record<string, Section[]> = {
       ],
     },
     { label: "address_information", fields: [text("Street", "street", 250), text("City", "city", 30), text("State", "state", 30), text("Zip_Code", "zip_code", 30), text("Country", "country", 2)] },
+    description,
+  ],
+  Deals: [
+    {
+      label: "deal_information",
+      fields: [
+        owner,
+        text("Deal_Name", "deal_name", 120, true),
+        { api: "Account_Name", type: "lookup", col: "account_id", lookup: "Accounts", req: true },
+        { api: "Contact_Name", type: "lookup", col: "contact_id", lookup: "Contacts" },
+        text("Contact_Role", "contact_role", 60),
+        pick("Type", "type", "Deal_Type"),
+        pick("Lead_Source", "lead_source"),
+        { api: "Amount", type: "currency", col: "amount" },
+        { api: "Closing_Date", type: "date", col: "closing_date", req: true },
+        // Pipeline and Stage are lookups into the pipeline set-up (registry SETUP_LOOKUPS); the pipeline follows the stage.
+        { api: "Pipeline", type: "lookup", col: "pipeline_id", ro: true },
+        { api: "Stage", type: "lookup", col: "stage_id", req: true },
+        { api: "Probability", type: "integer", col: "probability" },
+        { api: "Expected_Revenue", type: "currency", col: "expected_revenue", ro: true },
+        pick("Forecast_Category", "forecast_category"),
+        text("Next_Step", "next_step", 100),
+        pick("Reason_For_Loss", "reason_for_loss"),
+      ],
+    },
     description,
   ],
   Accounts: [
