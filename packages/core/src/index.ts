@@ -1,6 +1,7 @@
 // Public API of @crm/core; modules are added per task (docs/PLAN.md).
 export { parseConfig, type Config } from "./config.ts";
-export { getAuth } from "./auth.ts";
+export { getAuth, getAuthDb } from "./auth.ts";
+export { AcceptInvitationInput, acceptInvitation, getInvitation } from "./invitations.ts";
 export { resolveContext } from "./context.ts";
 export { bootCheck } from "./boot-check.ts";
 export { withTenant, type Role, type TenantContext, type Tx } from "./tenant.ts";
