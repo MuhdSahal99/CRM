@@ -76,4 +76,41 @@ describe("records API: create and read (T2.03)", () => {
     expect((await create({ Deal_Name: "x" }, "Deals")).status).toBe(404);
     expect((await get(crypto.randomUUID(), "Nope")).status).toBe(404);
   });
+
+  describe("list (T2.04)", () => {
+    const list = (query: string, cookie = repA) => call(moduleRoute, "GET", `/Accounts?${query}`, { cookie, params: { module: "Accounts" } });
+
+    it("AC-34: per_page above 200 is a 422", async () => {
+      expect((await list("per_page=100000")).json()).toMatchObject({ code: "INVALID_DATA", details: { api_name: "per_page" } });
+    });
+
+    it("AC-36: a sort_by outside the field allowlist is a 422 that echoes no SQL", async () => {
+      const res = await list(`sort_by=${encodeURIComponent("amount;drop table")}`);
+      expect(res.status).toBe(422);
+      expect(res.json()).toMatchObject({ details: { api_name: "sort_by" } });
+      expect(res.body).not.toMatch(/drop|select|order by/i);
+    });
+
+    it("US-02: rep B lists the account rep A created (Accounts are public in the org)", async () => {
+      const { details } = (await create({ Account_Name: "Rep A Public Account" })).json().data[0];
+      const repB = await signIn("rep.b@saqient.test");
+      const res = await list("per_page=200&sort_by=Account_Name&sort_order=asc", repB);
+      expect(res.status).toBe(200);
+      expect(res.json().data.map((r: { id: string }) => r.id)).toContain(details.id);
+    });
+
+    it("pages with a correct info.more_records and sorts by an allowlisted field", async () => {
+      await create({ Account_Name: "AAA Paging 1" });
+      await create({ Account_Name: "AAA Paging 2" });
+      const first = (await list("per_page=1&sort_by=Account_Name&sort_order=asc")).json();
+      expect(first.info).toEqual({ page: 1, per_page: 1, count: 1, more_records: true });
+      const all = (await list("per_page=200&sort_by=Account_Name&sort_order=asc")).json();
+      const names = all.data.map((r: { Account_Name: string }) => r.Account_Name);
+      expect(names.slice(0, 2)).toEqual(["AAA Paging 1", "AAA Paging 2"]);
+      expect(first.data[0].Account_Name).toBe("AAA Paging 1");
+      expect(all.info.more_records).toBe(false);
+      const last = (await list(`per_page=1&page=${all.info.count}&sort_by=Account_Name&sort_order=asc`)).json();
+      expect(last.info).toMatchObject({ count: 1, more_records: false });
+    });
+  });
 });

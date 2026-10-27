@@ -17,4 +17,4 @@ export { listFields, listModules, ModuleName } from "./metadata/settings.ts";
 export { deactivateUser, getMe, getUser, InviteUsersInput, inviteUsers, ListUsersInput, listUsers, RoleName, UpdateUserInput, updateUser } from "./users.ts";
 export { RECORD_MODULES } from "./modules/registry.ts";
 export { CreateRecordsInput, createRecords } from "./modules/write.ts";
-export { getRecord } from "./modules/list.ts";
+export { getRecord, ListRecordsInput, listRecords } from "./modules/list.ts";

@@ -206,7 +206,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a missing `Account_Name` → 422 on that field. **AC-22**: an `Owner.id` from another org → 422. A `created` timeline event is written. GET returns `data:[record]`.
 - **Done when:** the generic routes dispatch through the registry. Later modules only add a registry entry.
 
-#### T2.04 Account list with pagination and sorting · S
+#### T2.04 Account list with pagination and sorting · S · ✅
 - **Files:** `packages/core/src/modules/list.ts`, `[module]/route.ts` (GET).
 - **Tests first:** I: **AC-34**: `per_page=100000` → 422. **AC-36** part: `sort_by=amount;drop table` → 422 with no SQL text. **US-02**: rep B lists the account rep A created.
 - **Done when:** `info.more_records` is correct, and sorting is allowlisted.
