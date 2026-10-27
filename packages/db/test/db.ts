@@ -22,3 +22,34 @@ export function connectAsAuth(): Promise<pg.Client> {
   url.password = requireEnv("CRM_AUTH_PASSWORD");
   return connect(url.href);
 }
+
+/** Fixture: a new org, created as crm_auth (the only role that may write auth tables). Returns its id. */
+export async function createOrg(auth: pg.Client): Promise<string> {
+  const { rows } = await auth.query(
+    `INSERT INTO orgs (id, name, slug, created_at) VALUES (gen_random_uuid(), 'Org', 'org-' || gen_random_uuid(), now()) RETURNING id`,
+  );
+  return rows[0].id;
+}
+
+/** Fixture: a new user who is a member of `orgId`. Returns the user id. */
+export async function createMember(auth: pg.Client, orgId: string, role = "rep", managerId: string | null = null): Promise<string> {
+  const { rows } = await auth.query(
+    `WITH u AS (INSERT INTO "user" (id, name, email, created_at, updated_at)
+       VALUES (gen_random_uuid(), 'U', gen_random_uuid() || '@example.com', now(), now()) RETURNING id)
+     INSERT INTO member (id, org_id, user_id, role, manager_id, created_at)
+     SELECT gen_random_uuid(), $1, u.id, $2, $3, now() FROM u RETURNING user_id`,
+    [orgId, role, managerId],
+  );
+  return rows[0].user_id;
+}
+
+/** Runs `sql` in one transaction with `app.*` settings applied transaction-locally, like withTenant (ADR-0003). */
+export async function queryAs(client: pg.Client, settings: Record<string, string>, sql: string, params: unknown[] = []) {
+  await client.query("BEGIN");
+  try {
+    for (const [key, value] of Object.entries(settings)) await client.query("SELECT set_config($1, $2, true)", [`app.${key}`, value]);
+    return (await client.query(sql, params)).rows;
+  } finally {
+    await client.query("COMMIT");
+  }
+}

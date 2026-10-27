@@ -18,6 +18,13 @@ PRD G4 says a second tenant must need no schema rewrite. US-01 requires that a S
     WITH CHECK (org_id = current_setting('app.org_id', true)::uuid);
   ```
   When `app.org_id` is not set, `current_setting(..., true)` returns NULL, the comparison is NULL, and **zero rows** come back. The policy fails closed.
+
+  > **Amended 2026-10-27 (T1.05).** That holds only on a connection that has never set the value. After a transaction that used `set_config('app.org_id', …, true)` ends, the same connection reads it back as `''`, and `''::uuid` raises an error instead of matching nothing. Every pooled connection is in that state after its first request. Policies therefore use `app.org_id()`, which is `NULLIF(current_setting('app.org_id', true), '')::uuid`:
+  > ```sql
+  > CREATE POLICY tenant_isolation ON <table> TO crm_app
+  >   USING (org_id = app.org_id()) WITH CHECK (org_id = app.org_id());
+  > ```
+  > Covered by the test "a finished request leaves no usable context on the connection" (`packages/db/test/rls.test.ts`).
 - **DB roles:**
   - `crm_owner` owns the schema and runs migrations. The app never connects as it.
   - `crm_app` is used by web and worker. It has no `BYPASSRLS` and no DDL rights.

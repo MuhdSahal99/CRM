@@ -101,7 +101,7 @@ flowchart LR
 
 [ADR-0003](adr/0003-tenancy-org-id-row-level-security.md)
 
-- **Shared schema.** Every tenant table has `org_id NOT NULL`, indexes that lead with `org_id`, `ENABLE` + `FORCE ROW LEVEL SECURITY`, and the `tenant_isolation` policy on `current_setting('app.org_id', true)`.
+- **Shared schema.** Every tenant table has `org_id NOT NULL`, indexes that lead with `org_id`, `ENABLE` + `FORCE ROW LEVEL SECURITY`, and the `tenant_isolation` policy on `app.org_id()` (the transaction's `app.org_id` setting, NULL when unset).
 - **Fail closed.** If the setting is not set, queries return zero rows.
 - **DB roles.** `crm_owner` holds DDL and runs migrations. `crm_app` (web and worker) has no `BYPASSRLS`. `crm_auth` serves the Better Auth global tables only.
 - **Context bleed.** Settings are transaction-local (`is_local = true`), so pooled connections cannot carry context from one request to the next.

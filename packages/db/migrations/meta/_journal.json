@@ -22,6 +22,13 @@
       "when": 1793081036577,
       "tag": "0002_auth_grants_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793081376301,
+      "tag": "0003_rls_helpers",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 import type pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { connectAsApp, connectAsAuth } from "./db";
+import { connectAsApp, connectAsAuth, createMember, createOrg } from "./db";
 
 const AUTH_TABLES = ["account", "invitation", "member", "orgs", "session", "user", "verification"];
 const GLOBAL_AUTH_TABLES = ["account", "session", "user", "verification"];
@@ -34,21 +34,11 @@ describe("Better Auth tables (T1.04, ADR-0004)", () => {
     const ids = { orgA: "", orgB: "", userA: "", userB: "" };
 
     beforeAll(async () => {
-      const q = async (sql: string, params: unknown[] = []) => (await auth.query(sql, params)).rows[0].id as string;
-      ids.orgA = await q(`INSERT INTO orgs (id, name, slug, created_at) VALUES (gen_random_uuid(), 'A', 'a-' || gen_random_uuid(), now()) RETURNING id`);
-      ids.orgB = await q(`INSERT INTO orgs (id, name, slug, created_at) VALUES (gen_random_uuid(), 'B', 'b-' || gen_random_uuid(), now()) RETURNING id`);
-      const user = `INSERT INTO "user" (id, name, email, created_at, updated_at) VALUES (gen_random_uuid(), $1, $2, now(), now()) RETURNING id`;
-      ids.userA = await q(user, ["A", `a-${crypto.randomUUID()}@example.com`]);
-      ids.userB = await q(user, ["B", `b-${crypto.randomUUID()}@example.com`]);
-      await auth.query(
-        `INSERT INTO member (id, org_id, user_id, role, created_at) VALUES (gen_random_uuid(), $1, $2, 'manager', now()), (gen_random_uuid(), $3, $4, 'manager', now())`,
-        [ids.orgA, ids.userA, ids.orgB, ids.userB],
-      );
+      [ids.orgA, ids.orgB] = await Promise.all([createOrg(auth), createOrg(auth)]);
+      [ids.userA, ids.userB] = await Promise.all([createMember(auth, ids.orgA, "manager"), createMember(auth, ids.orgB, "manager")]);
     });
 
-    const addRep = (orgId: string, managerId: string | null, role = "rep") =>
-      auth.query(`WITH u AS (INSERT INTO "user" (id, name, email, created_at, updated_at) VALUES (gen_random_uuid(), 'R', gen_random_uuid() || '@example.com', now(), now()) RETURNING id)
-        INSERT INTO member (id, org_id, user_id, role, manager_id, created_at) SELECT gen_random_uuid(), $1, u.id, $3, $2, now() FROM u`, [orgId, managerId, role]);
+    const addRep = (orgId: string, managerId: string | null, role = "rep") => createMember(auth, orgId, role, managerId);
 
     it("accepts a manager from the same org", async () => {
       await expect(addRep(ids.orgA, ids.userA)).resolves.toBeDefined();
@@ -66,11 +56,6 @@ describe("Better Auth tables (T1.04, ADR-0004)", () => {
       await expect(
         auth.query(`UPDATE member SET manager_id = user_id WHERE user_id = $1`, [ids.userA]),
       ).rejects.toThrow(/check constraint/);
-    });
-
-    it("shows crm_app zero rows until tenant policies exist (fail closed)", async () => {
-      const { rows } = await app.query("SELECT count(*)::int AS n FROM member");
-      expect(rows[0].n).toBe(0);
     });
   });
 
