@@ -4,11 +4,11 @@ import type { schema } from "@crm/db";
 // them as `fields` rows (is_system, column_name) plus one default layout; label keys are fields.<Module>.<api_name>.
 
 type FieldType = (typeof schema.fieldType.enumValues)[number];
-type Spec = { api: string; type: FieldType; col: string; req?: true; max?: number; lookup?: string };
+type Spec = { api: string; type: FieldType; col: string; req?: true; max?: number; lookup?: string; list?: string };
 type Section = { label: string; columns?: 1; fields: Spec[] };
 
 const text = (api: string, col: string, max: number, req?: true): Spec => ({ api, type: "text", col, max, req });
-const pick = (api: string, col: string): Spec => ({ api, type: "picklist", col }); // picklist api_name = field api_name
+const pick = (api: string, col: string, list = api): Spec => ({ api, type: "picklist", col, list }); // picklist api_name = field api_name unless modules share a name
 const address = (prefix: string, code: string): Spec[] => [
   text(`${prefix}_Street`, `${prefix.toLowerCase()}_street`, 250),
   text(`${prefix}_City`, `${prefix.toLowerCase()}_city`, 30),
@@ -27,9 +27,19 @@ export const SYSTEM_PICKLISTS: Record<string, string[]> = {
     "Manufacturing", "Oil and Gas", "Real Estate", "Retail", "Technology", "Transportation", "Other"],
   Rating: ["Acquired", "Active", "Market Failed", "Project Cancelled", "Shut Down"],
   Salutation: ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof."],
+  Task_Status: ["Not Started", "Deferred", "In Progress", "Completed", "Waiting for input"],
+  Task_Priority: ["Highest", "High", "Normal", "Low", "Lowest"],
+  Call_Status: ["Planned", "Held", "Cancelled"],
+  Meeting_Status: ["Planned", "Held", "Cancelled"],
+  Call_Type: ["Inbound", "Outbound", "Missed"],
   Lead_Source: ["Advertisement", "Cold Call", "Employee Referral", "External Referral", "Online Store", "Partner", "Public Relations",
     "Sales Email Alias", "Seminar Partner", "Internal Seminar", "Trade Show", "Web Download", "Web Research", "Chat"],
 };
+
+const subject: Spec = { api: "Subject", type: "text", col: "subject", max: 255, req: true };
+/** Who_Id is a Lead or Contact, What_Id an Account, Deal, Quote, Sales Order or Invoice (polymorphic: the _type column sits beside it). */
+const links: Spec[] = [{ api: "Who_Id", type: "polymorphic", col: "who_id" }, { api: "What_Id", type: "polymorphic", col: "what_id" }];
+const when = (api: string, col: string, req?: true): Spec => ({ api, type: "datetime", col, req });
 
 export const SYSTEM_FIELDS: Record<string, Section[]> = {
   Accounts: [
@@ -86,6 +96,53 @@ export const SYSTEM_FIELDS: Record<string, Section[]> = {
       ],
     },
     { label: "address_information", fields: [...address("Mailing", "Zip"), ...address("Other", "Zip")] },
+    description,
+  ],
+  Tasks: [
+    {
+      label: "task_information",
+      fields: [
+        owner,
+        subject,
+        { api: "Due_Date", type: "date", col: "due_date" },
+        pick("Status", "status", "Task_Status"),
+        pick("Priority", "priority", "Task_Priority"),
+        ...links,
+      ],
+    },
+    description,
+  ],
+  Calls: [
+    {
+      label: "call_information",
+      fields: [
+        owner,
+        subject,
+        { ...pick("Call_Type", "call_type"), req: true },
+        text("Call_Purpose", "call_purpose", 120),
+        when("Call_Start_Time", "call_start_at", true),
+        { api: "Call_Duration_Seconds", type: "integer", col: "call_duration_seconds", req: true },
+        text("Call_Result", "call_result", 120),
+        pick("Status", "status", "Call_Status"),
+        ...links,
+      ],
+    },
+    description,
+  ],
+  Meetings: [
+    {
+      label: "meeting_information",
+      fields: [
+        owner,
+        subject,
+        when("Start_DateTime", "start_at", true),
+        when("End_DateTime", "end_at", true),
+        { api: "All_day", type: "boolean", col: "all_day" },
+        text("Venue", "venue", 255),
+        pick("Status", "status", "Meeting_Status"),
+        ...links,
+      ],
+    },
     description,
   ],
 };

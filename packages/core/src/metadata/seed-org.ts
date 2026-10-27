@@ -59,7 +59,7 @@ export async function provisionOrg(tx: Tx): Promise<void> {
         required: Boolean(f.req),
         maxLength: f.max ?? null,
         scale: f.type === "currency" ? 3 : null,
-        picklistId: f.type === "picklist" ? picklistId.get(f.api)! : null,
+        picklistId: f.type === "picklist" ? picklistId.get(f.list ?? f.api)! : null,
         lookupModuleId: f.lookup ? moduleId.get(f.lookup)! : null,
       })))
       .onConflictDoNothing({ target: [schema.fields.orgId, schema.fields.moduleId, schema.fields.apiName] });

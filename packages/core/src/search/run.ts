@@ -54,7 +54,7 @@ export async function searchRecords(tx: Tx, module: string, input: z.infer<typeo
 
   try {
     const { rows } = await tx.execute(sql`
-      SELECT * FROM ${def.table} WHERE deleted_at IS NULL AND ${where} ORDER BY updated_at DESC, id ${limitOffset(input)}`);
+      SELECT * FROM ${def.table} WHERE ${def.scope} AND deleted_at IS NULL AND ${where} ORDER BY updated_at DESC, id ${limitOffset(input)}`);
     return pageOf(await toApi(tx, fields, rows as Parameters<typeof toApi>[2]), input);
   } catch (error) {
     // A criteria value that does not fit the column's type (e.g. "many" for an integer).

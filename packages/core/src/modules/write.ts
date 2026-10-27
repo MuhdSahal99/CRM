@@ -57,7 +57,7 @@ export async function createRecords(tx: Tx, ctx: TenantContext, module: string, 
   for (const [i, record] of input.data.entries()) {
     try {
       const id = newId();
-      const row: Record<string, unknown> = { id, owner_id: ctx.userId, ...parse(fields, module, record) };
+      const row: Record<string, unknown> = { id, owner_id: ctx.userId, ...parse(fields, module, record), ...def.fixed };
       if (row.owner_id === null) row.owner_id = ctx.userId;
       const values = sql.join(Object.entries(row).map(([c, v]) => value(c, v)), sql`, `);
       await tx.execute(sql`INSERT INTO ${def.table} (org_id, ${columns(row)}) VALUES (app.org_id(), ${values})`).catch((e) => dbError(e, def.table, fields));
@@ -80,14 +80,14 @@ export async function updateRecord(tx: Tx, module: string, id: string, input: z.
   const { version, ...changes } = input.data[0]!;
   const v = VersionInput.safeParse({ version });
   if (!v.success) throw validationError(v.error, { version });
-  const before = (await tx.execute<Row>(sql`SELECT * FROM ${def.table} WHERE id = ${id} AND deleted_at IS NULL FOR UPDATE`)).rows[0];
+  const before = (await tx.execute<Row>(sql`SELECT * FROM ${def.table} WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL FOR UPDATE`)).rows[0];
   if (!before) throw new NotFound();
   if (before.version !== v.data.version) throw new Conflict("VERSION_CONFLICT", "This record was changed by someone else. Reload it and try again.");
   const row = parse(fields, module, changes, before);
   if (row.custom) row.custom = { ...before.custom, ...(row.custom as object) };
 
   const set = sql.join([...Object.entries(row).map(([c, val]) => sql`${sql.identifier(c)} = ${value(c, val)}`), sql`version = version + 1`], sql`, `);
-  const after = (await tx.execute<Row>(sql`UPDATE ${def.table} SET ${set} WHERE id = ${id} RETURNING *`).catch((e) => dbError(e, def.table, fields))).rows[0]!;
+  const after = (await tx.execute<Row>(sql`UPDATE ${def.table} SET ${set} WHERE id = ${id} AND ${def.scope} RETURNING *`).catch((e) => dbError(e, def.table, fields))).rows[0]!;
 
   const read = (f: Field, r: Row) => (f.isSystem ? r[f.columnName!] : r.custom[f.apiName]) ?? null;
   const diff = fields.filter((f) => f.apiName in changes && JSON.stringify(read(f, before)) !== JSON.stringify(read(f, after)));
@@ -103,7 +103,7 @@ export async function deleteRecord(tx: Tx, module: string, id: string) {
   const def = moduleDef(module);
   const { rows } = await tx.execute(sql`
     UPDATE ${def.table} SET deleted_at = now(), deleted_by = NULLIF(current_setting('app.user_id', true), '')::uuid, version = version + 1
-    WHERE id = ${id} AND deleted_at IS NULL RETURNING id`);
+    WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL RETURNING id`);
   if (rows.length === 0) throw new NotFound();
   await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "deleted" });
   return [{ code: "SUCCESS", status: "success", details: { id } }];

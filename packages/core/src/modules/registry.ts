@@ -3,6 +3,7 @@ import { getTableColumns, type SQL, sql } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import { ApiError, NotFound } from "../http/errors.ts";
 import type { FieldDef } from "../metadata/record-schema.ts";
+import { MODULE_OF_TYPE } from "../metadata/record-schema.ts";
 import { toE164 } from "../phone.ts";
 import type { Tx } from "../tenant.ts";
 import type { TimelineEvent } from "../timeline.ts";
@@ -15,19 +16,25 @@ export type ModuleDef = {
   /** The display name of a record, for lookups ({id, name}) and word search, and the fields it is built from. */
   name: SQL;
   nameFields: string[];
+  /** Narrows a table shared by several modules (Tasks, Calls and Meetings are `activities`) to this module's rows. */
+  scope: SQL;
+  /** Column values every row of this module has, whatever the client sends (the activity `type`). */
+  fixed: Record<string, unknown>;
   /** Columns metadata may write (buildRecordSchema's allowlist): never tenancy, audit, soft-delete or import columns. */
   writable: PgColumn[];
   /** Server-side normalisation of a parsed record (api_name keys) before it is stored; `before` is the row on update. */
   normalise?: (record: Record<string, unknown>, before?: Record<string, unknown>) => Record<string, unknown>;
 };
 
-const SERVER_COLUMNS = new Set(["id", "org_id", "created_at", "created_by", "updated_at", "updated_by", "version", "deleted_at", "deleted_by", "custom", "zoho_id", "needs_review"]);
+const SERVER_COLUMNS = new Set(["id", "org_id", "created_at", "created_by", "updated_at", "updated_by", "version", "deleted_at", "deleted_by", "custom", "zoho_id", "needs_review", "type", "completed_at"]);
 
 const entry = (table: PgTable, recordType: ModuleDef["recordType"], name: SQL, nameFields: string[], extra: Partial<ModuleDef> = {}): ModuleDef => ({
   table,
   recordType,
   name,
   nameFields,
+  scope: sql`true`,
+  fixed: {},
   writable: Object.values(getTableColumns(table)).filter((c) => !SERVER_COLUMNS.has(c.name)),
   ...extra,
 });
@@ -41,10 +48,16 @@ function contactMobile(record: Record<string, unknown>, before?: Record<string, 
   return { ...record, Mobile: mobile };
 }
 
+/** Tasks, Calls and Meetings: one table, one module each (SCHEMA § activities). */
+const activity = (type: string) => entry(schema.activities, "activity", sql`subject`, ["Subject"], { scope: sql`type = ${type}`, fixed: { type } });
+
 const MODULES = new Map<string, ModuleDef>([
   ["Accounts", entry(schema.accounts, "account", sql`account_name`, ["Account_Name"])],
     // Same expression as contacts_name_trgm_idx, so word search can use the index.
   ["Contacts", entry(schema.contacts, "contact", sql`(coalesce(first_name, '') || ' ' || last_name)`, ["First_Name", "Last_Name"], { normalise: contactMobile })],
+  ["Tasks", activity("task")],
+  ["Calls", activity("call")],
+  ["Meetings", activity("meeting")],
 ]);
 
 /** Module api_names the generic record routes serve today. */
@@ -86,12 +99,18 @@ export async function toApi(tx: Tx, fields: Field[], rows: Row[]) {
   const lookups = new Map<string, Set<string>>(); // target module ("" = users) → ids
   const want = (module: string, id: unknown) => typeof id === "string" && (lookups.get(module) ?? lookups.set(module, new Set()).get(module)!).add(id);
   const value = (f: Field, r: Row) => (f.isSystem ? r[f.columnName!] : r.custom[f.apiName]) ?? null;
+  // A polymorphic link's module comes from the sibling <name>_type column; modules not built yet have no name to read.
+  const linkModule = (f: Field, r: Row) => MODULE_OF_TYPE.get(r[f.columnName!.replace(/_id$/, "_type")] as string);
   for (const r of rows) {
     want("", r.created_by);
     want("", r.updated_by);
     for (const f of fields) {
       if (f.dataType === "user_lookup") want("", value(f, r));
       if (f.dataType === "lookup" && f.lookupModule) want(f.lookupModule, value(f, r));
+      if (f.dataType === "polymorphic") {
+        const module = linkModule(f, r);
+        if (module && MODULES.has(module)) want(module, value(f, r));
+      }
     }
   }
   for (const [module, ids] of lookups) {
@@ -115,7 +134,10 @@ export async function toApi(tx: Tx, fields: Field[], rows: Row[]) {
       Created_By: ref(r.created_by),
       Modified_By: ref(r.updated_by),
     };
-    for (const f of fields) record[f.apiName] = f.dataType === "lookup" || f.dataType === "user_lookup" ? ref(value(f, r)) : value(f, r);
+    for (const f of fields) {
+      if (f.dataType === "polymorphic") record[f.apiName] = value(f, r) === null ? null : { ...ref(value(f, r)), module: linkModule(f, r) };
+      else record[f.apiName] = f.dataType === "lookup" || f.dataType === "user_lookup" ? ref(value(f, r)) : value(f, r);
+    }
     return record;
   });
 }

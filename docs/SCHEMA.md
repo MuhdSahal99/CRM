@@ -207,7 +207,7 @@ All metadata tables carry `org_id` and `AUDIT`. System rows are seeded for each 
 | module_id | uuid | NOT NULL, composite FK → modules CASCADE |
 | api_name | varchar(60) | NOT NULL, UNIQUE (org_id, module_id, api_name). **Immutable** (trigger `fields_api_name_immutable`) |
 | label_key | varchar(120) | NOT NULL |
-| data_type | enum `field_type` | text, textarea, email, phone, url, picklist, multiselect, date, datetime, integer, decimal, currency, percent, boolean, lookup, user_lookup, autonumber |
+| data_type | enum `field_type` | text, textarea, email, phone, url, picklist, multiselect, date, datetime, integer, decimal, currency, percent, boolean, lookup, user_lookup, polymorphic, autonumber |
 | is_system | boolean | NOT NULL |
 | column_name | varchar(63) | NULL. CHECK `is_system = (column_name IS NOT NULL)`; custom fields live in `custom->>api_name` |
 | required, is_unique, read_only | boolean | NOT NULL DEFAULT false |

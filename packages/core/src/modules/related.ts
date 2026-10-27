@@ -21,11 +21,11 @@ export const RelatedInput = z.object(Paging);
 export async function listRelated(tx: Tx, module: string, id: string, relatedList: string, input: z.infer<typeof RelatedInput>) {
   const related = RELATED[module]?.find((r) => r.api_name === relatedList);
   if (!related) throw new NotFound();
-  const parent = await tx.execute(sql`SELECT 1 FROM ${moduleDef(module).table} WHERE id = ${id} AND deleted_at IS NULL`);
+  const parent = await tx.execute(sql`SELECT 1 FROM ${moduleDef(module).table} WHERE id = ${id} AND ${moduleDef(module).scope} AND deleted_at IS NULL`);
   if (parent.rows.length === 0) throw new NotFound();
   const child = moduleDef(related.module);
   const { rows } = await tx.execute(sql`
-    SELECT * FROM ${child.table} WHERE ${sql.identifier(related.column)} = ${id} AND deleted_at IS NULL
+    SELECT * FROM ${child.table} WHERE ${child.scope} AND ${sql.identifier(related.column)} = ${id} AND deleted_at IS NULL
     ORDER BY updated_at DESC, id ${limitOffset(input)}`);
   return pageOf(await toApi(tx, await loadFields(tx, related.module), rows as Parameters<typeof toApi>[2]), input);
 }

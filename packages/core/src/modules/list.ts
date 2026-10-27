@@ -9,7 +9,7 @@ import { loadFields, moduleDef, toApi } from "./registry.ts";
 /** GET /{module}/{id}: one visible record as data:[record], or 404. */
 export async function getRecord(tx: Tx, module: string, id: string) {
   const def = moduleDef(module);
-  const { rows } = await tx.execute(sql`SELECT * FROM ${def.table} WHERE id = ${id} AND deleted_at IS NULL`);
+  const { rows } = await tx.execute(sql`SELECT * FROM ${def.table} WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL`);
   if (rows.length === 0) throw new NotFound();
   return toApi(tx, await loadFields(tx, module), rows as Parameters<typeof toApi>[2]);
 }
@@ -45,7 +45,7 @@ export async function listRecords(tx: Tx, ctx: TenantContext, module: string, in
   const dir = input.sort_order === "asc" ? sql`ASC` : sql`DESC`;
   const mine = input.cvid === "my" ? sql`AND owner_id = ${ctx.userId}` : sql``;
   const { rows } = await tx.execute(sql`
-    SELECT * FROM ${def.table} WHERE deleted_at IS NULL ${mine}
+    SELECT * FROM ${def.table} WHERE ${def.scope} AND deleted_at IS NULL ${mine}
     ORDER BY ${sql.identifier(column)} ${dir} NULLS LAST, id ${dir} ${limitOffset(input)}`);
   const wanted = input.fields?.split(",").map((f) => f.trim());
   return pageOf(await toApi(tx, wanted ? fields.filter((f) => wanted.includes(f.apiName)) : fields, rows as Parameters<typeof toApi>[2]), input);

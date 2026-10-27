@@ -17,6 +17,14 @@ export type FieldDef = {
   picklistValues: string[];
 };
 
+/** Polymorphic links (SCHEMA § Conventions): the modules each field may point at, and the record_type stored for each. */
+export const LINK_MODULES: Record<string, Record<string, string>> = {
+  Who_Id: { Leads: "lead", Contacts: "contact" },
+  What_Id: { Accounts: "account", Deals: "deal", Quotes: "quote", Sales_Orders: "sales_order", Invoices: "invoice" },
+};
+/** record_type → module api_name, for reading a link back. */
+export const MODULE_OF_TYPE = new Map(Object.values(LINK_MODULES).flatMap((m) => Object.entries(m).map(([module, type]) => [type, module] as const)));
+
 function valueSchema(f: FieldDef): z.ZodType {
   const text = f.maxLength ? z.string().max(f.maxLength) : z.string();
   const decimal = z.string().regex(new RegExp(`^-?\\d{1,15}(\\.\\d{1,${f.scale ?? 3}})?$`), "Expected a decimal string");
@@ -32,6 +40,10 @@ function valueSchema(f: FieldDef): z.ZodType {
     case "decimal": case "currency": case "percent": return decimal; // money and rates travel as strings (ADR-0007)
     case "boolean": return z.boolean();
     case "lookup": case "user_lookup": return z.object({ id: z.uuid() }); // Lookup {id}; the name is read-only
+    case "polymorphic": { // {id, module}: kept as {id, recordType}, which toRow writes to the id column and its sibling _type column
+      const modules = LINK_MODULES[f.apiName] ?? {};
+      return z.object({ id: z.uuid(), module: z.enum(Object.keys(modules) as [string, ...string[]]) }).transform((v) => ({ id: v.id, recordType: modules[v.module]! }));
+    }
     default: return text; // text, textarea, phone (autonumber is read-only, so never an input)
   }
 }
@@ -62,6 +74,11 @@ export function buildRecordSchema(fields: FieldDef[], writableColumns: PgColumn[
       for (let [apiName, value] of Object.entries(input)) {
         const f = byApiName.get(apiName)!;
         if (f.dataType === "lookup" || f.dataType === "user_lookup") value = (value as { id: string } | null)?.id ?? null;
+        if (f.dataType === "polymorphic") {
+          const link = value as { id: string; recordType: string } | null;
+          row[f.columnName!.replace(/_id$/, "_type")] = link?.recordType ?? null;
+          value = link?.id ?? null;
+        }
         if (f.isSystem) row[f.columnName!] = value;
         else custom[apiName] = value;
       }

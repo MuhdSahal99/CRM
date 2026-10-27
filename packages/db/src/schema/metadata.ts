@@ -37,6 +37,7 @@ export const fieldType = pgEnum("field_type", [
   "boolean",
   "lookup",
   "user_lookup",
+  "polymorphic",
   "autonumber",
 ]);
 

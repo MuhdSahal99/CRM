@@ -14,6 +14,15 @@ const SAMPLE_ACCOUNTS: Record<string, Record<string, unknown>[]> = {
   "rep@demo.test": [{ Account_Name: "Demo Customer", Billing_Country: "OM" }],
 };
 
+/** Activities for Saqient's first rep: a task that is always overdue (its due date is long past) for My Activities, and one of each kind for the visibility matrix. */
+const SAMPLE_ACTIVITIES: Record<string, [module: string, record: Record<string, unknown>][]> = {
+  "rep.a@saqient.test": [
+    ["Tasks", { Subject: "Follow up with Al Noor", Due_Date: "2020-01-01", Priority: "High", Status: "Not Started" }],
+    ["Calls", { Subject: "Intro call", Call_Type: "Outbound", Call_Start_Time: "2026-01-05T09:00:00+04:00", Call_Duration_Seconds: 300, Status: "Held" }],
+    ["Meetings", { Subject: "Kick-off", Start_DateTime: "2026-01-06T10:00:00+04:00", End_DateTime: "2026-01-06T11:00:00+04:00", Venue: "Muscat" }],
+  ],
+};
+
 /**
  * Dev and test data (docs/PRODUCTION_READINESS.md § Seeded test users): users and orgs as crm_auth, then each
  * seeded org's metadata through provisionOrg as crm_app, under that org's admin, exactly like real onboarding.
@@ -32,10 +41,14 @@ export async function seedAll(authDb: Db, appDb: Db, password: string): Promise<
   for (const rep of reps.rows) {
     const ctx = { orgId: rep.org_id, userId: rep.user_id, role: "rep" as const, visibleOwnerIds: [rep.user_id], seeAll: false };
     await withTenant(ctx, async (tx) => {
-      if ((await tx.execute(sql`SELECT 1 FROM accounts LIMIT 1`)).rows.length > 0) return;
-      const [first] = await createRecords(tx, ctx, "Accounts", { data: SAMPLE_ACCOUNTS[rep.email]! });
-      const contact = { First_Name: "Ahmed", Last_Name: "Al Balushi", Mobile: "9123 4567", Mailing_Country: "OM", Account_Name: { id: first!.details.id } };
-      await createRecords(tx, ctx, "Contacts", { data: [contact] });
+      if ((await tx.execute(sql`SELECT 1 FROM accounts LIMIT 1`)).rows.length === 0) {
+        const [first] = await createRecords(tx, ctx, "Accounts", { data: SAMPLE_ACCOUNTS[rep.email]! });
+        const contact = { First_Name: "Ahmed", Last_Name: "Al Balushi", Mobile: "9123 4567", Mailing_Country: "OM", Account_Name: { id: first!.details.id } };
+        await createRecords(tx, ctx, "Contacts", { data: [contact] });
+      }
+      if (SAMPLE_ACTIVITIES[rep.email] && (await tx.execute(sql`SELECT 1 FROM activities LIMIT 1`)).rows.length === 0) {
+        for (const [module, record] of SAMPLE_ACTIVITIES[rep.email]!) await createRecords(tx, ctx, module, { data: [record] });
+      }
     }, appDb);
   }
 }

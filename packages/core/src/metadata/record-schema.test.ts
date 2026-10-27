@@ -79,4 +79,13 @@ describe("buildRecordSchema (T1.18, ADR-0006)", () => {
     expect(() => buildRecordSchema([{ ...evil, columnName: "grand_total" }], WRITABLE)).toThrow(/grand_total/);
     expect(() => buildRecordSchema([{ ...evil, columnName: "no_such_column" }], WRITABLE)).toThrow(/no_such_column/);
   });
+
+  it("writes a polymorphic link as its id and its sibling _type column, only for the modules that field allows", () => {
+    const what = field({ apiName: "What_Id", dataType: "polymorphic", isSystem: true, columnName: "what_id" });
+    const { schema, toRow } = buildRecordSchema([what], [Object.assign({}, things.company, { name: "what_id" }), Object.assign({}, things.company, { name: "what_type" })]);
+    const id = "0194b9a0-7b5e-7a31-8c1c-3d2f4a5b6c7d";
+    expect(toRow(schema.parse({ What_Id: { id, module: "Accounts" } }))).toEqual({ what_id: id, what_type: "account" });
+    expect(toRow(schema.parse({ What_Id: null }))).toEqual({ what_id: null, what_type: null });
+    expect(schema.safeParse({ What_Id: { id, module: "Contacts" } }).success).toBe(false); // a Contact is a Who_Id, not a What_Id
+  });
 });

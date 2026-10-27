@@ -1571,7 +1571,7 @@ components:
         data_type:
           type: string
           enum: [text, textarea, email, phone, url, picklist, multiselect, date, datetime, integer, decimal,
-                 currency, percent, boolean, lookup, user_lookup, autonumber]
+                 currency, percent, boolean, lookup, user_lookup, polymorphic, autonumber]
         is_system: { type: boolean }
         required: { type: boolean }
         is_unique: { type: boolean }
@@ -2005,6 +2005,7 @@ components:
             Call_Start_Time: { type: string, format: date-time }
             Call_Duration_Seconds: { type: integer, minimum: 0 }
             Call_Result: { type: [string, 'null'] }
+            Status: { type: string, enum: [Planned, Held, Cancelled], description: Held and Cancelled close the call }
     Meeting:
       allOf:
         - $ref: '#/components/schemas/ActivityBase'
@@ -2015,6 +2016,7 @@ components:
             End_DateTime: { type: string, format: date-time, description: Must be ≥ Start_DateTime }
             All_day: { type: boolean }
             Venue: { type: [string, 'null'], maxLength: 255 }
+            Status: { type: string, enum: [Planned, Held, Cancelled], description: Held and Cancelled close the meeting }
 
     # ------------------------------------------------------------ timeline / sending / forecasts / imports
     TimelineEvent:

@@ -268,7 +268,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a meeting without `start_at` is rejected. A `what_id` pointing at another org's account is rejected by `check_record_ref`. Rep B gets 0 rows for rep A's task on a public account (ADR-0005).
 - **Done when:** the table matches SCHEMA §activities.
 
-#### T3.02 Tasks, Calls and Meetings API · M
+#### T3.02 Tasks, Calls and Meetings API · M · ✅
 - **Files:** `packages/core/src/modules/activities.ts` (three registry entries over one table, with per-type Zod schemas).
 - **Tests first:** I: CRUD works for each type. A call needs `call_type`, `call_start_at` and duration. The visibility matrix covers all three.
 - **Done when:** activities link to Lead, Contact, Account, Deal, Quote, SO or Invoice through `who`/`what`. Types that don't exist yet are added to the enum by their own slice.
