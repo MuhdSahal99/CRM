@@ -75,7 +75,7 @@ flowchart LR
 | Threat | Example | Mitigation | Abuse case |
 |---|---|---|---|
 | **S** | Stolen session cookie; CSRF on state-changing POST | httpOnly + Secure + SameSite=Lax cookies; Better Auth origin check; no tokens in localStorage | AC-30, AC-31 |
-| **S** | Deactivated user keeps using an old session | `banUser` revokes sessions; every request re-checks session + member `status` | AC-32 |
+| **S** | Deactivated user keeps using an old session | Deactivation sets `user.banned` and deletes the user's sessions (ADR-0017); every request re-checks session + member `status` | AC-32 |
 | **T** | Client sends its own `Grand_Total`, `VAT_Amount`, `Exchange_Rate`, `Invoice_Number`, `Owner` of someone else, `org_id` | Zod strips unknown and `readOnly` fields; pricing engine is the only writer of money; `org_id` comes only from the session | AC-20, AC-21, AC-22 |
 | **T** | Editing an issued invoice or a converted lead | Service state checks + DB lock triggers | AC-23, AC-24 |
 | **R** | Rep denies cancelling an invoice or transferring records | `timeline_events` written in the same transaction (append-only grant) | AC-25 |

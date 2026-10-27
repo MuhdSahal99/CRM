@@ -89,11 +89,11 @@ flowchart LR
 
 ### Request lifecycle (authenticated API)
 
-1. **Session.** `proxy.ts` (Next 16) checks only that a session cookie is present and sets the locale. It makes no authorization decisions.
-2. **Handler.** The route handler resolves the session through Better Auth, yielding `user_id`, `org_id`, `role` and `status`. A missing or banned session returns 401.
-3. **Input validation.** Input is validated against the shared Zod schema. Failure returns 422 with errors per field. Unknown keys, including any client-sent totals, are stripped.
-4. **Tenant transaction.** `withTenant({orgId, userId, role, visibleOwnerIds, seeAll}, fn)` opens a transaction and runs `set_config(..., true)` for each value. The service runs inside it.
-5. **Permissions.** The service checks role permissions (403 when the action is not allowed for the role), applies the visibility predicate, and calls the pricing engine when money is involved.
+1. **Session.** `proxy.ts` (Next 16) runs on `/app` pages only and redirects to `/login` when no session cookie is present. It makes no authorization decisions. API routes answer 401 themselves. Locale needs nothing here while the MVP is English-only.
+2. **Handler.** Every `/api/v1` handler is wrapped by `apiRoute` (`apps/web/lib/api.ts`). It resolves the session through Better Auth (`resolveContext`), yielding `user_id`, `org_id`, `role` and `status`. A missing, banned or deactivated session returns 401.
+3. **Role permission.** The wrapper checks the route's declared permission against the role matrix (ADR-0005) and returns 403 when the role may not perform the action at all.
+4. **Input validation.** The body is capped (413), then validated against the shared Zod schema (query string on GET/DELETE, JSON body otherwise). Failure returns 422 with errors per field. Unknown keys, including any client-sent totals, are stripped. A malformed `{id}` returns 404 and never reaches SQL.
+5. **Tenant transaction.** `withTenant({orgId, userId, role, visibleOwnerIds, seeAll}, fn)` opens a transaction and runs `set_config(..., true)` for each value. The service runs inside it, applies the visibility predicate (RLS enforces it too), and calls the pricing engine when money is involved.
 6. **Timeline.** A `timeline_events` row is written in the same transaction for every change.
 7. **Side effects.** They are queued only after commit (ADR-0011).
 
@@ -300,3 +300,4 @@ CLAUDE.md rule: any dev-only relaxation must be a **typed config flag**, marked 
 | [0014](adr/0014-observability.md) | pino + OTel → CloudWatch/X-Ray in-region | Accepted |
 | [0015](adr/0015-rest-api-zoho-shape-openapi.md) | REST `/api/v1` mirroring Zoho v8, OpenAPI 3.1, Idempotency-Key | Accepted |
 | [0016](adr/0016-i18n-rtl-mobile-first.md) | next-intl, logical CSS lint, 360 px Playwright project | Accepted |
+| [0017](adr/0017-user-admin-in-crm-services.md) | Invite-only sign-in; invite and deactivate in CRM services, not Better Auth's plugin endpoints; per-IP + per-account sign-in limits | Accepted |

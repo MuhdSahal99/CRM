@@ -1,6 +1,6 @@
 # Implementation Plan: Saqient Sales CRM MVP
 
-Status: **Draft for approval** (2026-10-27). No code is written until this plan is approved.
+Status: **In progress** (2026-10-27). Slice 1 tasks T1.01–T1.27 are done; the slice 1 human checkpoint is still open.
 **Tasks:** 112 in the MVP across slices 1–9 and 11, plus 3 in slice 10, deferred to Phase 2 (2026-10-27 scope change, PRD changelog).
 Inputs: `docs/PRD.md` §5 (slice order), `docs/TRD.md`, `docs/SCHEMA.md`, `docs/openapi.yaml`, `docs/adr/`, `docs/THREAT_MODEL.md` (abuse cases `AC-xx`), `docs/DESIGN_SYSTEM.md`.
 
@@ -10,6 +10,7 @@ Inputs: `docs/PRD.md` §5 (slice order), `docs/TRD.md`, `docs/SCHEMA.md`, `docs/
 - **Size** counts hand-written diff lines. Lockfile, `messages/en.json` keys and drizzle-kit snapshot files don't count. **XS** < 30 · **S** 30–70 · **M** 70–100. Anything bigger is already split.
 - **Tests first.** Write these before the code and watch them fail. **U** = Vitest unit. **I** = Vitest integration against real Postgres, connected as `crm_app`, never as a superuser (ADR-0003). **E** = Playwright run in the existing `w360-*` and `w1440-*` projects (`apps/web/playwright.config.ts`). Every E test asserts `scrollWidth <= viewport` (ADR-0016).
 - **🛑 HUMAN CHECK**: stop after this task. Wait for a human review before the next one.
+- **✅** after a task heading: done, with its tests green and its commit on `main`.
 - **⛔ OQ-xx**: blocked by an open question; the task can't be finished, or can't go to prod, until it's answered. **⚠ OQ-xx**: built on the PRD's MVP default; revisit when the question is answered.
 
 ### Definition of done (every task)
@@ -39,143 +40,143 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Deal currency.** Deals carry a currency (SCHEMA), but exchange rates arrive in slice 6. So T5.02 creates `currencies` seeded with OMR/AED/INR, and the deals service accepts OMR only. Without an effective rate, creating a non-OMR deal is blocked, which is already the correct US-09 behaviour. T6.04 enables AED/INR.
 - **Ownership transfer.** Transfer (US-03) needs records to move, so it lands in slice 5 (leads, deals, activities). T7.07 adds quotes and T8.03 adds sales orders.
 - **Worker.** `apps/worker` isn't needed until PDFs exist, so it's created in slice 8 (T8.07), not slice 1.
-- **Invitations.** `POST /users` invitations can't email anyone until SMTP lands in slice 9. Until then, the Admin copies the accept link from the UI. T9.04 adds the email.
+- **Invitations.** `POST /users` invitations can't email anyone until SMTP lands in slice 9. Until then, the Admin copies the accept link from the UI. T9.04 adds the email. **Gap found after slice 1:** no task builds the `/accept-invite/{id}` page that the link points to (ADR-0017), so an invited user can't join yet. It needs a task before slice 2 ends.
 
 ---
 
 ## Slice 1: Foundation (US-01, US-03 part, E11)
 
-#### T1.01 Workspace packages · S
+#### T1.01 Workspace packages · S · ✅
 - **Files:** `packages/core/{package.json,tsconfig.json,vitest.config.ts,src/index.ts}`, `packages/db/{package.json,tsconfig.json,vitest.config.ts}`, `pnpm-workspace.yaml` (if needed), root `package.json` (`db:migrate`, `db:seed`).
 - **Tests first:** U: one trivial test per package, to prove `pnpm -r test` and `pnpm -r check` reach both packages.
 - **Done when:** `pnpm check && pnpm test` runs in web, core and db. Packages use TS 5.9.3 strict (ADR-0001).
 
-#### T1.02 Local infra and typed config · S
+#### T1.02 Local infra and typed config · S · ✅
 - **Files:** `docker-compose.yml` (postgres:16, redis:7), `.env.example`, `packages/core/src/config.ts` (Zod env schema).
 - **Tests first:** U: an invalid or missing env var throws with the variable's name. A `TEMP-DEV`-style flag can't be enabled when `NODE_ENV=production` (the schema refuses it).
 - **Done when:** the app refuses to boot on bad config (TRD Environments). `.env.local` is in `.gitignore`.
 
-#### T1.03 DB roles, drizzle-kit and the integration-test harness · M
+#### T1.03 DB roles, drizzle-kit and the integration-test harness · M · ✅
 - **Files:** `packages/db/drizzle.config.ts`, `packages/db/migrations/0000_roles_extensions.sql` (`crm_owner`/`crm_app`/`crm_auth`, `pg_trgm`, `citext`), `packages/db/src/client.ts` (node-postgres `Pool` as `crm_app`), `packages/db/test/global-setup.ts` (fresh DB, migrations run as owner).
 - **Tests first:** I: connected as `crm_app`, `rolsuper` and `rolbypassrls` are false. `crm_app` can't `CREATE TABLE`.
 - **Done when:** `pnpm db:migrate` runs as `crm_owner`, and integration tests run as `crm_app` (ADR-0002, ADR-0003).
 
-#### T1.04 Better Auth tables (orgs, user, member…) · M
+#### T1.04 Better Auth tables (orgs, user, member…) · M · ✅
 - **Files:** `packages/db/src/schema/auth.ts`, migration `0001_auth.sql`: `orgs`, `user`, `session`, `account`, `verification`, `member` (+`manager_id`, `status`), `invitation`; `crm_auth` grants; `auth_access` policies; `org_users` view.
 - **Tests first:** I: `crm_auth` can't select from any CRM table. `crm_app` has no grant on `session`/`account`/`verification`. The `member` composite FK rejects a manager from another org.
 - **Done when:** the tables match SCHEMA §Tenancy and auth. Generate them with Better Auth's CLI, then review the output (ADR-0004).
 
-#### T1.05 RLS helpers and catalog guard · 🛑 HUMAN CHECK · S
+#### T1.05 RLS helpers and catalog guard · 🛑 HUMAN CHECK · S · ✅
 - **Files:** migration `0002_rls_helpers.sql`: `app.visible_owner_ids()`, and `tenant_isolation` on `member`/`invitation`/`orgs` (read only for `crm_app`); `packages/db/test/rls-catalog.test.ts`.
 - **Tests first:** I: **AC-14**: every table with `org_id` has RLS + FORCE + `tenant_isolation`. **AC-16**: with no context set, `crm_app` sees zero rows in every tenant table.
 - **Done when:** the guard fails if a later migration adds a table without the policy. *Human check: these policies are the security backstop for every later slice.*
 
-#### T1.06 `withTenant(ctx, fn)` · M
+#### T1.06 `withTenant(ctx, fn)` · M · ✅
 - **Files:** `packages/core/src/tenant.ts`, `packages/core/src/tenant.test.ts`.
 - **Tests first:** I: **AC-15**: in context A, raw `SELECT` returns only org A rows. **AC-12**: two concurrent orgs share a pool of size 1, and `current_setting('app.org_id', true)` is empty after commit. A thrown `fn` rolls back.
 - **Done when:** this is the only DB handle `packages/core` exports. All five `set_config(..., true)` values are set (ADR-0003).
 
-#### T1.07 Boot guard · XS
+#### T1.07 Boot guard · XS · ✅
 - **Files:** `packages/core/src/boot-check.ts`, called from web startup (`instrumentation.ts`).
 - **Tests first:** I: **AC-19**: the check throws when connected as a superuser or a BYPASSRLS role.
 - **Done when:** the web app refuses to start with an unsafe DB role.
 
-#### T1.08 Seed: two orgs, users per role · S
+#### T1.08 Seed: two orgs, users per role · S · ✅
 - **Files:** `packages/db/src/seed.ts`, `docs/PRODUCTION_READINESS.md` (§Seeded test users).
 - **Tests first:** I: the seed is idempotent (running it twice is a no-op). It refuses to run when `NODE_ENV=production`.
 - **Done when:** *Saqient* has admin, manager, rep A and rep B, with A and B reporting to the manager. *Demo* has an admin and a rep. A deactivated Saqient rep exists for US-01. Credentials are documented and come from env, never hard-coded in app code.
 
-#### T1.09 Better Auth server and route · M
+#### T1.09 Better Auth server and route · M · ✅
 - **Files:** `apps/web/lib/auth.ts` (email/password, `organization` + `admin` plugins, drizzle adapter on the `crm_auth` pool, Redis-backed rate limit), `apps/web/app/api/auth/[...all]/route.ts`, `packages/core/src/access.ts` (`createAccessControl` roles admin/manager/rep per ADR-0005).
 - **Tests first:** I: a seeded user signs in and gets an httpOnly, Secure, SameSite=Lax cookie. A deactivated (banned) user gets 403 (**US-01**). **AC-31**: 20 bad passwords in 15 min are throttled, and an unknown email gets the same generic error.
 - **Done when:** sign-in works against the real DB. There is no bypass path of any kind (CLAUDE.md).
 
-#### T1.10 Switch the login screen to the auth client · XS
+#### T1.10 Switch the login screen to the auth client · XS · ✅
 - **Files:** `apps/web/lib/auth-client.ts` (replace the `shortcut:` fetch with `createAuthClient().signIn.email`), `apps/web/e2e/login.spec.ts`.
 - **Tests first:** E (w360, w1440): a seeded rep signs in and lands on `/app`. A wrong password shows the inline error. A deactivated user sees the "deactivated" message.
 - **Done when:** the `shortcut:` comment is gone, and the login E2E is green on both widths.
 
-#### T1.11 Request context: session, membership, visibility · M
+#### T1.11 Request context: session, membership, visibility · M · ✅
 - **Files:** `packages/core/src/context.ts` (`resolveContext(headers)`: session → member → role/status → recursive CTE for `visible_owner_ids`, `see_all` for admin), `apps/web/proxy.ts` (cookie present → continue, otherwise redirect to `/login`; sets locale; makes no auth decisions).
 - **Tests first:** I: the manager's ids include rep A, rep B and the manager. Rep A's ids are only A. An admin gets `see_all`. **AC-32**: after deactivation, the old cookie gets 401 immediately.
 - **Done when:** the hierarchy is recomputed per request with no cache (ADR-0005).
 
-#### T1.12 Hierarchy cycle guard · XS
+#### T1.12 Hierarchy cycle guard · XS · ✅
 - **Files:** migration `0003_member_no_cycle.sql`.
 - **Tests first:** I: **AC-37**: setting A→B and then B→A is rejected. A self-manager is rejected by the CHECK.
 - **Done when:** the trigger rejects cycles of any length.
 
-#### T1.13 API route wrapper and error envelope · M
+#### T1.13 API route wrapper and error envelope · M · ✅
 - **Files:** `packages/core/src/http/{errors.ts,envelope.ts}`, `apps/web/lib/api.ts` (`apiRoute({input, permission}, handler)`: context → 401/403 → Zod parse → 422 per field → `withTenant` → `{data, info}`; maps `NotFound` → 404, `Conflict` → 409; body cap → 413).
 - **Tests first:** U: a Zod error becomes `{code, message, details:{api_name}, status:422}`. A `NotFound` body is byte-identical whether the record is missing or invisible. **AC-34** part: a 10 MB body → 413.
 - **Done when:** every `/api/v1` handler uses this wrapper (ADR-0015).
 
-#### T1.14 Logger with redaction · S
+#### T1.14 Logger with redaction · S · ✅
 - **Files:** `packages/core/src/log.ts` (pino, redact `password`, `token`, `authorization`, `cookie`, and `/s/<token>` paths), and the wrapper logs one line per request.
 - **Tests first:** U: logging a request to `/s/abc…` with a cookie emits neither the cookie nor the token.
 - **Done when:** this logger is used by the web app (and later the worker) (ADR-0014).
 
-#### T1.15 Generated visibility matrix and OpenAPI drift test · M
+#### T1.15 Generated visibility matrix and OpenAPI drift test · M · ✅
 - **Files:** `apps/web/test/visibility-matrix.test.ts` (reads `docs/openapi.yaml`, runs each path that has a route file under `app/api/v1`), `packages/core/test/openapi-drift.test.ts` (`z.toJSONSchema()` vs components).
 - **Tests first:** I: **AC-10** harness: a Demo user calls each implemented `{id}` route with a Saqient id and gets a 404 identical to a random UUID's. U: the drift test fails on a deliberately mismatched schema.
 - **Done when:** both tests grow automatically as routes are added (PRD M4).
 
-#### T1.16 Timeline write path · S
+#### T1.16 Timeline write path · S · ✅
 - **Files:** migration `0005_timeline.sql` (`timeline_events`, insert/select-only grants, `record_visibility` policy with an `app.can_see()` stub covering `user`/`org`), `packages/core/src/timeline.ts` (`recordEvent(tx, …)`).
 - **Tests first:** I: **AC-25** part: `crm_app` can't UPDATE or DELETE `timeline_events`. An event is written in the caller's transaction and disappears on rollback.
 - **Done when:** later slices extend `app.can_see()` for each new record type.
 
-#### T1.17 Metadata tables · M
+#### T1.17 Metadata tables · M · ✅
 - **Files:** migration `0006_metadata.sql` (`modules`, `fields`, `picklists`, `picklist_values`, `layouts`, `layout_sections`, `layout_fields`, `field_permissions`; `api_name` immutable triggers; `admin_only` write policy), `packages/db/src/schema/metadata.ts`.
 - **Tests first:** I: updating `fields.api_name` raises. A rep can read the metadata but not insert it. The picklist CHECK holds.
 - **Done when:** the tables match SCHEMA §Metadata (ADR-0006).
 
-#### T1.18 Metadata → Zod builder and per-org seeding · M
+#### T1.18 Metadata → Zod builder and per-org seeding · M · ✅
 - **Files:** `packages/core/src/metadata/{seed-org.ts,record-schema.ts}`, called from the seed.
 - **Tests first:** U: `buildRecordSchema(fields)` rejects unknown custom keys, enforces `required`/`max_length`, validates picklist values, and maps `api_name` → column.
 - **Done when:** each org gets system `modules` rows. Fields are seeded per module by the later slices.
 
-#### T1.19 Settings metadata endpoints · S
+#### T1.19 Settings metadata endpoints · S · ✅
 - **Files:** `apps/web/app/api/v1/settings/{modules,fields}/route.ts`.
 - **Tests first:** I: a rep gets only their own org's modules and fields. A cross-org module id returns 404.
 - **Done when:** responses match `openapi.yaml`.
 
-#### T1.20 Users API: list, invite, read/update role and manager · M
+#### T1.20 Users API: list, invite, read/update role and manager · M · ✅
 - **Files:** `apps/web/app/api/v1/users/route.ts`, `users/[id]/route.ts`, `packages/core/src/users.ts`, migration for the `org_users` view (moved here from T1.04: this is its first consumer).
 - **Tests first:** I: **AC-35** part: a rep `POST /users` gets 403. An admin invite creates an `invitation` and returns the accept link. Changing a role or manager writes `role_changed` to the timeline. A cross-org id returns 404.
 - **Done when:** these satisfy **US-03** (invite, role, manager). Email delivery comes in T9.04.
 
-#### T1.21 Deactivate a user · S
+#### T1.21 Deactivate a user · S · ✅
 - **Files:** `apps/web/app/api/v1/users/[id]/actions/deactivate/route.ts`, `packages/core/src/users.ts`.
 - **Tests first:** I: deactivation bans the user, revokes their sessions, sets `member.status = deactivated` and writes `user_deactivated`. Their records are unchanged (**US-01**).
 - **Done when:** deactivated users can't sign in, and their records stay intact.
 
-#### T1.22 App shell: layout and auth guard · S
+#### T1.22 App shell: layout and auth guard · S · ✅
 - **Files:** `apps/web/app/(app)/layout.tsx` (server: `resolveContext` → redirect to `/login`), `apps/web/app/(app)/page.tsx` (empty home).
 - **Tests first:** E: `/app` without a session redirects to `/login`. With a session it renders.
 - **Done when:** every CRM page lives under `(app)`.
 
-#### T1.23 App shell: sidebar and mobile drawer · M
+#### T1.23 App shell: sidebar and mobile drawer · M · ✅
 - **Files:** `apps/web/components/shell/{sidebar.tsx,nav-items.ts}`, shadcn `sheet` (added via the CLI, then checked for literals and physical classes).
 - **Tests first:** E (w360): the menu button opens a drawer, nav links are reachable, and focus returns to the trigger. E (w1440): the sidebar is visible. There's no horizontal scroll at either width.
 - **Done when:** nav items come from `modules`. Only routes that exist are shown (DESIGN_SYSTEM §Patterns, §Keyboard).
 
-#### T1.24 App shell: top bar · S
+#### T1.24 App shell: top bar · S · ✅
 - **Files:** `apps/web/components/shell/top-bar.tsx` (org name, user menu, sign out, `ThemeToggle`).
 - **Tests first:** E: sign out returns to `/login`, and `/app` then redirects.
 - **Done when:** sticky headers reserve `scroll-padding` (WCAG 2.4.11).
 
-#### T1.25 Admin Users screen: list and invite · M
+#### T1.25 Admin Users screen: list and invite · M · ✅
 - **Files:** `apps/web/app/(app)/settings/users/page.tsx`, `invite-dialog.tsx`.
 - **Tests first:** E (w360, w1440): the admin sees users and their roles and invites a rep. A rep gets 404 on the page.
 - **Done when:** this is the **US-03** UI for listing and inviting.
 
-#### T1.26 Admin Users screen: edit and deactivate · S
+#### T1.26 Admin Users screen: edit and deactivate · S · ✅
 - **Files:** `apps/web/app/(app)/settings/users/[id]/page.tsx`.
 - **Tests first:** E: change the manager, then deactivate with a confirm dialog. The deactivated user's sign-in then fails.
 - **Done when:** this is the **US-03** UI for editing roles and managers and deactivating. The transfer UI comes in T5.10.
 
-#### T1.27 CI pipeline · S
+#### T1.27 CI pipeline · S · ✅
 - **Files:** `.github/workflows/ci.yml` (postgres/redis services; `pnpm check`, `pnpm test`, `pnpm e2e`), `scripts/check-temp-dev.ts` (every `TEMP-DEV:` id must be in PRODUCTION_READINESS).
 - **Tests first:** U: the TEMP-DEV script fails on an unlisted id.
 - **Done when:** CI is green on a branch (GitHub Actions, confirmed 2026-10-27).

@@ -1,7 +1,7 @@
 # ADR-0004: Authentication with Better Auth
 
 ## Status
-Accepted
+Accepted. Amended by [ADR-0017](0017-user-admin-in-crm-services.md): invitations and deactivation run in CRM services, not the plugin endpoints.
 
 ## Date
 2026-10-27

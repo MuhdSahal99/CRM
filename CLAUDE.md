@@ -2,8 +2,9 @@
 ## Commands
 - Dev: `pnpm dev` · Test: `pnpm test` · E2E: `pnpm e2e` · Lint/types: `pnpm check` · DB: `pnpm db:migrate`, `pnpm db:seed`
 ## Source of truth
-- Requirements: @docs/PRD.md · Architecture: @docs/TRD.md · Schema: @docs/SCHEMA.md
-- Domain spec: docs/reference/zoho-crm-sales-module-rebuild.md (read the relevant section, not the whole file)
+Read the relevant section, not the whole file:
+- Requirements: docs/PRD.md · Architecture: docs/TRD.md · Schema: docs/SCHEMA.md · API: docs/openapi.yaml · Decisions: docs/adr/
+- Tasks: docs/PLAN.md (mark a finished task ✅) · Domain spec: docs/reference/zoho-crm-sales-module-rebuild.md
 ## Rules
 - IMPORTANT: Never add an auth bypass, magic header, or "skip auth if dev" branch. Use seeded test users (see docs/PRODUCTION_READINESS.md).
 - Any dev-only relaxation must be a typed config flag, marked `// TEMP-DEV: <id>` and listed in docs/PRODUCTION_READINESS.md.

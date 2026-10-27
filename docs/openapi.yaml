@@ -79,6 +79,7 @@ paths:
                 properties:
                   data: { type: array, items: { $ref: '#/components/schemas/FieldMeta' } }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound', description: The module is not provisioned in the caller's org }
         '422': { $ref: '#/components/responses/ValidationError' }
 
   /settings/layouts:
@@ -396,7 +397,7 @@ paths:
     put:
       tags: [Users]
       operationId: updateUser
-      summary: Change role or reporting manager (Admin). Cycles in the hierarchy are rejected.
+      summary: Change role or reporting manager (Admin). Cycles in the hierarchy are rejected, and Admins cannot change their own role.
       requestBody:
         required: true
         content:
@@ -419,6 +420,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict', description: An Admin changing their own role }
         '422': { $ref: '#/components/responses/ValidationError' }
 
   /users/{id}/actions/deactivate:

@@ -277,9 +277,26 @@ Kept as written so Phase 2 can pick them up unchanged. They are **not** built or
 | OQ-10 | The final reason for rebuilding (working assumption: sell it later) | Founders | Phase 2 priorities |
 | OQ-11 | Which accounting system to sync with in Phase 2 | Finance | Phase 2 |
 
+## 8. Acceptance status
+
+Updated 2026-10-27, after slice 1 (tasks in `docs/PLAN.md`). "Met" means the story's criteria have passing automated tests on `main`. The slice 1 human checkpoint is still open.
+
+| Story | Status | Notes |
+|---|---|---|
+| US-01 Sign in, stay in my org | **Met** | Sign-in, deactivated-user refusal, and 404 for another org's ids on every route built so far (generated visibility matrix). The matrix grows with each new `{id}` route |
+| US-02 Private deals, public accounts | Not started | Slices 2 and 5 |
+| US-03 Manage users and ownership | **Partly met** | Invite, role, reporting manager and deactivate are done (API and Admin UI). Not done: record transfer (T5.10), and the page that accepts an invitation (`/accept-invite/{id}`, no task yet). Invitation email comes in T9.04 |
+| US-04 – US-15, US-17 | Not started | Slices 2–9 and 11 |
+| US-16 Forecasts | Phase 2 | Not built in the MVP |
+| E11 Phone | Partly met | The app shell and Users screens pass E2E at 360 px. Each later screen adds its own |
+| E11 i18n | Met so far | `pnpm check` fails on literal JSX strings and physical direction utilities |
+| E11 Speed | Not verified | Load test at 100k records is T11.11 |
+| E11 API | Met so far | Routes use shared Zod schemas through `apiRoute`; the OpenAPI drift test compares them with `openapi.yaml` |
+
 ## Changelog
 
 | Date | Change |
 |---|---|
 | 2026-10-27 | Approved. |
 | 2026-10-27 | **Scope change:** Forecasts move to Phase 2. US-16 (manager sets quarterly targets per Rep; per-Rep and team forecast in OMR) and its "fiscal year starts in January" assumption move to §5 *Deferred stories*. Slice 10 leaves the MVP. No success metric referred to forecasts, so §6 is unchanged. Deal stages still set Probability and Forecast Category (US-07): those are deal fields, not the Forecasts module. |
+| 2026-10-27 | Added §8 *Acceptance status* after slice 1. No requirement changed. |
