@@ -263,7 +263,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 3: Activities and timeline (US-15)
 
-#### T3.01 Activities table, record references and visibility · M
+#### T3.01 Activities table, record references and visibility · M · ✅
 - **Files:** `schema/activities.ts`, migration (type CHECKs, `owner_visibility` restrictive policy, generic `check_record_ref` trigger, `app.can_see()` extended to account/contact/activity).
 - **Tests first:** I: a meeting without `start_at` is rejected. A `what_id` pointing at another org's account is rejected by `check_record_ref`. Rep B gets 0 rows for rep A's task on a public account (ADR-0005).
 - **Done when:** the table matches SCHEMA §activities.

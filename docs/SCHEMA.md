@@ -387,24 +387,25 @@ Postgres `round(numeric, int)` rounds half away from zero, which is half-up for 
 |---|---|---|
 | type | enum `activity_type` | task, call, meeting |
 | subject | varchar(255) | **NOT NULL** |
-| status | varchar(30) | task: not_started, deferred, in_progress, completed, waiting; meeting/call: planned, held, cancelled |
-| priority | varchar(20) | task only |
+| status | varchar(30) | picklist display values. Task: Not Started, Deferred, In Progress, Completed, Waiting for input; call/meeting: Planned, Held, Cancelled. Trigger `activities_completed_at` sets `completed_at` when a task is Completed or a call/meeting is Held or Cancelled, and clears it otherwise |
+| priority | varchar(20) | task only: Highest, High, Normal, Low, Lowest |
 | due_date | date | task |
 | start_at, end_at | timestamptz | meeting: NOT NULL, CHECK end_at ≥ start_at |
 | all_day | boolean | meeting |
 | venue | varchar(255) | meeting |
-| call_type | enum | inbound, outbound, missed; call: NOT NULL |
+| call_type | varchar(10) | CHECK IN ('Inbound', 'Outbound', 'Missed'); call: NOT NULL |
 | call_purpose, call_result | varchar(120) | |
 | call_start_at | timestamptz | call: NOT NULL |
 | call_duration_seconds | int | call: NOT NULL CHECK ≥ 0 |
-| who_type | enum | lead, contact |
+| who_type | enum `record_type` | CHECK IN (lead, contact) |
 | who_id | uuid | CHECK `(who_type IS NULL) = (who_id IS NULL)` |
-| what_type | enum | account, deal, quote, sales_order, invoice |
+| what_type | enum `record_type` | CHECK IN (account, deal, quote, sales_order, invoice) |
 | what_id | uuid | CHECK `(what_type IS NULL) = (what_id IS NULL)` |
-| completed_at | timestamptz | |
+| completed_at | timestamptz | server-set (see status); never client-writable |
 | description | text | |
 
-- **Type-specific checks:** CHECK constraints enforce the columns each `type` requires.
+- **Type-specific checks:** CHECK constraints enforce the columns each `type` requires (`activities_meeting_times`, `activities_call_fields`, `activities_call_duration`).
+- **Links:** trigger `check_record_ref` on `who`/`what` rejects a target the writer cannot see (another org's, missing, or one hidden by RLS), as a foreign-key violation on `activities_who_id_fk` / `activities_what_id_fk`. `app.can_see()` knows `account`, `contact` and `activity`; each later slice adds its own types (so `who_type = 'lead'` and the document types fail closed until then).
 - **Indexes:**
   - `(org_id, owner_id, due_date) WHERE completed_at IS NULL AND deleted_at IS NULL` (My Activities / overdue, US-15)
   - `(org_id, who_type, who_id)`

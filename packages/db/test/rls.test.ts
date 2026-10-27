@@ -41,6 +41,7 @@ describe("tenant isolation (ADR-0003)", () => {
       // One row in each record table (slice 2).
       await queryAs(app, { org_id: org, user_id: manager }, `INSERT INTO accounts (id, org_id, owner_id, account_name) VALUES (gen_random_uuid(), $1, $2, 'A')`, [org, manager]);
       await queryAs(app, { org_id: org, user_id: manager }, `INSERT INTO contacts (id, org_id, owner_id, last_name) VALUES (gen_random_uuid(), $1, $2, 'C')`, [org, manager]);
+      await queryAs(app, { org_id: org, user_id: manager, see_all: "on" }, `INSERT INTO activities (id, org_id, owner_id, type, subject) VALUES (gen_random_uuid(), $1, $2, 'task', 'T')`, [org, manager]);
       await queryAs(app, { org_id: org }, `INSERT INTO idempotency_keys (org_id, user_id, key, request_hash, status) VALUES ($1, $2, 'k', decode('00', 'hex'), 'in_progress')`, [org, manager]);
     }
   });
@@ -73,7 +74,7 @@ describe("tenant isolation (ADR-0003)", () => {
   it("with org A's context, crm_app sees only org A in every tenant table", async () => {
     for (const table of tenantTables) {
       const column = table === "orgs" ? "id" : "org_id";
-      const rows = await queryAs(app, { org_id: orgs.a }, `SELECT DISTINCT ${column} AS org FROM "${table}"`);
+      const rows = await queryAs(app, { org_id: orgs.a, see_all: "on" }, `SELECT DISTINCT ${column} AS org FROM "${table}"`);
       expect({ table, orgs: rows.map((r) => r.org) }).toEqual({ table, orgs: [orgs.a] });
     }
   });
