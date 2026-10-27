@@ -5,8 +5,14 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.local}
-    ports: ["127.0.0.1:5432:5432"]
-    volumes: [pgdata:/var/lib/postgresql/data]
+      # Read by packages/db/bootstrap/01-roles.sh on first start only (empty volume).
+      CRM_OWNER_PASSWORD: ${CRM_OWNER_PASSWORD:?}
+      CRM_APP_PASSWORD: ${CRM_APP_PASSWORD:?}
+      CRM_AUTH_PASSWORD: ${CRM_AUTH_PASSWORD:?}
+    ports: ["127.0.0.1:${POSTGRES_PORT:-5432}:5432"] # set POSTGRES_PORT if a local Postgres owns 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./packages/db/bootstrap:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 2s

@@ -1,6 +1,6 @@
 # Schema
 
-Status: **Design** (2026-10-27). No migrations exist yet; this is the target for slices 1–11.
+Status: **Design** (2026-10-27). The target for slices 1–11; what is already migrated is listed in the migrations log at the end.
 Design: `docs/TRD.md` · Decisions: `docs/adr/` (tenancy [0003](adr/0003-tenancy-org-id-row-level-security.md), visibility [0005](adr/0005-rbac-and-record-visibility.md), metadata [0006](adr/0006-metadata-driven-fields-and-layouts.md), money [0007](adr/0007-money-vat-currency.md), numbering [0008](adr/0008-gap-free-invoice-numbering-and-locking.md), share links [0009](adr/0009-pdf-share-tokens.md))
 
 PostgreSQL 16. Required extensions: `pg_trgm` (name search), `citext` (emails).
@@ -635,4 +635,5 @@ Re-importing the same file creates no duplicates. Rows are upserted on `UNIQUE (
 
 | # | Date | Description | Slice |
 |---|---|---|---|
-| — | — | No migrations yet. The first will be the slice 1 Foundation migration (orgs, auth, member, metadata, timeline, RLS helpers, roles and grants) | 1 |
+| — | 2026-10-27 | `packages/db/bootstrap/01-roles.sh` (not a migration; run once by the superuser): roles `crm_owner`, `crm_app`, `crm_auth` (all NOBYPASSRLS), databases `crm` and `crm_test` owned by `crm_owner`, `CONNECT` for the app roles only | 1 |
+| 0000 | 2026-10-27 | `extensions_grants`: `pg_trgm`, `citext`; `USAGE` on `public` for `crm_app`/`crm_auth`, no `CREATE` for anyone but the owner | 1 |

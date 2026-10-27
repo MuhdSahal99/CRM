@@ -8,6 +8,7 @@
     "test": "pnpm -r test",
     "e2e": "pnpm --filter web e2e",
     "infra:up": "docker compose --env-file .env.local up -d --wait",
-    "infra:down": "docker compose --env-file .env.local down"
+    "infra:down": "docker compose --env-file .env.local down",
+    "db:migrate": "pnpm --filter @crm/db migrate"
   }
 }

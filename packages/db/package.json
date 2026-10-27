@@ -2,14 +2,23 @@
   "name": "@crm/db",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "migrate": "node --env-file-if-exists=../../.env.local src/migrate.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11",
     "typescript": "5.9.3",
     "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1"
   }
 }
