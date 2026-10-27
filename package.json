@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "check": "pnpm -r check",
-    "test": "pnpm -r test",
+    "test": "pnpm -r --workspace-concurrency=1 test",
     "e2e": "pnpm --filter web e2e",
     "infra:up": "docker compose --env-file .env.local up -d --wait",
     "infra:down": "docker compose --env-file .env.local down",

@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./test/db.ts",
+    "./test-setup": "./test/global-setup.ts"
   },
   "scripts": {
     "check": "tsc --noEmit",

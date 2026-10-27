@@ -11,10 +11,14 @@
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
+    "@types/pg": "8.23.1",
+    "pg": "8.23.1",
     "typescript": "5.9.3",
     "vitest": "^5.0.5"
   },
   "dependencies": {
+    "@crm/db": "workspace:*",
+    "drizzle-orm": "0.45.4",
     "zod": "4.6.7"
   }
 }
