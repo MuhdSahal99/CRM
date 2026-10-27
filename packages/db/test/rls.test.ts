@@ -28,6 +28,16 @@ describe("tenant isolation (ADR-0003)", () => {
         [org, manager],
       );
       await queryAs(app, { org_id: org }, `INSERT INTO timeline_events (id, org_id, record_type, record_id, event_type) VALUES (gen_random_uuid(), $1, 'org', $1, 'updated')`, [org]);
+      // One row in each metadata table (T1.17), written as an admin would.
+      await queryAs(app, { org_id: org, role: "admin" }, `
+        WITH m AS (INSERT INTO modules (id, org_id, created_by, updated_by, api_name, label_key, sort_order) VALUES (gen_random_uuid(), $1, $2, $2, 'Leads', 'l', 1) RETURNING id),
+        p AS (INSERT INTO picklists (id, org_id, created_by, updated_by, api_name) VALUES (gen_random_uuid(), $1, $2, $2, 'p') RETURNING id),
+        pv AS (INSERT INTO picklist_values (id, org_id, created_by, updated_by, picklist_id, value, label_key, sort_order) SELECT gen_random_uuid(), $1, $2, $2, p.id, 'v', 'v', 1 FROM p),
+        f AS (INSERT INTO fields (id, org_id, created_by, updated_by, module_id, api_name, label_key, data_type, is_system) SELECT gen_random_uuid(), $1, $2, $2, m.id, 'f', 'f', 'text', false FROM m RETURNING id),
+        fp AS (INSERT INTO field_permissions (org_id, created_by, updated_by, field_id, role, access) SELECT $1, $2, $2, f.id, 'rep', 'hidden' FROM f),
+        l AS (INSERT INTO layouts (id, org_id, created_by, updated_by, module_id, name) SELECT gen_random_uuid(), $1, $2, $2, m.id, 'Standard' FROM m RETURNING id),
+        s AS (INSERT INTO layout_sections (id, org_id, created_by, updated_by, layout_id, label_key, sort_order) SELECT gen_random_uuid(), $1, $2, $2, l.id, 's', 1 FROM l RETURNING id)
+        INSERT INTO layout_fields (id, org_id, created_by, updated_by, section_id, field_id, sort_order) SELECT gen_random_uuid(), $1, $2, $2, s.id, f.id, 1 FROM s, f`, [org, manager]);
     }
   });
   afterAll(() => Promise.all([app?.end(), auth?.end()]));

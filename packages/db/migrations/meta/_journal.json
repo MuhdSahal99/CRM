@@ -43,6 +43,13 @@
       "when": 1793085454741,
       "tag": "0005_timeline",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793085667794,
+      "tag": "0006_metadata",
+      "breakpoints": true
     }
   ]
 }
