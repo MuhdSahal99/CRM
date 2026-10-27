@@ -1,6 +1,7 @@
 // Public API of @crm/core; modules are added per task (docs/PLAN.md).
 export { parseConfig, type Config } from "./config.ts";
 export { getAuth, getAuthDb } from "./auth.ts";
+export { redactInviteLinks } from "./users.ts";
 export { AcceptInvitationInput, acceptInvitation, getInvitation, hashInviteToken, newInviteToken } from "./invitations.ts";
 export { resolveContext } from "./context.ts";
 export { bootCheck } from "./boot-check.ts";

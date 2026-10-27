@@ -48,6 +48,11 @@ export async function getUser(tx: Tx, id: string) {
   return rows;
 }
 
+/** The stored copy of an invite response: the accept link carries the secret token, so only the first response has it. */
+export const redactInviteLinks = (body: { data: { details?: Record<string, unknown> }[] }) => ({
+  data: body.data.map(({ details, ...o }) => ({ ...o, details: details && Object.fromEntries(Object.entries(details).filter(([k]) => k !== "accept_url")) })),
+});
+
 /** POST /users (Admin): one pending invitation per person, returned with the link that accepts it. */
 export async function inviteUsers(tx: Tx, ctx: TenantContext, input: z.infer<typeof InviteUsersInput>, baseUrl: string) {
   const outcomes = [];

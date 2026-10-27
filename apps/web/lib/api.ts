@@ -32,7 +32,7 @@ type Handler<S extends z.ZodType> = (args: {
  * Input comes from the query string on GET/DELETE and from the JSON body otherwise; unknown keys are stripped.
  * `idempotent` routes honour an Idempotency-Key header (ADR-0015).
  */
-export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission; status?: number; idempotent?: true }, handler: Handler<S>) {
+export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission; status?: number; idempotent?: true; redact?: (body: never) => unknown }, handler: Handler<S>) {
   return async (request: Request, route?: { params?: Promise<Record<string, string>> }): Promise<Response> => {
     const started = performance.now();
     let session: TenantContext | null = null;
@@ -57,7 +57,7 @@ export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: 
         throw new ApiError(422, "INVALID_DATA", "Idempotency-Key must be 8 to 255 characters.", { api_name: "Idempotency-Key" });
       }
       const result = key
-        ? await idempotent(ctx, key, requestHash(request.method, new URL(request.url).pathname, raw), status, run)
+        ? await idempotent(ctx, key, requestHash(request.method, new URL(request.url).pathname, raw), status, run, undefined, options.redact as (body: unknown) => unknown)
         : { status, body: await withTenant(ctx, run) };
       response = Response.json(result.body, { status: result.status });
     } catch (error) {

@@ -60,7 +60,13 @@ describe("users API (T1.20)", () => {
     const first = await send("Retry");
     const again = await send("Retry");
     expect(first.status).toBe(201);
-    expect(again).toMatchObject({ status: 201, body: first.body });
+    expect(again.status).toBe(201);
+    // The secret token is in the first answer only: neither the stored row nor the replay holds it.
+    const token = first.json().data[0].details.accept_url.split("/").pop();
+    expect(again.body).not.toContain(token);
+    expect(again.json().data[0].details.id).toBe(first.json().data[0].details.id);
+    const stored = await queryAs(app, { org_id: saqient, user_id: ids["admin@saqient.test"]!, role: "admin" }, "SELECT response_body::text AS body FROM idempotency_keys WHERE key = 'invite-retry-0001'");
+    expect(stored[0].body).not.toContain(token);
     expect((await send("Changed")).json()).toMatchObject({ code: "IDEMPOTENCY_KEY_REUSED" });
   });
 

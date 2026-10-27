@@ -11,10 +11,11 @@ export const requestHash = (method: string, path: string, body: unknown): Buffer
 /**
  * Idempotency-Key (ADR-0015, AC-28). The key is claimed in its own committed transaction, so a concurrent retry sees
  * it in flight (409). The handler's change and the stored response commit together; a failed handler frees the key.
+ * `redact` strips secrets from the body before it is stored; only the first response carries them, a replay does not.
  * shortcut: a process crash mid-request leaves the key in_progress until it expires (7 days); the purge job is a
  * worker task (slice 8) and expired keys are replaced on reuse until then.
  */
-export async function idempotent<T>(ctx: TenantContext, key: string, hash: Buffer, status: number, run: (tx: Tx) => Promise<T>, db: Db = getAppDb()) {
+export async function idempotent<T>(ctx: TenantContext, key: string, hash: Buffer, status: number, run: (tx: Tx) => Promise<T>, db: Db = getAppDb(), redact: (body: T) => unknown = (b) => b) {
   const where = sql`user_id = ${ctx.userId} AND key = ${key}`;
   const existing = await withTenant(ctx, async (tx) => {
     await tx.execute(sql`DELETE FROM idempotency_keys WHERE ${where} AND expires_at <= now()`);
@@ -39,7 +40,7 @@ export async function idempotent<T>(ctx: TenantContext, key: string, hash: Buffe
   try {
     return await withTenant(ctx, async (tx) => {
       const body = await run(tx);
-      await tx.execute(sql`UPDATE idempotency_keys SET status = 'completed', response_status = ${status}, response_body = ${JSON.stringify(body)}::jsonb WHERE ${where}`);
+      await tx.execute(sql`UPDATE idempotency_keys SET status = 'completed', response_status = ${status}, response_body = ${JSON.stringify(redact(body))}::jsonb WHERE ${where}`);
       return { status, body };
     }, db);
   } catch (error) {
