@@ -3,8 +3,8 @@ import { connectAsAuth, createMember, createOrg, requireEnv } from "@crm/db/test
 import { sql } from "drizzle-orm";
 import type pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type TenantContext, withTenant } from "./tenant";
-import { recordEvent } from "./timeline";
+import { type TenantContext, withTenant } from "./tenant.ts";
+import { recordEvent } from "./timeline.ts";
 
 describe("timeline write path (T1.16, SCHEMA § timeline_events)", () => {
   let auth: pg.Client;

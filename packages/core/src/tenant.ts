@@ -1,6 +1,6 @@
 import { createDb, type Db } from "@crm/db";
 import { sql } from "drizzle-orm";
-import { parseConfig } from "./config";
+import { parseConfig } from "./config.ts";
 
 export type Role = "admin" | "manager" | "rep";
 

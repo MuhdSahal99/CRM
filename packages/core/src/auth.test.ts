@@ -4,7 +4,7 @@ import { requireEnv, TEST_SEED_PASSWORD as PASSWORD, testUrlFor } from "@crm/db/
 import { getAuthTables } from "better-auth/db";
 import { Redis } from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { authOptions, createAuth } from "./auth";
+import { authOptions, createAuth } from "./auth.ts";
 
 const BASE = "http://localhost:3000";
 const randomIp = () => `10.${Array.from({ length: 3 }, () => Math.floor(Math.random() * 256)).join(".")}`;

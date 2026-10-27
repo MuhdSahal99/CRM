@@ -2,7 +2,7 @@
 
 ## Seeded test users
 
-Created by `pnpm db:seed` (`packages/db/src/seed.ts`) in **dev and test only**: the seed refuses to run when `NODE_ENV=production`, and prod never runs it. It connects as `crm_auth` (`DATABASE_AUTH_URL`) and is idempotent: it only inserts what is missing.
+Created by `pnpm db:seed` (`packages/core/src/seed.ts`) in **dev and test only**: the seed refuses to run when `NODE_ENV=production`, and prod never runs it. It writes users and orgs as `crm_auth` (`DATABASE_AUTH_URL`), then provisions each org's metadata with `provisionOrg()` as `crm_app` (`DATABASE_URL`) under the org's admin. It is idempotent: it only inserts what is missing.
 
 All users share one password, read from `SEED_PASSWORD` (never in the code or the repo). The `.test` domain is reserved and cannot receive mail.
 

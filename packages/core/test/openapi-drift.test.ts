@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { z } from "zod";
-import "../src/index"; // loads every shared schema, so each `.meta({ id })` lands in z.globalRegistry
+import "../src/index.ts"; // loads every shared schema, so each `.meta({ id })` lands in z.globalRegistry
 
 // T1.15: a shared Zod schema registered with `.meta({ id: "<Component>" })` must match
 // docs/openapi.yaml components.schemas.<Component>. New schemas are picked up automatically.

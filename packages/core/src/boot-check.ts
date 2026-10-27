@@ -1,7 +1,7 @@
 import type { Db } from "@crm/db";
 import { sql } from "drizzle-orm";
-import { parseConfig } from "./config";
-import { getAppDb } from "./tenant";
+import { parseConfig } from "./config.ts";
+import { getAppDb } from "./tenant.ts";
 
 /** Throws unless the connection's role is subject to RLS and cannot change the schema (ADR-0003, AC-19). */
 export async function assertSafeDbRole(db: Db): Promise<void> {

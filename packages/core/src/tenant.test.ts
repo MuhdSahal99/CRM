@@ -3,7 +3,7 @@ import { connectAsAuth, createMember, createOrg, requireEnv } from "@crm/db/test
 import { sql } from "drizzle-orm";
 import type pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type TenantContext, withTenant } from "./tenant";
+import { type TenantContext, withTenant } from "./tenant.ts";
 
 describe("withTenant (ADR-0003)", () => {
   let auth: pg.Client;

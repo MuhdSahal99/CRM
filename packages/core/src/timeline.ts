@@ -1,6 +1,6 @@
 import { newId, schema } from "@crm/db";
 import { sql } from "drizzle-orm";
-import type { Tx } from "./tenant";
+import type { Tx } from "./tenant.ts";
 
 // SCHEMA § timeline_events.
 type EventType =

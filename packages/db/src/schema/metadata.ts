@@ -24,15 +24,18 @@ import { member, orgs } from "./auth.ts";
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true });
 
+// The trigger app.set_audit_columns() (migration 0007) sets these from the context anyway; this only spares callers.
+const currentUser = sql`NULLIF(current_setting('app.user_id', true), '')::uuid`;
+
 /** org_id plus the AUDIT columns (SCHEMA § Conventions). */
 const tenantAudit = () => ({
   orgId: uuid("org_id")
     .notNull()
     .references(() => orgs.id, { onDelete: "restrict" }),
   createdAt: tstz("created_at").notNull().defaultNow(),
-  createdBy: uuid("created_by").notNull(),
+  createdBy: uuid("created_by").notNull().$defaultFn(() => currentUser),
   updatedAt: tstz("updated_at").notNull().defaultNow(),
-  updatedBy: uuid("updated_by").notNull(),
+  updatedBy: uuid("updated_by").notNull().$defaultFn(() => currentUser),
   version: integer("version").notNull().default(1),
 });
 

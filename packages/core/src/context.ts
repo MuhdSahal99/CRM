@@ -1,7 +1,7 @@
 import type { Db } from "@crm/db";
 import { sql } from "drizzle-orm";
-import { type createAuth, getAuth, getAuthDb } from "./auth";
-import type { Role, TenantContext } from "./tenant";
+import { type createAuth, getAuth, getAuthDb } from "./auth.ts";
+import type { Role, TenantContext } from "./tenant.ts";
 
 type Deps = { auth: ReturnType<typeof createAuth>; db: Db }; // db connects as crm_auth (ADR-0004)
 

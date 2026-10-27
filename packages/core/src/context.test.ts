@@ -5,8 +5,8 @@ import { hashPassword } from "better-auth/crypto";
 import { sql } from "drizzle-orm";
 import { Redis } from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createAuth } from "./auth";
-import { resolveContext } from "./context";
+import { createAuth } from "./auth.ts";
+import { resolveContext } from "./context.ts";
 
 const BASE = "http://localhost:3000";
 

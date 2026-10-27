@@ -4,8 +4,8 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
 import { Redis } from "ioredis";
-import { ac, roles } from "./access";
-import { parseConfig } from "./config";
+import { ac, roles } from "./access.ts";
+import { parseConfig } from "./config.ts";
 
 type AuthDeps = {
   db: Db; // must connect as crm_auth (ADR-0004)

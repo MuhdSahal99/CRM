@@ -1,7 +1,7 @@
 import { createDb } from "@crm/db";
 import { requireEnv, testUrlFor } from "@crm/db/testing";
 import { describe, expect, it } from "vitest";
-import { assertSafeDbRole } from "./boot-check";
+import { assertSafeDbRole } from "./boot-check.ts";
 
 async function checkAs(url: string) {
   const db = createDb(url, { max: 1 });

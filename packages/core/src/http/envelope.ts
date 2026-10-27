@@ -1,5 +1,5 @@
-import { log } from "../log";
-import { ApiError } from "./errors";
+import { log } from "../log.ts";
+import { ApiError } from "./errors.ts";
 
 export type Info = { page: number; per_page: number; count: number; more_records: boolean };
 

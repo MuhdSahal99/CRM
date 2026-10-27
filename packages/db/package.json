@@ -11,8 +11,7 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "vitest run",
-    "migrate": "node --env-file-if-exists=../../.env.local src/migrate.ts",
-    "seed": "node --env-file-if-exists=../../.env.local src/seed.ts"
+    "migrate": "node --env-file-if-exists=../../.env.local src/migrate.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

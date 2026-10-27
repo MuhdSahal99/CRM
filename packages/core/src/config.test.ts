@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseConfig } from "./config";
+import { parseConfig } from "./config.ts";
 
 const valid = {
   NODE_ENV: "development",

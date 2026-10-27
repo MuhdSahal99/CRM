@@ -10,6 +10,6 @@
     "infra:up": "docker compose --env-file .env.local up -d --wait",
     "infra:down": "docker compose --env-file .env.local down",
     "db:migrate": "pnpm --filter @crm/db migrate",
-    "db:seed": "pnpm --filter @crm/db seed"
+    "db:seed": "pnpm --filter @crm/core seed"
   }
 }

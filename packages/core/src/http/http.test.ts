@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { roles } from "../access";
-import { errorResponse } from "./envelope";
-import { NotFound, PayloadTooLarge, readJsonBody, validationError } from "./errors";
+import { roles } from "../access.ts";
+import { errorResponse } from "./envelope.ts";
+import { NotFound, PayloadTooLarge, readJsonBody, validationError } from "./errors.ts";
 
 const post = (body: string) => new Request("http://x/api/v1/Leads", { method: "POST", body });
 

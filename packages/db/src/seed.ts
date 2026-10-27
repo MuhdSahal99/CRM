@@ -1,6 +1,6 @@
 import { hashPassword } from "better-auth/crypto";
 import { and, eq } from "drizzle-orm";
-import { createDb, type Db } from "./client.ts";
+import type { Db } from "./client.ts";
 import { newId } from "./id.ts";
 import { account, member, orgs, user } from "./schema/index.ts";
 
@@ -64,17 +64,4 @@ export async function seed(db: Db, password: string): Promise<void> {
         .onConflictDoNothing({ target: [member.orgId, member.userId] });
     }
   });
-}
-
-if (import.meta.main) {
-  const url = process.env.DATABASE_AUTH_URL;
-  const password = process.env.SEED_PASSWORD;
-  if (!url || !password) throw new Error("DATABASE_AUTH_URL and SEED_PASSWORD must be set (see .env.example)");
-  const db = createDb(url, { max: 1 });
-  try {
-    await seed(db, password);
-    console.log(`seeded ${SEED_ORGS.length} orgs and ${SEED_USERS.length} users`);
-  } finally {
-    await db.$client.end();
-  }
 }
