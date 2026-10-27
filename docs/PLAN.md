@@ -121,12 +121,12 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Done when:** both tests grow automatically as routes are added (PRD M4).
 
 #### T1.16 Timeline write path · S
-- **Files:** migration `0004_timeline.sql` (`timeline_events`, insert/select-only grants, `record_visibility` policy with an `app.can_see()` stub covering `user`/`org`), `packages/core/src/timeline.ts` (`recordEvent(tx, …)`).
+- **Files:** migration `0005_timeline.sql` (`timeline_events`, insert/select-only grants, `record_visibility` policy with an `app.can_see()` stub covering `user`/`org`), `packages/core/src/timeline.ts` (`recordEvent(tx, …)`).
 - **Tests first:** I: **AC-25** part: `crm_app` can't UPDATE or DELETE `timeline_events`. An event is written in the caller's transaction and disappears on rollback.
 - **Done when:** later slices extend `app.can_see()` for each new record type.
 
 #### T1.17 Metadata tables · M
-- **Files:** migration `0005_metadata.sql` (`modules`, `fields`, `picklists`, `picklist_values`, `layouts`, `layout_sections`, `layout_fields`, `field_permissions`; `api_name` immutable triggers; `admin_only` write policy), `packages/db/src/schema/metadata.ts`.
+- **Files:** migration `0006_metadata.sql` (`modules`, `fields`, `picklists`, `picklist_values`, `layouts`, `layout_sections`, `layout_fields`, `field_permissions`; `api_name` immutable triggers; `admin_only` write policy), `packages/db/src/schema/metadata.ts`.
 - **Tests first:** I: updating `fields.api_name` raises. A rep can read the metadata but not insert it. The picklist CHECK holds.
 - **Done when:** the tables match SCHEMA §Metadata (ADR-0006).
 

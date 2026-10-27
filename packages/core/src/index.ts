@@ -8,3 +8,4 @@ export { roles, type Permission } from "./access";
 export { errorResponse, type Envelope, type Info } from "./http/envelope";
 export { ApiError, Conflict, Forbidden, NotFound, PayloadTooLarge, Unauthorized, readJsonBody, validationError } from "./http/errors";
 export { log } from "./log";
+export { recordEvent, type TimelineEvent } from "./timeline";

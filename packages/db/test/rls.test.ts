@@ -27,6 +27,7 @@ describe("tenant isolation (ADR-0003)", () => {
         `INSERT INTO invitation (id, org_id, email, role, expires_at, inviter_id) VALUES (gen_random_uuid(), $1, gen_random_uuid() || '@example.com', 'rep', now() + interval '1 day', $2)`,
         [org, manager],
       );
+      await queryAs(app, { org_id: org }, `INSERT INTO timeline_events (id, org_id, record_type, record_id, event_type) VALUES (gen_random_uuid(), $1, 'org', $1, 'updated')`, [org]);
     }
   });
   afterAll(() => Promise.all([app?.end(), auth?.end()]));
