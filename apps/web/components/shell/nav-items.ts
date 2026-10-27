@@ -11,6 +11,7 @@ export function navItems(modules: { api_name: string; label_key: string }[], rol
   return [
     { href: "/app", labelKey: "shell.home" },
     ...modules.flatMap((m) => (MODULE_PAGES[m.api_name] ? [{ href: MODULE_PAGES[m.api_name]!, labelKey: m.label_key }] : [])),
+    { href: "/app/activities", labelKey: "shell.activities" }, // My Activities: Tasks, Calls and Meetings are reached from it and from records
     ...(role === "admin" ? [{ href: "/app/settings/users", labelKey: "shell.users" }] : []),
   ];
 }

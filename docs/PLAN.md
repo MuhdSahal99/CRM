@@ -293,7 +293,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** E (w360, w1440): log a call on a Contact, and it appears at the top of the timeline.
 - **Done when:** the timeline shows field changes, activities and notes.
 
-#### T3.07 UI: My Activities page · S
+#### T3.07 UI: My Activities page · S · ✅
 - **Files:** `app/(app)/activities/page.tsx`.
 - **Tests first:** E: a seeded overdue task shows a warning badge with text (not color alone). Completing it removes it.
 - **Done when:** **US-15** passes end to end.
