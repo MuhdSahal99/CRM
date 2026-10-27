@@ -69,6 +69,12 @@ describe("records API: create and read (T2.03)", () => {
     });
   });
 
+  it("a bulk create names the record a field error belongs to, and writes none of them", async () => {
+    const res = await call(moduleRoute, "POST", "/Accounts", { cookie: repA, params: { module: "Accounts" }, body: { data: [{ Account_Name: "Bulk Good" }, { Phone: "1" }] } });
+    expect(res.json()).toMatchObject({ details: { api_name: "data.1.Account_Name" } });
+    expect(await queryAs(app, { org_id: saqient }, "SELECT 1 FROM accounts WHERE account_name = 'Bulk Good'")).toEqual([]);
+  });
+
   it("a picklist value that is not in the metadata is refused", async () => {
     expect((await create({ Account_Name: "X", Industry: "Space Mining" })).json()).toMatchObject({ details: { api_name: "Industry" } });
   });

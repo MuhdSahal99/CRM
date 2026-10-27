@@ -3,6 +3,7 @@ import { connectAsAuth, createMember, createOrg, requireEnv } from "@crm/db/test
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { provisionOrg } from "../metadata/seed-org.ts";
+import { getRecord } from "../modules/list.ts";
 import { createRecords } from "../modules/write.ts";
 import { type TenantContext, withTenant } from "../tenant.ts";
 import { searchRecords } from "./run.ts";
@@ -12,6 +13,7 @@ describe("searchRecords and hidden fields", () => {
   let db: Db;
   let admin: TenantContext;
   let rep: TenantContext;
+  let contact: { details: { id: string } } | undefined;
 
   beforeAll(async () => {
     const auth = await connectAsAuth();
@@ -23,9 +25,10 @@ describe("searchRecords and hidden fields", () => {
     db = createDb(requireEnv("TEST_DATABASE_URL"), { max: 1 });
     await withTenant(admin, async (tx) => {
       await provisionOrg(tx);
-      await createRecords(tx, admin, "Accounts", { data: [{ Account_Name: "Secret Name LLC", Email: "x@secret.om" }] });
+      const [account] = await createRecords(tx, admin, "Accounts", { data: [{ Account_Name: "Secret Name LLC", Email: "x@secret.om" }] });
+      [contact] = await createRecords(tx, admin, "Contacts", { data: [{ Last_Name: "Linked", Account_Name: { id: account!.details.id } }] });
       await tx.execute(sql`INSERT INTO field_permissions (org_id, field_id, role, access)
-        SELECT app.org_id(), f.id, 'rep', 'hidden' FROM fields f WHERE f.api_name IN ('Account_Name', 'Email')`);
+        SELECT app.org_id(), f.id, 'rep', 'hidden' FROM fields f WHERE f.api_name IN ('Account_Name', 'Email') AND f.module_id = (SELECT id FROM modules WHERE api_name = 'Accounts')`);
     }, db);
   });
   afterAll(() => db?.$client.end());
@@ -37,5 +40,11 @@ describe("searchRecords and hidden fields", () => {
     await expect(search(rep, { word: "secret" })).rejects.toMatchObject({ httpStatus: 422 });
     expect((await search(rep, { email: "x@secret.om" })).data).toEqual([]);
     await expect(search(rep, { criteria: "(Account_Name:equals:Secret Name LLC)" })).rejects.toMatchObject({ httpStatus: 422 });
+  });
+
+  it("a lookup to a record whose name is hidden shows its id but not its name", async () => {
+    const read = (ctx: TenantContext) => withTenant(ctx, (tx) => getRecord(tx, "Contacts", contact!.details.id), db);
+    expect((await read(admin))[0]!.Account_Name).toMatchObject({ name: "Secret Name LLC" });
+    expect((await read(rep))[0]!.Account_Name).toEqual({ id: expect.any(String), name: null });
   });
 });

@@ -38,6 +38,14 @@ export function dbError(error: unknown, table: PgTable, fields: Field[]): never 
   throw error;
 }
 
+/** In a bulk create, says which record a field error belongs to: data.<index>.<api_name>. */
+function atRecord(error: unknown, index: number) {
+  if (!(error instanceof ApiError) || !error.details) return error;
+  const at = (api?: string) => (api ? `data.${index}.${api}` : api);
+  const { api_name, errors } = error.details;
+  return new ApiError(error.httpStatus, error.code, error.message, { api_name: at(api_name), errors: errors?.map((e) => ({ ...e, api_name: at(e.api_name)! })) });
+}
+
 const columns = (row: Record<string, unknown>) => sql.join(Object.keys(row).map((c) => sql.identifier(c)), sql`, `);
 const value = (column: string, v: unknown) => (column === "custom" ? sql`${JSON.stringify(v)}::jsonb` : sql`${v}`);
 
@@ -46,14 +54,18 @@ export async function createRecords(tx: Tx, ctx: TenantContext, module: string, 
   const def = moduleDef(module);
   const fields = await loadFields(tx, module);
   const outcomes = [];
-  for (const record of input.data) {
-    const id = newId();
-    const row: Record<string, unknown> = { id, owner_id: ctx.userId, ...parse(fields, module, record) };
-    if (row.owner_id === null) row.owner_id = ctx.userId;
-    const values = sql.join(Object.entries(row).map(([c, v]) => value(c, v)), sql`, `);
-    await tx.execute(sql`INSERT INTO ${def.table} (org_id, ${columns(row)}) VALUES (app.org_id(), ${values})`).catch((e) => dbError(e, def.table, fields));
-    await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "created" });
-    outcomes.push({ code: "SUCCESS", status: "success", details: { id, version: 1 } });
+  for (const [i, record] of input.data.entries()) {
+    try {
+      const id = newId();
+      const row: Record<string, unknown> = { id, owner_id: ctx.userId, ...parse(fields, module, record) };
+      if (row.owner_id === null) row.owner_id = ctx.userId;
+      const values = sql.join(Object.entries(row).map(([c, v]) => value(c, v)), sql`, `);
+      await tx.execute(sql`INSERT INTO ${def.table} (org_id, ${columns(row)}) VALUES (app.org_id(), ${values})`).catch((e) => dbError(e, def.table, fields));
+      await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "created" });
+      outcomes.push({ code: "SUCCESS", status: "success", details: { id, version: 1 } });
+    } catch (error) {
+      throw input.data.length > 1 ? atRecord(error, i) : error;
+    }
   }
   return outcomes;
 }

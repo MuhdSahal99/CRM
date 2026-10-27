@@ -35,7 +35,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" aria-busy={pending}>
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-5" aria-busy={pending}>
       {error && (
         <p id="login-error" role="alert" className="flex items-start gap-2 rounded-md bg-muted p-3 text-destructive">
           <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden />

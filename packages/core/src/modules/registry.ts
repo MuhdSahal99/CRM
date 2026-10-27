@@ -43,7 +43,8 @@ function contactMobile(record: Record<string, unknown>, before?: Record<string, 
 
 const MODULES = new Map<string, ModuleDef>([
   ["Accounts", entry(schema.accounts, "account", sql`account_name`, ["Account_Name"])],
-  ["Contacts", entry(schema.contacts, "contact", sql`concat_ws(' ', first_name, last_name)`, ["First_Name", "Last_Name"], { normalise: contactMobile })],
+    // Same expression as contacts_name_trgm_idx, so word search can use the index.
+  ["Contacts", entry(schema.contacts, "contact", sql`(coalesce(first_name, '') || ' ' || last_name)`, ["First_Name", "Last_Name"], { normalise: contactMobile })],
 ]);
 
 /** Module api_names the generic record routes serve today. */
@@ -94,9 +95,14 @@ export async function toApi(tx: Tx, fields: Field[], rows: Row[]) {
     }
   }
   for (const [module, ids] of lookups) {
+    // A name built from fields the caller's role has hidden stays null, like any hidden value.
+    if (module) {
+      const visible = new Set((await loadFields(tx, module)).map((f) => f.apiName));
+      if (!moduleDef(module).nameFields.every((api) => visible.has(api))) continue;
+    }
     const source = module ? sql`SELECT id, ${moduleDef(module).name} AS name FROM ${moduleDef(module).table}` : sql`SELECT id, name FROM org_users`;
     const found = await tx.execute<{ id: string; name: string }>(sql`SELECT * FROM (${source}) s WHERE id IN ${[...ids]}`);
-    for (const n of found.rows) names.set(n.id, n.name);
+    for (const n of found.rows) names.set(n.id, n.name?.trim() ?? null);
   }
   const ref = (id: unknown) => (typeof id === "string" ? { id, name: names.get(id) ?? null } : null);
 
