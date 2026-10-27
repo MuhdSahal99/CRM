@@ -310,7 +310,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I + U: missing `Last_Name` **and** `Company` → 422 with an error on each field (**US-04**). Rep B gets 404 on rep A's lead.
 - **Done when:** Leads CRUD works through the registry. Lists exclude converted leads by default.
 
-#### T4.02 Converted Leads view · XS
+#### T4.02 Converted Leads view · XS · ✅
 - **Files:** `packages/core/src/modules/leads.ts` (`view=converted`).
 - **Tests first:** I: a converted lead appears only in this view.
 - **Done when:** **US-05** (converted view) is met.

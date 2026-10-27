@@ -25,7 +25,7 @@ export const ListRecordsInput = z.object({
   sort_by: z.string().max(60).optional(),
   sort_order: z.enum(["asc", "desc"]).default("desc"),
   fields: z.string().max(2000).optional(),
-  cvid: z.enum(["all", "my", "my_open", "overdue", "recently_created", "recently_modified"]).optional(), // shortcut: system views only, no saved custom views
+  cvid: z.enum(["all", "my", "my_open", "overdue", "converted", "recently_created", "recently_modified"]).optional(), // shortcut: system views only, no saved custom views
 });
 
 /** page/per_page → LIMIT one extra row, so more_records is exact without a count query. */
@@ -42,6 +42,8 @@ export async function listRecords(tx: Tx, ctx: TenantContext, module: string, in
     if (module !== "Tasks") throw new ApiError(422, "INVALID_DATA", "This view is only for Tasks.", { api_name: "cvid" });
     return listMyTasks(tx, ctx, input.cvid, input);
   }
+  if (input.cvid === "converted" && module !== "Leads") throw new ApiError(422, "INVALID_DATA", "This view is only for Leads.", { api_name: "cvid" });
+  const scope = input.cvid === "converted" ? sql`is_converted` : def.listScope; // US-05: converted leads show only here
   const fields = await loadFields(tx, module);
   const sortable = new Map<string, string>([["Created_Time", "created_at"], ["Modified_Time", "updated_at"]]);
   for (const f of fields) if (f.isSystem) sortable.set(f.apiName, f.columnName!);
@@ -50,7 +52,7 @@ export async function listRecords(tx: Tx, ctx: TenantContext, module: string, in
   const dir = input.sort_order === "asc" ? sql`ASC` : sql`DESC`;
   const mine = input.cvid === "my" ? sql`AND owner_id = ${ctx.userId}` : sql``;
   const { rows } = await tx.execute(sql`
-    SELECT * FROM ${def.table} WHERE ${def.scope} AND ${def.listScope} AND deleted_at IS NULL ${mine}
+    SELECT * FROM ${def.table} WHERE ${def.scope} AND ${scope} AND deleted_at IS NULL ${mine}
     ORDER BY ${sql.identifier(column)} ${dir} NULLS LAST, id ${dir} ${limitOffset(input)}`);
   const wanted = input.fields?.split(",").map((f) => f.trim());
   return pageOf(await toApi(tx, wanted ? fields.filter((f) => wanted.includes(f.apiName)) : fields, rows as Parameters<typeof toApi>[2]), input);

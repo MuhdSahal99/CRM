@@ -51,4 +51,15 @@ describe("Leads API (T4.01)", () => {
     expect((await get(repA, id)).status).toBe(200);
     await expect(queryAs(app, admin, "UPDATE leads SET company = 'X' WHERE id = $1", [id])).rejects.toThrow(/converted lead cannot be changed/);
   });
+
+  it("T4.02: a converted lead appears only in the converted view, which is Leads-only", async () => {
+    const id = (await create(repA, { Last_Name: "Gone", Company: "Gone LLC" })).json().data[0].details.id;
+    const view = async (module: string, cvid: string) => call(moduleRoute, "GET", `/${module}?cvid=${cvid}`, { cookie: repA, params: { module } });
+    const ids = async (cvid: string) => (await view("Leads", cvid)).json().data.map((l: { id: string }) => l.id);
+    expect(await ids("converted")).not.toContain(id);
+    await queryAs(app, { org_id: saqient, user_id: adminId, role: "admin", see_all: "on" }, "UPDATE leads SET is_converted = true, converted_at = now() WHERE id = $1", [id]);
+    expect(await ids("converted")).toContain(id);
+    for (const cvid of ["all", "my", "recently_created", "recently_modified"]) expect(await ids(cvid)).not.toContain(id);
+    expect((await view("Accounts", "converted")).status).toBe(422);
+  });
 });
