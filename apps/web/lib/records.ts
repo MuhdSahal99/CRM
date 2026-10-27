@@ -1,4 +1,4 @@
-import { listFields, listLayouts, listRecords, listUsers, nameFieldsOf, RECORD_MODULES, type TenantContext, type Tx } from "@crm/core";
+import { listFields, listLayouts, listPipelines, listRecords, listUsers, nameFieldsOf, RECORD_MODULES, type TenantContext, type Tx } from "@crm/core";
 
 // Metadata as the record pages use it (ADR-0006).: fields from /settings/fields, grouped by the default layout.
 
@@ -58,6 +58,10 @@ export async function lookupOptions(tx: Tx, ctx: TenantContext, meta: ModuleMeta
     if (f.data_type === "user_lookup") {
       const { data } = await listUsers(tx, { status: "active", page: 1, per_page: 200 });
       options[f.api_name] = (data as Lookup[]).map((u) => ({ id: u.id, name: u.name }));
+    } else if (f.data_type === "lookup" && f.api_name === "Stage" && !f.lookup_module) {
+      // Pipeline set-up is not a module: the stages of the default pipeline, named by their api_value.
+      const pipelines = (await listPipelines(tx)) as { is_default: boolean; stages: { id: string; api_value: string }[] }[];
+      options[f.api_name] = (pipelines.find((p) => p.is_default)?.stages ?? []).map((s) => ({ id: s.id, name: s.api_value }));
     } else if (f.data_type === "lookup" && f.lookup_module && isRecordModule(f.lookup_module)) {
       const target = await moduleMeta(tx, f.lookup_module);
       const { data } = await listRecords(tx, ctx, f.lookup_module, { page: 1, per_page: 200, sort_order: "desc" });

@@ -21,7 +21,9 @@
     "negotiation_review": "Negotiation/Review",
     "closed_won": "Closed Won",
     "closed_lost": "Closed Lost",
-    "closed_lost_to_competition": "Closed Lost to Competition"
+    "closed_lost_to_competition": "Closed Lost to Competition",
+    "proposal": "Proposal/Price Quote",
+    "negotiation": "Negotiation/Review"
   },
   "lineItems": {
     "product": "Product",
@@ -904,5 +906,22 @@
     "closingDate": "Closing date",
     "stage": "Stage",
     "amount": "Amount (OMR)"
+  },
+  "deals": {
+    "board": "Pipeline board",
+    "boardLink": "Board",
+    "moveToStage": "Move to stage",
+    "lostTitle": "Why was this deal lost?",
+    "lostDescription": "Closed Lost deals need a reason.",
+    "reason": "Reason for loss",
+    "chooseReason": "Choose a reason",
+    "cancel": "Cancel",
+    "markLost": "Mark as lost",
+    "moveFailed": "The deal could not be moved. Try again.",
+    "conflict": "This deal was changed by someone else. Reload the page.",
+    "noPipeline": "No pipeline is set up yet.",
+    "stage": "Stage",
+    "changeStage": "Change stage",
+    "history": "Stage history"
   }
 }

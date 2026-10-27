@@ -1,6 +1,7 @@
 "use client";
 
 import { MoreHorizontalIcon } from "lucide-react";
+import Link from "next/link";
 import { Money } from "@/components/money";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Currency } from "@/lib/format";
 
-export type KanbanCard = { id: string; title: string; subtitle: string; amount: string; currency: Currency };
-export type KanbanColumn = { id: string; title: string; count: number; totalOmr: string; cards: KanbanCard[] };
+export type KanbanCard = { id: string; title: string; subtitle: string; amount: string | null; currency: Currency; href?: string };
+export type KanbanColumn = { id: string; title: string; count: number; totalOmr: string | null; cards: KanbanCard[] };
 
 type Props = {
   label: string;
@@ -43,16 +44,18 @@ export function Kanban({ label, columns, moveLabel, onMove }: Props) {
                 {col.count}
               </Badge>
             </h3>
-            <p className="text-xs text-muted-foreground">
-              <Money value={col.totalOmr} currency="OMR" />
-            </p>
+            {col.totalOmr !== null && (
+              <p className="text-xs text-muted-foreground">
+                <Money value={col.totalOmr} currency="OMR" />
+              </p>
+            )}
           </header>
           <ul className="flex flex-col gap-2">
             {col.cards.map((card) => (
               <li key={card.id} className="rounded-md border bg-card p-3 shadow-xs">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{card.title}</p>
+                    <p className="truncate font-medium">{card.href ? <Link href={card.href} className="hover:underline">{card.title}</Link> : card.title}</p>
                     <p className="truncate text-xs text-muted-foreground">{card.subtitle}</p>
                   </div>
                   <DropdownMenu>
@@ -73,9 +76,11 @@ export function Kanban({ label, columns, moveLabel, onMove }: Props) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <p className="mt-2 text-end">
-                  <Money value={card.amount} currency={card.currency} />
-                </p>
+                {card.amount !== null && (
+                  <p className="mt-2 text-end">
+                    <Money value={card.amount} currency={card.currency} />
+                  </p>
+                )}
               </li>
             ))}
           </ul>

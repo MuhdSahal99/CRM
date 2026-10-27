@@ -38,6 +38,11 @@ export default async function RecordListPage({ params, searchParams }: Props) {
             <Link href={input.cvid === "converted" ? "/app/Leads" : "/app/Leads?cvid=converted"}>{t(input.cvid === "converted" ? "records.allLeads" : "records.convertedLeads")}</Link>
           </Button>
         )}
+        {module === "Deals" && (
+          <Button asChild variant="link" className="me-auto">
+            <Link href="/app/Deals/board">{t("deals.boardLink")}</Link>
+          </Button>
+        )}
         <Button asChild>
           <Link href={`/app/${module}/new`}>
             <PlusIcon aria-hidden />

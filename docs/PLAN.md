@@ -377,7 +377,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: with "Create Deal" ticked → exactly 1 Account, 1 Contact and 1 Deal, and Deal Name defaults to "Acme". Unticked → no deal. The rollback test covers the deal insert too. E (w360, w1440): convert with a deal.
 - **Done when:** **US-05** is fully met.
 
-#### T5.08 UI: Kanban board · M
+#### T5.08 UI: Kanban board · M · ✅
 - **Files:** `app/(app)/Deals/board/page.tsx` (uses `patterns/kanban`), `lost-reason-dialog.tsx`.
 - **Tests first:** E (w360, w1440): move a deal with the "Move to stage" menu, and the column counts and Σ OMR refresh. Closed Lost opens the reason dialog, and Cancel leaves the deal where it was.
 - **Done when:** this is the PRD E11 US-07 flow, with no page-level horizontal scroll (the board scrolls inside itself).
