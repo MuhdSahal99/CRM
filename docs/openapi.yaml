@@ -1344,11 +1344,12 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: better-auth.session_token
+      name: __Secure-better-auth.session_token
       description: |
-        Better Auth session cookie: httpOnly, Secure, SameSite=Lax. In production the cookie name carries the
-        `__Secure-` prefix. Sign-in and sign-out are Better Auth routes under `/api/auth/*` and are documented
-        by Better Auth. There is no API-key or header bypass.
+        Better Auth session cookie: httpOnly, Secure, SameSite=Lax, with the `__Secure-` prefix in every
+        environment (localhost counts as a secure origin). Sign-in and sign-out are Better Auth routes under
+        `/api/auth/*` and are documented by Better Auth. Public sign-up is disabled (users are invited, US-03).
+        Sign-in is rate-limited per IP and per account (AC-31). There is no API-key or header bypass.
 
   parameters:
     Module:

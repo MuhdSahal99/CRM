@@ -24,3 +24,7 @@ Use these for manual testing, E2E and the visibility matrix: rep A vs rep B (pri
 |----|------|-----|-----------|
 
 ## Launch checklist
+
+- [ ] **Reverse proxy overwrites `X-Forwarded-For`** with the real client address (nginx: `proxy_set_header X-Forwarded-For $remote_addr;`, not `$proxy_add_x_forwarded_for`). The sign-in rate limit (AC-31) keys on that header; if the proxy appends, a client can fake a new IP per request and the limit never triggers. The app must not be reachable except through the proxy.
+- [ ] `BETTER_AUTH_URL` is the public `https://` origin (Better Auth trusts only this origin for cookie-bearing requests).
+- [ ] No seed has run against the prod database (`member` has no `*.test` emails).

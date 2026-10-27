@@ -6,6 +6,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }), // crm_app: no BYPASSRLS, no DDL (ADR-0003)
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+  DATABASE_AUTH_URL: z.url({ protocol: /^postgres(ql)?$/ }), // crm_auth: Better Auth's tables only (ADR-0004)
+  BETTER_AUTH_SECRET: z.string().min(32), // signs session cookies
+  BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }), // the app's public origin; also the trusted origin for CSRF checks
 });
 
 export type Config = z.infer<typeof envSchema>;

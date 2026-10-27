@@ -5,7 +5,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./testing": "./test/db.ts",
-    "./test-setup": "./test/global-setup.ts"
+    "./test-setup": "./test/global-setup.ts",
+    "./seed": "./src/seed.ts"
   },
   "scripts": {
     "check": "tsc --noEmit",

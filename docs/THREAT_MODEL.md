@@ -249,6 +249,8 @@ Levels: **U** = unit, **I** = integration (real Postgres as `crm_app`), **E** = 
 |---|---|
 | Share links are bearer URLs. Anyone a customer forwards the link to can open the PDF until it expires | Accepted per US-14; 7-day TTL; revocable. Consider an optional OTP-on-open in Phase 2 |
 | Data residency outside Oman (GCC region) | Pending OQ-03 (ADR-0013 Proposed) |
+| Sign-in lockout as denial of service: AC-31 caps attempts per account (20 per 15 min, any IP) as well as per IP (10 per 15 min), so anyone who knows a user's email can block that user's sign-in for up to 15 minutes | Accepted 2026-10-27 (stops distributed password guessing). Revisit if it is abused: add an Admin unlock, or a CAPTCHA after the per-account limit |
+| Sign-in rate limit keys on `X-Forwarded-For` | Requires the reverse proxy to overwrite the header (PRODUCTION_READINESS launch checklist); otherwise per-IP limiting can be bypassed |
 | A small window for a duplicate SMTP send (ack lost after the provider accepted the mail) | Accepted; Message-ID derived from `email_sends.id` |
 | Better Auth `crm_auth` role can read all memberships across orgs | Needed for sign-in; `crm_auth` has no CRM-table grants. Covered by a grant test |
 | Admin is all-powerful within an org (sees all, transfers, imports) | By design; every Admin action writes `timeline_events` |
