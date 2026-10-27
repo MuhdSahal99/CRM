@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { char, check, foreignKey, integer, pgTable, smallint, text, uuid, varchar } from "drizzle-orm/pg-core";
+import { char, check, date, foreignKey, integer, numeric, pgEnum, pgTable, smallint, text, unique, uuid, varchar } from "drizzle-orm/pg-core";
 import { tstz } from "./_columns.ts";
 import { member, orgs } from "./auth.ts";
 
@@ -35,5 +35,27 @@ export const orgSettings = pgTable(
     check("org_settings_ttl", sql`${t.shareLinkTtlDays} BETWEEN 1 AND 30`),
     check("org_settings_smtp_port", sql`${t.smtpPort} BETWEEN 1 AND 65535`),
     foreignKey({ name: "org_settings_updated_by_fk", columns: [t.orgId, t.updatedBy], foreignColumns: [member.orgId, member.userId] }).onDelete("restrict"),
+  ],
+);
+
+export const vatCategory = pgEnum("vat_category", ["standard", "zero_rated", "exempt"]);
+
+/** Append-only (crm_app has no UPDATE or DELETE): a new rate is a new row with its effective date. */
+export const vatRates = pgTable(
+  "vat_rates",
+  {
+    id: uuid("id").primaryKey(),
+    orgId: uuid("org_id").notNull().references(() => orgs.id, { onDelete: "restrict" }),
+    category: vatCategory("category").notNull(),
+    rate: numeric("rate", { precision: 7, scale: 4 }).notNull(),
+    effectiveFrom: date("effective_from").notNull(),
+    createdAt: tstz("created_at").notNull().defaultNow(),
+    createdBy: uuid("created_by").notNull(),
+  },
+  (t) => [
+    unique("vat_rates_org_category_from_key").on(t.orgId, t.category, t.effectiveFrom),
+    check("vat_rates_category", sql`${t.category} IN ('standard', 'zero_rated')`),
+    check("vat_rates_rate_range", sql`${t.rate} BETWEEN 0 AND 100`),
+    foreignKey({ name: "vat_rates_created_by_fk", columns: [t.orgId, t.createdBy], foreignColumns: [member.orgId, member.userId] }).onDelete("restrict"),
   ],
 );

@@ -404,7 +404,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-35**: a rep `PUT /settings/org` → 403. **AC-46**: GET returns no password, only `smtp_secret_ref` presence. The seller VAT number round-trips.
 - **Done when:** the fields T8 snapshots onto invoices exist.
 
-#### T6.02 VAT rates · S
+#### T6.02 VAT rates · S · ✅
 - **Files:** migration `vat_rates` (append-only, seeded standard 5.0000 / zero_rated 0.0000), `settings/vat_rates/route.ts`, `packages/core/src/money/vat-rate.ts`.
 - **Tests first:** U/I: `effectiveVatRate('standard', date)` picks the latest row with `effective_from ≤ date`. A new rate dated tomorrow doesn't affect today. `crm_app` can't UPDATE a rate.
 - **Done when:** **US-08** (rate stored as config) is met.

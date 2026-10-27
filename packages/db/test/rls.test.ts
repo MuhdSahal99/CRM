@@ -52,6 +52,7 @@ describe("tenant isolation (ADR-0003)", () => {
         INSERT INTO deals (id, org_id, owner_id, deal_name, account_id, currency, currency_scale, exchange_rate, closing_date, stage_id)
         SELECT gen_random_uuid(), $1, $2, 'D', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), 'OMR', 3, 1, '2026-12-31', s.id FROM s`, [org, manager]);
       await queryAs(app, admin, `INSERT INTO org_settings (org_id, legal_name) VALUES ($1, 'L')`, [org]);
+      await queryAs(app, admin, `INSERT INTO vat_rates (id, org_id, category, rate, effective_from, created_by) VALUES (gen_random_uuid(), $1, 'standard', 5, '2000-01-01', $2)`, [org, manager]);
       await queryAs(app, { org_id: org }, `INSERT INTO idempotency_keys (org_id, user_id, key, request_hash, status) VALUES ($1, $2, 'k', decode('00', 'hex'), 'in_progress')`, [org, manager]);
     }
   });

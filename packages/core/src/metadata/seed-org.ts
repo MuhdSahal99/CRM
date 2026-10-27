@@ -105,4 +105,9 @@ export async function provisionOrg(tx: Tx): Promise<void> {
   await tx.insert(schema.currencies).values(CURRENCIES.map(([code, scale, isBase]) => ({ orgId, code, scale, isBase }))).onConflictDoNothing();
   // T6.01: the seller details start as the org's name; the Admin completes them in Settings.
   await tx.execute(sql`INSERT INTO org_settings (org_id, legal_name) SELECT id, name FROM orgs WHERE id = app.org_id() ON CONFLICT DO NOTHING`);
+  // T6.02: VAT 5% standard and 0% zero-rated, in force from long ago; later changes are new dated rows.
+  await tx.execute(sql`INSERT INTO vat_rates (id, org_id, category, rate, effective_from, created_by)
+    VALUES (${newId()}, app.org_id(), 'standard', 5, '2000-01-01', NULLIF(current_setting('app.user_id', true), '')::uuid),
+      (${newId()}, app.org_id(), 'zero_rated', 0, '2000-01-01', NULLIF(current_setting('app.user_id', true), '')::uuid)
+    ON CONFLICT DO NOTHING`);
 }

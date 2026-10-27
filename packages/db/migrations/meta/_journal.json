@@ -134,6 +134,13 @@
       "when": 1793136544016,
       "tag": "0018_org_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793136695374,
+      "tag": "0019_vat_rates",
+      "breakpoints": true
     }
   ]
 }
