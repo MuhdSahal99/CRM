@@ -1,2 +1,2 @@
 // Public API of @crm/core; modules are added per task (docs/PLAN.md).
-export {};
+export { parseConfig, type Config } from "./config";

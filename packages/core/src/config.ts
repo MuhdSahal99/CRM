@@ -1,0 +1,19 @@
+import { z } from "zod";
+
+// Every runtime setting comes from here; a bad environment stops the process at boot (TRD § Environments).
+// Dev-only relaxations would be typed flags in this schema, marked `// TEMP-DEV: <id>` (none exist).
+const envSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]),
+  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }), // crm_app: no BYPASSRLS, no DDL (ADR-0003)
+  REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+});
+
+export type Config = z.infer<typeof envSchema>;
+
+export function parseConfig(env: Record<string, string | undefined>): Config {
+  const result = envSchema.safeParse(env);
+  if (result.success) return result.data;
+  // Names and messages only: values may hold credentials.
+  const problems = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
+  throw new Error(`Invalid environment: ${problems.join("; ")}`);
+}
