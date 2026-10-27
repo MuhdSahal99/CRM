@@ -668,6 +668,8 @@
     "saving": "Saving…",
     "required": "Required",
     "none": "None",
-    "conflict": "Someone else changed this record. Reload the page to see their changes, then try again."
+    "conflict": "Someone else changed this record. Reload the page to see their changes, then try again.",
+    "edit": "Edit",
+    "add": "Add {name}"
   }
 }

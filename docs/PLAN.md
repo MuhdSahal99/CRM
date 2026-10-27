@@ -251,7 +251,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** E: submitting with an empty required field shows the server's 422 error under that field, linked with `aria-describedby`. Phone inputs are `type=tel`, `dir=ltr`.
 - **Done when:** the form renders from the layout (DESIGN_SYSTEM §Forms).
 
-#### T2.13 UI: Account and Contact detail · M
+#### T2.13 UI: Account and Contact detail · M · ✅
 - **Files:** `app/(app)/[module]/[id]/page.tsx`, `components/records/{record-detail.tsx,related-tabs.tsx}`.
 - **Tests first:** E (w360, w1440): create an Account, add a Contact with an Omani mobile, see the Contact on the Account's tab, and see the mobile shown as +968.
 - **Done when:** **US-06** passes end to end.
