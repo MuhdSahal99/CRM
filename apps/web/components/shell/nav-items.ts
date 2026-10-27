@@ -4,7 +4,7 @@ export type NavItem = { href: string; labelKey: string };
 
 // Pages that exist, by module api_name. Each module's slice adds its list page here, so the nav only links to
 // routes that are really there (DESIGN_SYSTEM § Patterns).
-const MODULE_PAGES: Partial<Record<string, string>> = {};
+const MODULE_PAGES: Partial<Record<string, string>> = { Accounts: "/app/Accounts", Contacts: "/app/Contacts" };
 
 /** Nav for the caller: home, the org's modules (from metadata, in their order) that have a page, then admin settings. */
 export function navItems(modules: { api_name: string; label_key: string }[], role: Role): NavItem[] {

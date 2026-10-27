@@ -49,6 +49,9 @@ const MODULES = new Map<string, ModuleDef>([
 /** Module api_names the generic record routes serve today. */
 export const RECORD_MODULES = [...MODULES.keys()];
 
+/** The fields a record's display name is built from, in order (record titles in the UI). */
+export const nameFieldsOf = (module: string) => moduleDef(module).nameFields;
+
 /** The module's entry; an unknown or not-yet-built module is a 404, like a missing record. */
 export function moduleDef(name: string): ModuleDef {
   const def = MODULES.get(name);

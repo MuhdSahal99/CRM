@@ -57,6 +57,12 @@ describe("buildRecordSchema (T1.18, ADR-0006)", () => {
     expect(schema.safeParse({ Last_Name: "A", Budget: 12.5 }).success).toBe(false);
   });
 
+  it("accepts only http(s) URLs", () => {
+    const { schema } = buildRecordSchema([field({ apiName: "Website", dataType: "url" })], WRITABLE);
+    expect(schema.safeParse({ Website: "https://saqient.om" }).success).toBe(true);
+    expect(schema.safeParse({ Website: "javascript:alert(1)" }).success).toBe(false);
+  });
+
   it("takes a lookup as {id} and stores the id", () => {
     const owner = field({ apiName: "Owner", dataType: "user_lookup", isSystem: true, columnName: "company" });
     const { schema, toRow } = buildRecordSchema([owner], WRITABLE);

@@ -23,7 +23,7 @@ function valueSchema(f: FieldDef): z.ZodType {
   const pick = f.picklistValues.length ? z.enum(f.picklistValues as [string, ...string[]]) : z.never(); // no active values: nothing fits
   switch (f.dataType) {
     case "email": return z.email().max(f.maxLength ?? 254);
-    case "url": return z.url().max(f.maxLength ?? 2048);
+    case "url": return z.url({ protocol: /^https?$/ }).max(f.maxLength ?? 2048); // never javascript: or data: links
     case "picklist": return pick;
     case "multiselect": return z.array(pick);
     case "date": return z.iso.date();

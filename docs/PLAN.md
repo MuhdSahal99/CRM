@@ -241,7 +241,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: Account → Contacts lists that account's contacts. A Demo user gets 404 (the matrix covers this).
 - **Done when:** later slices add Deals, Quotes and similar related lists as registry entries.
 
-#### T2.11 UI: metadata-driven list page · M
+#### T2.11 UI: metadata-driven list page · M · ✅
 - **Files:** `apps/web/app/(app)/[module]/page.tsx`, `components/records/record-list.tsx` (uses `patterns/data-table`).
 - **Tests first:** E (w360: card list; w1440: table): Accounts list, Load more / pagination, and the empty state.
 - **Done when:** columns come from the layout metadata, with no per-module code.
