@@ -1,11 +1,12 @@
 {
   "name": "saqient-crm",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@12.11.2",
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "check": "pnpm -r check",
-    "test": "pnpm -r --workspace-concurrency=1 test",
+    "check": "pnpm -r check && node scripts/check-temp-dev.ts",
+    "test": "pnpm -r --workspace-concurrency=1 test && node --test \"scripts/*.test.ts\"",
     "e2e": "pnpm --filter web e2e",
     "infra:up": "docker compose --env-file .env.local up -d --wait",
     "infra:down": "docker compose --env-file .env.local down",

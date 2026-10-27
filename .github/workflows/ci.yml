@@ -1,0 +1,72 @@
+# T1.27: lint/types, unit + integration (real Postgres as crm_app), and E2E on every push and PR.
+# Passwords below are throwaway values for this job's own service containers; no real secret is used or needed.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: ci-postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 2s --health-timeout 5s --health-retries 30
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 2s --health-timeout 5s --health-retries 30
+    env:
+      POSTGRES_PASSWORD: ci-postgres
+      CRM_OWNER_PASSWORD: ci-owner
+      CRM_APP_PASSWORD: ci-app
+      CRM_AUTH_PASSWORD: ci-auth
+      DATABASE_OWNER_URL: postgres://crm_owner:ci-owner@localhost:5432/crm
+      DATABASE_URL: postgres://crm_app:ci-app@localhost:5432/crm
+      DATABASE_AUTH_URL: postgres://crm_auth:ci-auth@localhost:5432/crm
+      TEST_DATABASE_OWNER_URL: postgres://crm_owner:ci-owner@localhost:5432/crm_test
+      TEST_DATABASE_URL: postgres://crm_app:ci-app@localhost:5432/crm_test
+      REDIS_URL: redis://localhost:6379
+      BETTER_AUTH_SECRET: ci-only-secret-0000000000000000000000000
+      BETTER_AUTH_URL: http://localhost:3100
+      SEED_PASSWORD: ci-seed-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # version from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Same one-time bootstrap the local postgres container runs (roles crm_owner/crm_app/crm_auth, crm and crm_test).
+      - name: Bootstrap database roles
+        run: sh packages/db/bootstrap/01-roles.sh
+        env:
+          PGHOST: localhost
+          PGPASSWORD: ci-postgres
+      - run: pnpm db:migrate
+      - run: pnpm db:seed # dev data for the E2E server
+
+      - run: pnpm check
+      - run: pnpm test
+
+      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - run: pnpm e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: apps/web/test-results/
+          retention-days: 7
