@@ -122,3 +122,12 @@ export async function deactivateUser(tx: Tx, ctx: TenantContext, id: string, aut
   });
   return [{ code: "SUCCESS", status: "success", details: { id } }];
 }
+
+/** The signed-in user and their org, for the app shell (both rows are RLS-scoped to the current org). */
+export async function getMe(tx: Tx, userId: string) {
+  const { rows } = await tx.execute<{ org_name: string; name: string; email: string }>(
+    sql`SELECT o.name AS org_name, u.name, u.email FROM orgs o, org_users u WHERE u.id = ${userId}`,
+  );
+  if (rows.length === 0) throw new NotFound();
+  return rows[0]!;
+}

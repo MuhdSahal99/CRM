@@ -446,7 +446,9 @@
     "nav": "Main",
     "menu": "Menu",
     "openMenu": "Open menu",
-    "home": "Home"
+    "home": "Home",
+    "account": "Account",
+    "signOut": "Sign out"
   },
   "modules": {
     "Leads": "Leads",

@@ -165,6 +165,11 @@
   outline-offset: 2px;
 }
 
+/* WCAG 2.4.11: focused elements never hide under the app shell's sticky top bar (h-14 + breathing room). */
+:root:has([data-app-shell]) {
+  scroll-padding-block-start: 4.5rem;
+}
+
 /* WCAG 2.5.8 / ADR-0016: 44px targets on touch screens; desktop keeps the dense sizes. */
 @media (pointer: coarse) {
   [data-slot="button"],

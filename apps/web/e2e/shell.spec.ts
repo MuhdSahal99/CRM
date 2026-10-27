@@ -39,3 +39,17 @@ test("T1.23: on desktop the sidebar is visible and the menu button is not", asyn
   await expect(page.getByRole("button", { name: "Open menu" })).toBeHidden();
   await noPageScroll(page);
 });
+
+test("T1.24: the top bar shows the org and account; sign out returns to /login and /app then redirects", async ({ page }) => {
+  await signInToApp(page, "rep.a@saqient.test");
+  const bar = page.getByRole("banner");
+  await expect(bar.getByText("Saqient", { exact: true })).toBeVisible();
+  await expect(bar.getByRole("group", { name: "Color theme" })).toBeVisible();
+  await noPageScroll(page);
+  await bar.getByRole("button", { name: "Account" }).click();
+  await expect(page.getByRole("menu").getByText("rep.a@saqient.test")).toBeVisible();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/login$/);
+});

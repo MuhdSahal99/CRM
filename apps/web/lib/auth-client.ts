@@ -18,3 +18,8 @@ export async function signInEmail(input: { email: string; password: string; reme
   if (error.status === 403) return { ok: false, reason: "deactivated" };
   return { ok: false, reason: "unavailable" };
 }
+
+/** Ends the session (Better Auth deletes it server-side and clears the cookie). */
+export async function signOut(): Promise<void> {
+  await authClient.signOut();
+}
