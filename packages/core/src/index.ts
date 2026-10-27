@@ -26,3 +26,4 @@ export { addNote, NoteInput } from "./notes.ts";
 export { ConvertLeadInput, convertLead, getConversionOptions } from "./leads/convert.ts";
 export { getKanban, KanbanInput } from "./deals/kanban.ts";
 export { TransferInput, transferRecords } from "./users/transfer.ts";
+export { getOrgSettings, UpdateOrgSettingsInput, updateOrgSettings } from "./settings/org.ts";

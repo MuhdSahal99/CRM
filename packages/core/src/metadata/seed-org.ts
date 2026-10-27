@@ -1,5 +1,5 @@
 import { newId, schema } from "@crm/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { SYSTEM_FIELDS, SYSTEM_PICKLISTS } from "./system-fields.ts";
 import type { Tx } from "../tenant.ts";
 
@@ -103,4 +103,6 @@ export async function provisionOrg(tx: Tx): Promise<void> {
     })))
     .onConflictDoNothing();
   await tx.insert(schema.currencies).values(CURRENCIES.map(([code, scale, isBase]) => ({ orgId, code, scale, isBase }))).onConflictDoNothing();
+  // T6.01: the seller details start as the org's name; the Admin completes them in Settings.
+  await tx.execute(sql`INSERT INTO org_settings (org_id, legal_name) SELECT id, name FROM orgs WHERE id = app.org_id() ON CONFLICT DO NOTHING`);
 }

@@ -1682,10 +1682,10 @@ components:
         smtp_host: { type: [string, 'null'] }
         smtp_port: { type: [integer, 'null'], minimum: 1, maximum: 65535 }
         smtp_username: { type: [string, 'null'] }
-        smtp_password:
-          type: string
-          writeOnly: true
-          description: Stored in the secrets manager; never returned.
+        smtp_secret_configured:
+          type: boolean
+          readOnly: true
+          description: Whether an SMTP secret reference is set. The password is never accepted or returned here (set up with T9).
         smtp_from_email: { type: [string, 'null'], format: email }
         smtp_from_name: { type: [string, 'null'] }
         version: { type: integer }

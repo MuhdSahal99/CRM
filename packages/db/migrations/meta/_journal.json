@@ -127,6 +127,13 @@
       "when": 1793133861063,
       "tag": "0017_deals",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793136544016,
+      "tag": "0018_org_settings",
+      "breakpoints": true
     }
   ]
 }

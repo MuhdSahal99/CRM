@@ -399,7 +399,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 6: Products, VAT and exchange rates (US-08, US-09)
 
-#### T6.01 Org settings · S
+#### T6.01 Org settings · S · ✅
 - **Files:** migration `org_settings`, `apps/web/app/api/v1/settings/org/route.ts`.
 - **Tests first:** I: **AC-35**: a rep `PUT /settings/org` → 403. **AC-46**: GET returns no password, only `smtp_secret_ref` presence. The seller VAT number round-trips.
 - **Done when:** the fields T8 snapshots onto invoices exist.
