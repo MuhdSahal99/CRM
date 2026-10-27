@@ -13,3 +13,4 @@ export { buildRecordSchema, type FieldDef } from "./metadata/record-schema.ts";
 export { provisionOrg, SYSTEM_MODULES } from "./metadata/seed-org.ts";
 export { seedAll } from "./seed.ts";
 export { listFields, listModules, ModuleName } from "./metadata/settings.ts";
+export { getUser, InviteUsersInput, inviteUsers, ListUsersInput, listUsers, RoleName, UpdateUserInput, updateUser } from "./users.ts";

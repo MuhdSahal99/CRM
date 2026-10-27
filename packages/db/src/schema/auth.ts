@@ -127,6 +127,9 @@ export const invitation = pgTable(
     inviterId: uuid("inviter_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
+    // Ours, not Better Auth's: what the Admin chose at invite time, applied to the membership on accept (US-03).
+    name: text("name"),
+    managerId: uuid("manager_id"), // composite FK (org_id, manager_id) → member(org_id, user_id), in SQL
   },
   (t) => [
     index("invitation_org_id_email_idx").on(t.orgId, t.email),

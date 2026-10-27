@@ -57,6 +57,13 @@
       "when": 1793085852646,
       "tag": "0007_metadata_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793102222340,
+      "tag": "0008_org_users",
+      "breakpoints": true
     }
   ]
 }

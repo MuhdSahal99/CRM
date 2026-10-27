@@ -1,0 +1,102 @@
+import { newId, schema } from "@crm/db";
+import { sql } from "drizzle-orm";
+import { z } from "zod";
+import { ApiError, NotFound } from "./http/errors.ts";
+import type { TenantContext, Tx } from "./tenant.ts";
+import { recordEvent } from "./timeline.ts";
+
+export const RoleName = z.enum(["admin", "manager", "rep"]).meta({ id: "Role" });
+const managerId = z.uuid().nullable().optional();
+
+export const ListUsersInput = z.object({
+  status: z.enum(["active", "deactivated"]).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(200).default(20),
+});
+export const InviteUsersInput = z.object({
+  data: z.array(z.object({ email: z.email().max(254), name: z.string().trim().min(1).max(120), role: RoleName, manager_id: managerId })).min(1).max(20),
+});
+export const UpdateUserInput = z.object({ data: z.array(z.object({ role: RoleName.optional(), manager_id: managerId })).length(1) });
+
+const INVITE_TTL_DAYS = 7;
+
+// Members of the current org (org_users is RLS-scoped) plus, unless filtered by status, pending invitations.
+const USERS = sql`
+  SELECT u.id, u.name, u.email, u.role, u.status,
+    CASE WHEN mgr.id IS NULL THEN NULL ELSE json_build_object('id', mgr.id, 'name', mgr.name) END AS manager
+  FROM (
+    SELECT id, name, email, role, manager_id, status FROM org_users
+    UNION ALL
+    SELECT id, COALESCE(name, email), email, role, manager_id, 'invited' FROM invitation WHERE status = 'pending' AND expires_at > now()
+  ) u LEFT JOIN org_users mgr ON mgr.id = u.manager_id`;
+
+/** GET /users: every role may read names for owner pickers. */
+export async function listUsers(tx: Tx, { status, page, per_page }: z.infer<typeof ListUsersInput>) {
+  const { rows } = await tx.execute(sql`
+    SELECT * FROM (${USERS}) x WHERE ${status ?? null}::text IS NULL OR x.status = ${status ?? null}
+    ORDER BY x.name, x.id LIMIT ${per_page + 1} OFFSET ${(page - 1) * per_page}`);
+  return { data: rows.slice(0, per_page), info: { page, per_page, count: Math.min(rows.length, per_page), more_records: rows.length > per_page } };
+}
+
+/** GET /users/{id}: a member of the caller's org, or 404. */
+export async function getUser(tx: Tx, id: string) {
+  const { rows } = await tx.execute(sql`SELECT * FROM (${USERS}) x WHERE x.id = ${id} AND x.status <> 'invited'`);
+  if (rows.length === 0) throw new NotFound();
+  return rows;
+}
+
+/** POST /users (Admin): one pending invitation per person, returned with the link that accepts it. */
+export async function inviteUsers(tx: Tx, ctx: TenantContext, input: z.infer<typeof InviteUsersInput>, baseUrl: string) {
+  const outcomes = [];
+  for (const person of input.data) {
+    const taken = await tx.execute(sql`SELECT 1 FROM org_users WHERE email = ${person.email}`);
+    if (taken.rows.length > 0) {
+      outcomes.push({ code: "DUPLICATE_DATA", status: "error", message: "This email already belongs to a member.", details: { api_name: "email" } });
+      continue;
+    }
+    if (person.manager_id && (await tx.execute(sql`SELECT 1 FROM org_users WHERE id = ${person.manager_id}`)).rows.length === 0) {
+      outcomes.push({ code: "INVALID_DATA", status: "error", message: "This manager is not a member.", details: { api_name: "manager_id" } });
+      continue;
+    }
+    const id = newId();
+    await tx.insert(schema.invitation).values({
+      id,
+      orgId: ctx.orgId,
+      email: person.email,
+      name: person.name,
+      role: person.role,
+      managerId: person.manager_id ?? null,
+      status: "pending",
+      expiresAt: new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000),
+      inviterId: ctx.userId,
+    });
+    outcomes.push({ code: "SUCCESS", status: "success", details: { id, accept_url: `${baseUrl}/accept-invite/${id}` } });
+  }
+  return outcomes;
+}
+
+/** PUT /users/{id} (Admin): role and/or reporting manager, logged as role_changed. Cycles are refused (T1.12). */
+export async function updateUser(tx: Tx, id: string, input: z.infer<typeof UpdateUserInput>) {
+  const change = input.data[0]!;
+  const { rows } = await tx.execute<{ role: string; manager_id: string | null }>(sql`SELECT role, manager_id FROM member WHERE user_id = ${id} FOR UPDATE`);
+  const before = rows[0];
+  if (!before) throw new NotFound();
+
+  const after = { role: change.role ?? before.role, manager_id: change.manager_id === undefined ? before.manager_id : change.manager_id };
+  try {
+    await tx.execute(sql`UPDATE member SET role = ${after.role}, manager_id = ${after.manager_id} WHERE user_id = ${id}`);
+  } catch (error) {
+    // member_no_cycle / member_manager_not_self (23514) or a manager outside this org (23503, composite FK).
+    const code = (error as { cause?: { code?: string } }).cause?.code;
+    if (code === "23514" || code === "23503") {
+      throw new ApiError(422, "INVALID_DATA", "This manager is not allowed.", { api_name: "manager_id" });
+    }
+    throw error;
+  }
+
+  const changes = Object.fromEntries(
+    (["role", "manager_id"] as const).filter((k) => after[k] !== before[k]).map((k) => [k, [before[k], after[k]] as [unknown, unknown]]),
+  );
+  if (Object.keys(changes).length > 0) await recordEvent(tx, { recordType: "user", recordId: id, eventType: "role_changed", changes });
+  return [{ code: "SUCCESS", status: "success", details: { id } }];
+}

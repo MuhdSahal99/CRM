@@ -158,7 +158,7 @@ RLS for `crm_app`: `id = app.org_id` (read only). There is no soft delete: a ten
 | ban_expires | timestamptz | NULL |
 | created_at, updated_at | timestamptz | NOT NULL |
 
-`crm_app` reads users only through the view `org_users`, which joins `user` with `member` where `member.org_id = app.org_id`. The view exposes `id, name, email, role, manager_id, status`. (Planned for T1.20, its first consumer; not migrated yet.)
+`crm_app` reads users through the view `org_users` (`security_invoker`), which joins `user` with `member` and exposes `id, name, email, role, manager_id, status, created_at`. `user` has RLS + FORCE: `crm_auth` gets `auth_access`, and `crm_app` gets `SELECT (id, name, email)` under policy `org_member` (the user is a member visible under `member`'s RLS, so only the current org's members).
 
 #### `session`, `account`, `verification` (Better Auth, global)
 - **`session`:** `id`, `user_id` (FK → user CASCADE), `token` (UNIQUE), `expires_at`, `ip_address`, `user_agent`, `active_organization_id` (uuid), `impersonated_by` (uuid, admin plugin), `created_at`, `updated_at`.
@@ -185,7 +185,7 @@ No Better Auth table has a DB default for `id`: the app supplies UUID v7 (Better
 - **Trigger:** `member_no_cycle` rejects a `manager_id` that would create a cycle (recursive check).
 
 #### `invitation` (Better Auth)
-`id`, `org_id` (FK), `email` (citext), `role` (CHECK as in `member`), `status` (pending/accepted/rejected/canceled), `expires_at`, `inviter_id` (FK → user), `created_at`. Index `(org_id, email)`.
+`id`, `org_id` (FK), `email` (citext), `role` (CHECK as in `member`), `status` (pending/accepted/rejected/canceled), `expires_at`, `inviter_id` (FK → user), `created_at`, plus our `name` (text) and `manager_id` (composite FK → `member(org_id, user_id)` ON DELETE SET NULL (manager_id)), applied to the membership on accept. Index `(org_id, email)`. `crm_app` may INSERT (restrictive `admin_only_insert`).
 
 ### Metadata (ADR-0006)
 
@@ -649,3 +649,4 @@ Re-importing the same file creates no duplicates. Rows are upserted on `UNIQUE (
 | 0005 | 2026-10-27 | `timeline`: enum `record_type`, append-only `timeline_events` (`crm_app` SELECT/INSERT only, AC-25) with RLS + FORCE, `tenant_isolation` and restrictive `record_visibility`; `app.can_see(record_type, uuid)` (SECURITY INVOKER) covers `org` and `user` only, other types are invisible until their slice adds a branch | 1 |
 | 0006 | 2026-10-27 | `metadata`: enum `field_type`; `modules`, `fields`, `picklists`, `picklist_values`, `layouts`, `layout_sections`, `layout_fields`, `field_permissions`, each with `org_id` + AUDIT (composite `created_by`/`updated_by` FKs to `member`) and composite intra-tenant FKs; trigger `api_name_immutable` on `modules` and `fields`; `crm_app` SELECT/INSERT/UPDATE (DELETE on `layout_sections`/`layout_fields` only); RLS + FORCE, `tenant_isolation`, restrictive `admin_only_insert`/`_update`/`_delete`. Choices not fixed above: `layouts.name` is varchar(80), `layout_sections.columns` defaults to 2 | 1 |
 | 0007 | 2026-10-27 | `metadata_integrity`: CHECK `fields.column_name` is an identifier; trigger `fields_system_immutable` (`is_system`, `column_name`); trigger `app.set_audit_columns()` on every metadata table sets `created_*`/`updated_*` from `app.user_id` (caller values ignored; no user context → error) | 1 |
+| 0008 | 2026-10-27 | `org_users`: `invitation.name`, `invitation.manager_id` (+ composite FK); RLS + FORCE on `user` (`auth_access` for `crm_auth`, `org_member` SELECT for `crm_app` on `id, name, email`); view `org_users`; `crm_app` INSERT on `invitation` and UPDATE (`role`, `manager_id`, `status`) on `member`, each with a restrictive admin-only policy (AC-35) | 1 |

@@ -3,6 +3,7 @@ import {
   errorResponse,
   Forbidden,
   log,
+  NotFound,
   type Permission,
   readJsonBody,
   resolveContext,
@@ -13,7 +14,7 @@ import {
   validationError,
   withTenant,
 } from "@crm/core";
-import type { z } from "zod";
+import { z } from "zod";
 
 type Handler<S extends z.ZodType> = (args: {
   ctx: TenantContext;
@@ -27,7 +28,7 @@ type Handler<S extends z.ZodType> = (args: {
  * session → 401, role permission → 403, body cap → 413, Zod → 422 per field, then one withTenant transaction.
  * Input comes from the query string on GET/DELETE and from the JSON body otherwise; unknown keys are stripped.
  */
-export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission }, handler: Handler<S>) {
+export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission; status?: number }, handler: Handler<S>) {
   return async (request: Request, route: { params: Promise<Record<string, string>> }): Promise<Response> => {
     const started = performance.now();
     let session: TenantContext | null = null;
@@ -44,7 +45,9 @@ export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: 
       if (!parsed.success) throw validationError(parsed.error, raw);
 
       const params = await route.params;
-      response = Response.json(await withTenant(ctx, (tx) => handler({ ctx, input: parsed.data, params, tx })));
+      if (params.id !== undefined && !z.uuid().safeParse(params.id).success) throw new NotFound(); // never reaches SQL
+      const body = await withTenant(ctx, (tx) => handler({ ctx, input: parsed.data, params, tx }));
+      response = Response.json(body, { status: options.status ?? 200 });
     } catch (error) {
       response = errorResponse(error);
     }
