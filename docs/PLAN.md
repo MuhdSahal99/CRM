@@ -236,7 +236,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a mobile saved as `9xxx xxxx` with OM is stored as `+968…` (**US-06**). **AC-13**: an `Account_Name.id` from another org → 422 or 404, and the SQL composite FK rejects it as well.
 - **Done when:** Contacts CRUD and search work through the registry.
 
-#### T2.10 Related lists and layouts settings · S
+#### T2.10 Related lists and layouts settings · S · ✅
 - **Files:** `apps/web/app/api/v1/[module]/[id]/[related_list]/route.ts`, `settings/related_lists/route.ts`, `settings/layouts/route.ts`.
 - **Tests first:** I: Account → Contacts lists that account's contacts. A Demo user gets 404 (the matrix covers this).
 - **Done when:** later slices add Deals, Quotes and similar related lists as registry entries.

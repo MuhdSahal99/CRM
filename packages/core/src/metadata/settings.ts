@@ -34,3 +34,18 @@ export async function listFields(tx: Tx, module: z.infer<typeof ModuleName>) {
     ORDER BY f.is_system DESC, f.api_name`);
   return rows;
 }
+
+/** GET /settings/layouts: a module's layouts with sections and placed field api_names, minus fields hidden for the role. */
+export async function listLayouts(tx: Tx, module: z.infer<typeof ModuleName>) {
+  const { rows } = await tx.execute(sql`
+    SELECT l.id, l.name, l.is_default,
+      COALESCE((SELECT json_agg(json_build_object('label_key', s.label_key, 'columns', s.columns, 'fields',
+        COALESCE((SELECT json_agg(f.api_name ORDER BY lf.sort_order) FROM layout_fields lf JOIN fields f ON f.id = lf.field_id
+          LEFT JOIN field_permissions fp ON fp.field_id = f.id AND fp.role = current_setting('app.role', true)
+          WHERE lf.section_id = s.id AND COALESCE(fp.access, 'read_write') <> 'hidden'), '[]')) ORDER BY s.sort_order)
+        FROM layout_sections s WHERE s.layout_id = l.id), '[]') AS sections
+    FROM layouts l JOIN modules m ON m.id = l.module_id
+    WHERE m.api_name = ${module}
+    ORDER BY l.is_default DESC, l.name`);
+  return rows;
+}
