@@ -4,3 +4,4 @@ export * from "./timeline.ts";
 export * from "./metadata.ts";
 export * from "./accounts.ts";
 export * from "./idempotency.ts";
+export * from "./contacts.ts";

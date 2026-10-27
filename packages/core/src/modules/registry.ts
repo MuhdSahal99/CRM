@@ -1,8 +1,9 @@
 import { schema } from "@crm/db";
 import { getTableColumns, type SQL, sql } from "drizzle-orm";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
-import { NotFound } from "../http/errors.ts";
+import { ApiError, NotFound } from "../http/errors.ts";
 import type { FieldDef } from "../metadata/record-schema.ts";
+import { toE164 } from "../phone.ts";
 import type { Tx } from "../tenant.ts";
 import type { TimelineEvent } from "../timeline.ts";
 
@@ -11,25 +12,39 @@ import type { TimelineEvent } from "../timeline.ts";
 export type ModuleDef = {
   table: PgTable;
   recordType: TimelineEvent["recordType"];
-  /** The display name of a record, for lookups ({id, name}) and word search. */
+  /** The display name of a record, for lookups ({id, name}) and word search, and the fields it is built from. */
   name: SQL;
+  nameFields: string[];
   /** Columns metadata may write (buildRecordSchema's allowlist): never tenancy, audit, soft-delete or import columns. */
   writable: PgColumn[];
-  /** Server-side normalisation of a parsed record before it is stored (e.g. E.164 phones). */
-  normalise?: (record: Record<string, unknown>) => Record<string, unknown>;
+  /** Server-side normalisation of a parsed record (api_name keys) before it is stored; `before` is the row on update. */
+  normalise?: (record: Record<string, unknown>, before?: Record<string, unknown>) => Record<string, unknown>;
 };
 
 const SERVER_COLUMNS = new Set(["id", "org_id", "created_at", "created_by", "updated_at", "updated_by", "version", "deleted_at", "deleted_by", "custom", "zoho_id", "needs_review"]);
 
-const entry = (table: PgTable, recordType: ModuleDef["recordType"], name: SQL, extra: Partial<ModuleDef> = {}): ModuleDef => ({
+const entry = (table: PgTable, recordType: ModuleDef["recordType"], name: SQL, nameFields: string[], extra: Partial<ModuleDef> = {}): ModuleDef => ({
   table,
   recordType,
   name,
+  nameFields,
   writable: Object.values(getTableColumns(table)).filter((c) => !SERVER_COLUMNS.has(c.name)),
   ...extra,
 });
 
-const MODULES = new Map<string, ModuleDef>([["Accounts", entry(schema.accounts, "account", sql`account_name`)]]);
+/** US-06: a mobile is stored as E.164, read in the mailing country unless it is already international. */
+function contactMobile(record: Record<string, unknown>, before?: Record<string, unknown>) {
+  if (typeof record.Mobile !== "string") return record;
+  const country = "Mailing_Country" in record ? record.Mailing_Country : before?.mailing_country;
+  const mobile = toE164(record.Mobile, typeof country === "string" ? country : null);
+  if (!mobile) throw new ApiError(422, "INVALID_DATA", "Enter a valid mobile number: with its country code, or set the mailing country.", { api_name: "Mobile" });
+  return { ...record, Mobile: mobile };
+}
+
+const MODULES = new Map<string, ModuleDef>([
+  ["Accounts", entry(schema.accounts, "account", sql`account_name`, ["Account_Name"])],
+  ["Contacts", entry(schema.contacts, "contact", sql`concat_ws(' ', first_name, last_name)`, ["First_Name", "Last_Name"], { normalise: contactMobile })],
+]);
 
 /** Module api_names the generic record routes serve today. */
 export const RECORD_MODULES = [...MODULES.keys()];

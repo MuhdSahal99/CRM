@@ -14,17 +14,20 @@ export const CreateRecordsInput = z.object({ data: z.array(record).min(1).max(10
 export const UpdateRecordInput = z.object({ data: z.array(record).length(1) });
 
 /** Parses one record with the metadata-built schema, then the module's normalisation, as a row of column → value. */
-function parse(fields: Field[], module: string, input: Record<string, unknown>, partial = false) {
+function parse(fields: Field[], module: string, input: Record<string, unknown>, before?: Record<string, unknown>) {
   const def = moduleDef(module);
   const { schema, toRow } = buildRecordSchema(fields, def.writable);
-  const parsed = (partial ? schema.partial() : schema).safeParse(input);
+  const parsed = (before ? schema.partial() : schema).safeParse(input);
   if (!parsed.success) throw validationError(parsed.error, input);
-  return toRow(def.normalise ? def.normalise(parsed.data) : parsed.data);
+  return toRow(def.normalise ? def.normalise(parsed.data, before) : parsed.data);
 }
 
 /** A constraint the database enforces, reported on the field it concerns (AC-13, AC-22: a lookup into another org). */
 export function dbError(error: unknown, table: PgTable, fields: Field[]): never {
-  const cause = (error as { cause?: { code?: string; constraint?: string } }).cause;
+  const cause = (error as { cause?: { code?: string; constraint?: string; column?: string } }).cause;
+  if (cause?.code === "23502") {
+    throw new ApiError(422, "MANDATORY_NOT_FOUND", "This field cannot be empty.", { api_name: fields.find((f) => f.columnName === cause.column)?.apiName });
+  }
   if (cause?.code === "23503") {
     // RLS hides the key from the error detail, so go by name: <table>_<column or its prefix>_fk.
     const key = cause.constraint?.slice(getTableName(table).length + 1, -"_fk".length);
@@ -65,11 +68,10 @@ export async function updateRecord(tx: Tx, module: string, id: string, input: z.
   const { version, ...changes } = input.data[0]!;
   const v = VersionInput.safeParse({ version });
   if (!v.success) throw validationError(v.error, { version });
-  const row = parse(fields, module, changes, true);
-
   const before = (await tx.execute<Row>(sql`SELECT * FROM ${def.table} WHERE id = ${id} AND deleted_at IS NULL FOR UPDATE`)).rows[0];
   if (!before) throw new NotFound();
   if (before.version !== v.data.version) throw new Conflict("VERSION_CONFLICT", "This record was changed by someone else. Reload it and try again.");
+  const row = parse(fields, module, changes, before);
   if (row.custom) row.custom = { ...before.custom, ...(row.custom as object) };
 
   const set = sql.join([...Object.entries(row).map(([c, val]) => sql`${sql.identifier(c)} = ${value(c, val)}`), sql`version = version + 1`], sql`, `);

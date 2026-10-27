@@ -78,6 +78,13 @@
       "when": 1793106246732,
       "tag": "0010_idempotency_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793113478217,
+      "tag": "0011_contacts",
+      "breakpoints": true
     }
   ]
 }

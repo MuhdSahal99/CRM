@@ -26,6 +26,9 @@ export const SYSTEM_PICKLISTS: Record<string, string[]> = {
   Industry: ["Communications", "Construction", "Consulting", "Education", "Financial Services", "Government", "Healthcare", "Hospitality",
     "Manufacturing", "Oil and Gas", "Real Estate", "Retail", "Technology", "Transportation", "Other"],
   Rating: ["Acquired", "Active", "Market Failed", "Project Cancelled", "Shut Down"],
+  Salutation: ["Mr.", "Mrs.", "Ms.", "Dr.", "Prof."],
+  Lead_Source: ["Advertisement", "Cold Call", "Employee Referral", "External Referral", "Online Store", "Partner", "Public Relations",
+    "Sales Email Alias", "Seminar Partner", "Internal Seminar", "Trade Show", "Web Download", "Web Research", "Chat"],
 };
 
 export const SYSTEM_FIELDS: Record<string, Section[]> = {
@@ -54,6 +57,35 @@ export const SYSTEM_FIELDS: Record<string, Section[]> = {
       ],
     },
     { label: "address_information", fields: [...address("Billing", "Code"), ...address("Shipping", "Code")] },
+    description,
+  ],
+  Contacts: [
+    {
+      label: "contact_information",
+      fields: [
+        owner,
+        pick("Salutation", "salutation"),
+        text("First_Name", "first_name", 40),
+        text("Last_Name", "last_name", 80, true),
+        { api: "Account_Name", type: "lookup", col: "account_id", lookup: "Accounts" },
+        text("Title", "title", 100),
+        text("Department", "department", 100),
+        { api: "Email", type: "email", col: "email", max: 100 },
+        { api: "Secondary_Email", type: "email", col: "secondary_email", max: 100 },
+        { api: "Phone", type: "phone", col: "phone", max: 30 },
+        { api: "Mobile", type: "phone", col: "mobile", max: 30 }, // stored as E.164 (US-06)
+        { api: "Home_Phone", type: "phone", col: "home_phone", max: 30 },
+        { api: "Other_Phone", type: "phone", col: "other_phone", max: 30 },
+        { api: "Fax", type: "phone", col: "fax", max: 30 },
+        text("Assistant", "assistant", 80),
+        { api: "Asst_Phone", type: "phone", col: "asst_phone", max: 30 },
+        { api: "Date_of_Birth", type: "date", col: "date_of_birth" },
+        { api: "Reporting_To", type: "lookup", col: "reporting_to_id", lookup: "Contacts" },
+        pick("Lead_Source", "lead_source"),
+        { api: "Email_Opt_Out", type: "boolean", col: "email_opt_out" },
+      ],
+    },
+    { label: "address_information", fields: [...address("Mailing", "Zip"), ...address("Other", "Zip")] },
     description,
   ],
 };

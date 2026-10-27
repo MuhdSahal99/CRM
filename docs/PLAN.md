@@ -231,7 +231,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** U: `"9xxx xxxx"` with OM → `+968…`. A UAE number with AE → `+971…`. Garbage → a validation error.
 - **Done when:** the output matches the SCHEMA E.164 CHECK (**US-06**).
 
-#### T2.09 Contacts table and API · M
+#### T2.09 Contacts table and API · M · ✅
 - **Files:** `schema/contacts.ts`, migration, metadata seed, `packages/core/src/modules/contacts.ts`.
 - **Tests first:** I: a mobile saved as `9xxx xxxx` with OM is stored as `+968…` (**US-06**). **AC-13**: an `Account_Name.id` from another org → 422 or 404, and the SQL composite FK rejects it as well.
 - **Done when:** Contacts CRUD and search work through the registry.

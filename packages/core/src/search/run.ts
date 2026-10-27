@@ -37,7 +37,13 @@ export async function searchRecords(tx: Tx, module: string, input: z.infer<typeo
 
   let where: SQL;
   if (input.criteria !== undefined) where = compileCriteria(parseCriteria(input.criteria, new Set(fields.map((f) => f.apiName))), column);
-  else if (input.word !== undefined) where = sql`${def.name} ILIKE ${`%${escapeLike(input.word)}%`}`; // trigram index
+  else if (input.word !== undefined) {
+    // The name is built from fields the caller's role may have hidden: matching on them would leak their values.
+    if (!def.nameFields.every((api) => fields.some((f) => f.apiName === api))) {
+      throw new ApiError(422, "INVALID_QUERY", "Word search is not available for your role in this module.", { api_name: "word" });
+    }
+    where = sql`${def.name} ILIKE ${`%${escapeLike(input.word)}%`}`; // trigram index
+  }
   else if (input.email !== undefined) where = anyOf(ofType("email").map((c) => sql`lower(${c}) = lower(${input.email})`));
   else {
     const digits = input.phone!.replace(/\D/g, "");
