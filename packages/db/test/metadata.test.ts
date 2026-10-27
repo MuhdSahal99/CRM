@@ -47,6 +47,19 @@ describe("metadata tables (T1.17, ADR-0006)", () => {
     expect(await as("rep", "UPDATE modules SET label_key = 'x' RETURNING id")).toEqual([]);
   });
 
+  it("created_by and updated_by come from the context, not the caller", async () => {
+    const [row] = await as("admin", `INSERT INTO picklists (id, org_id, created_by, updated_by, api_name)
+      VALUES (gen_random_uuid(), $1, $2, $2, 'spoofed') RETURNING created_by, updated_by`, [org, rep]);
+    expect(row).toEqual({ created_by: admin, updated_by: admin });
+  });
+
+  it("is_system and column_name are fixed, and column_name must be an identifier", async () => {
+    const [{ id }] = await insertField("admin", "Plain", "text");
+    await expect(as("admin", "UPDATE fields SET is_system = true, column_name = 'password' WHERE id = $1", [id])).rejects.toThrow(/immutable/);
+    await expect(as("admin", `INSERT INTO fields (id, org_id, created_by, updated_by, module_id, api_name, label_key, data_type, is_system, column_name)
+      VALUES (gen_random_uuid(), $1, $2, $2, $3, 'Evil', 'x', 'text', true, 'x; DROP TABLE y')`, [org, admin, moduleId])).rejects.toThrow(/fields_column_name_identifier/);
+  });
+
   it("the picklist CHECK holds: picklist types need a picklist, other types must not have one", async () => {
     await expect(insertField("admin", "Source", "picklist")).rejects.toThrow(/fields_picklist/);
     await expect(insertField("admin", "Notes", "text", picklistId)).rejects.toThrow(/fields_picklist/);

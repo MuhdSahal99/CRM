@@ -133,6 +133,8 @@ export const fields = pgTable(
     foreignKey({ name: "fields_picklist_fk", columns: [t.orgId, t.picklistId], foreignColumns: [picklists.orgId, picklists.id] }).onDelete("restrict"),
     foreignKey({ name: "fields_lookup_module_fk", columns: [t.orgId, t.lookupModuleId], foreignColumns: [modules.orgId, modules.id] }).onDelete("restrict"),
     check("fields_system_column", sql`${t.isSystem} = (${t.columnName} IS NOT NULL)`),
+    // A real column's name, never an expression: services still map it against their own column list.
+    check("fields_column_name_identifier", sql`${t.columnName} ~ '^[a-z_][a-z0-9_]{0,62}$'`),
     check("fields_picklist", sql`(${t.dataType} IN ('picklist', 'multiselect')) = (${t.picklistId} IS NOT NULL)`),
     ...auditFks("fields", t),
   ],

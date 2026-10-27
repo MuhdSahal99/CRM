@@ -29,7 +29,7 @@ describe("tenant isolation (ADR-0003)", () => {
       );
       await queryAs(app, { org_id: org }, `INSERT INTO timeline_events (id, org_id, record_type, record_id, event_type) VALUES (gen_random_uuid(), $1, 'org', $1, 'updated')`, [org]);
       // One row in each metadata table (T1.17), written as an admin would.
-      await queryAs(app, { org_id: org, role: "admin" }, `
+      await queryAs(app, { org_id: org, user_id: manager, role: "admin" }, `
         WITH m AS (INSERT INTO modules (id, org_id, created_by, updated_by, api_name, label_key, sort_order) VALUES (gen_random_uuid(), $1, $2, $2, 'Leads', 'l', 1) RETURNING id),
         p AS (INSERT INTO picklists (id, org_id, created_by, updated_by, api_name) VALUES (gen_random_uuid(), $1, $2, $2, 'p') RETURNING id),
         pv AS (INSERT INTO picklist_values (id, org_id, created_by, updated_by, picklist_id, value, label_key, sort_order) SELECT gen_random_uuid(), $1, $2, $2, p.id, 'v', 'v', 1 FROM p),
