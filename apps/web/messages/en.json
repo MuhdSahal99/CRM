@@ -448,7 +448,8 @@
     "openMenu": "Open menu",
     "home": "Home",
     "account": "Account",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "users": "Users"
   },
   "modules": {
     "Leads": "Leads",
@@ -462,5 +463,35 @@
     "Tasks": "Tasks",
     "Calls": "Calls",
     "Meetings": "Meetings"
+  },
+  "users": {
+    "metaTitle": "Users · Saqient CRM",
+    "title": "Users",
+    "caption": "Users in your organisation",
+    "empty": "No users yet. Invite your team to get started.",
+    "failed": "Something went wrong. Try again.",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "manager": "Reports to",
+    "noManager": "No manager",
+    "status": "Status",
+    "roles": {
+      "rep": "Rep",
+      "manager": "Manager",
+      "admin": "Admin"
+    },
+    "statuses": {
+      "active": "Active",
+      "deactivated": "Deactivated",
+      "invited": "Invited"
+    },
+    "invite": "Invite user",
+    "inviteTitle": "Invite a user",
+    "inviteDescription": "They join with the role and manager you choose here.",
+    "invitedDescription": "Invitation created. Send this link to the person you invited; it works for 7 days.",
+    "acceptLink": "Invitation link",
+    "sendInvite": "Send invite",
+    "inviting": "Inviting…"
   }
 }

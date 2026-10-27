@@ -4,7 +4,7 @@ import { hashPassword } from "better-auth/crypto";
 import { expect } from "vitest";
 import { BASE } from "./env.ts";
 
-export type RouteModule = Partial<Record<string, (request: Request, route: { params: Promise<Record<string, string>> }) => Promise<Response>>>;
+export type RouteModule = Partial<Record<string, (request: Request, route?: { params?: Promise<Record<string, string>> }) => Promise<Response>>>;
 
 /** Signs a seeded user in through Better Auth and returns the Cookie header a browser would send. */
 export async function signIn(email: string, password = TEST_SEED_PASSWORD): Promise<string> {
@@ -21,9 +21,10 @@ export async function signIn(email: string, password = TEST_SEED_PASSWORD): Prom
 }
 
 /** Calls a route handler in-process, as Next would: `path` is the /api/v1 path with its params filled in. */
-export async function call(mod: RouteModule, method: string, path: string, { cookie, params = {}, body }: { cookie: string; params?: Record<string, string>; body?: unknown }) {
+export async function call(mod: RouteModule, method: string, path: string, { cookie, params, body }: { cookie: string; params?: Record<string, string>; body?: unknown }) {
   const init = { method, headers: { cookie, "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) };
-  const res = await mod[method]!(new Request(BASE + "/api/v1" + path, init), { params: Promise.resolve(params) });
+  // Like Next: a route without dynamic segments gets no params at all.
+  const res = await mod[method]!(new Request(BASE + "/api/v1" + path, init), params ? { params: Promise.resolve(params) } : undefined);
   const text = await res.text();
   return { status: res.status, body: text, json: () => JSON.parse(text) };
 }

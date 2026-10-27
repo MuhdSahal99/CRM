@@ -9,7 +9,7 @@ import { requireContext } from "@/lib/session";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireContext();
   const { modules, me } = await withTenant(ctx, async (tx) => ({ modules: await listModules(tx), me: await getMe(tx, ctx.userId) }));
-  const items = navItems(modules);
+  const items = navItems(modules, ctx.role);
   return (
     <div data-app-shell className="flex min-h-svh">
       <Sidebar items={items} />

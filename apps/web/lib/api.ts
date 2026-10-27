@@ -29,7 +29,7 @@ type Handler<S extends z.ZodType> = (args: {
  * Input comes from the query string on GET/DELETE and from the JSON body otherwise; unknown keys are stripped.
  */
 export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission; status?: number }, handler: Handler<S>) {
-  return async (request: Request, route: { params: Promise<Record<string, string>> }): Promise<Response> => {
+  return async (request: Request, route?: { params?: Promise<Record<string, string>> }): Promise<Response> => {
     const started = performance.now();
     let session: TenantContext | null = null;
     let response: Response;
@@ -44,7 +44,7 @@ export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: 
       const parsed = options.input.safeParse(raw);
       if (!parsed.success) throw validationError(parsed.error, raw);
 
-      const params = await route.params;
+      const params = (await route?.params) ?? {}; // Next passes no params to a route without dynamic segments
       if (params.id !== undefined && !z.uuid().safeParse(params.id).success) throw new NotFound(); // never reaches SQL
       const body = await withTenant(ctx, (tx) => handler({ ctx, input: parsed.data, params, tx }));
       response = Response.json(body, { status: options.status ?? 200 });

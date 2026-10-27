@@ -1,0 +1,45 @@
+import { expect, test } from "@playwright/test";
+import { noPageScroll, phoneAndDesktop, signInToApp } from "./helpers";
+
+phoneAndDesktop();
+
+test("T1.25: an admin sees the org's users and invites a rep", async ({ page }) => {
+  await signInToApp(page, "admin@saqient.test");
+  await page.goto("/app/settings/users");
+  await expect(page.getByRole("heading", { level: 1, name: "Users" })).toBeVisible();
+  await expect(page.getByText("rep.a@saqient.test").filter({ visible: true }).first()).toBeVisible();
+  await noPageScroll(page);
+
+  const email = `invitee-${crypto.randomUUID().slice(0, 8)}@example.test`;
+  await page.getByRole("button", { name: "Invite user" }).click();
+  const dialog = page.getByRole("dialog", { name: "Invite a user" });
+  await dialog.getByLabel("Name").fill("Invited Rep");
+  await dialog.getByLabel("Email").fill(email);
+  await expect(dialog.getByRole("radio", { name: "Rep" })).toBeChecked();
+  await dialog.getByLabel("Reports to").click();
+  await page.getByRole("option", { name: "Sales Manager" }).click();
+  await dialog.getByRole("button", { name: "Send invite" }).click();
+
+  await expect(dialog.getByLabel("Invitation link")).toHaveValue(/\/accept-invite\/[0-9a-f-]{36}$/);
+  await dialog.getByRole("button", { name: "Close" }).first().click();
+  await expect(page.getByText(email).filter({ visible: true }).first()).toBeVisible();
+  await noPageScroll(page);
+});
+
+test("T1.25: the invite form shows the server's error under the field", async ({ page }) => {
+  await signInToApp(page, "admin@saqient.test");
+  await page.goto("/app/settings/users");
+  await page.getByRole("button", { name: "Invite user" }).click();
+  const dialog = page.getByRole("dialog", { name: "Invite a user" });
+  await dialog.getByLabel("Name").fill("Duplicate");
+  await dialog.getByLabel("Email").fill("rep.b@saqient.test");
+  await dialog.getByRole("button", { name: "Send invite" }).click();
+  await expect(dialog.getByLabel("Email")).toHaveAttribute("aria-invalid", "true");
+  await expect(dialog.locator("#email-error")).toHaveText("This email already belongs to a member.");
+});
+
+test("T1.25: a rep gets 404 on the users page", async ({ page }) => {
+  await signInToApp(page, "rep.a@saqient.test");
+  const res = await page.goto("/app/settings/users");
+  expect(res?.status()).toBe(404);
+});
