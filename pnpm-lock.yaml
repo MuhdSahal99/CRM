@@ -168,6 +168,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@crm/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1

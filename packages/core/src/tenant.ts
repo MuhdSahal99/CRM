@@ -17,12 +17,15 @@ export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 let appDb: Db | undefined;
 
+/** The app's crm_app pool, created on first use from DATABASE_URL. Not exported from the package: use withTenant. */
+export const getAppDb = (): Db => (appDb ??= createDb(parseConfig(process.env).DATABASE_URL));
+
 /**
  * The only way @crm/core touches the database (ADR-0003). Runs `fn` in one transaction whose app.* settings are
  * transaction-local, so RLS sees this tenant and a pooled connection carries nothing into the next request.
  * `db` is for tests; the app uses its crm_app pool.
  */
-export function withTenant<T>(ctx: TenantContext, fn: (tx: Tx) => Promise<T>, db: Db = (appDb ??= createDb(parseConfig(process.env).DATABASE_URL))): Promise<T> {
+export function withTenant<T>(ctx: TenantContext, fn: (tx: Tx) => Promise<T>, db: Db = getAppDb()): Promise<T> {
   return db.transaction(async (tx) => {
     await tx.execute(sql`SELECT
       set_config('app.org_id', ${ctx.orgId}, true),
