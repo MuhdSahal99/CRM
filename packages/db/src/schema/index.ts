@@ -6,3 +6,4 @@ export * from "./accounts.ts";
 export * from "./idempotency.ts";
 export * from "./contacts.ts";
 export * from "./activities.ts";
+export * from "./notes.ts";

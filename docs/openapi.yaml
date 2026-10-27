@@ -670,6 +670,9 @@ paths:
       tags: [Records]
       operationId: listRelated
       summary: Related records of a visible parent, each filtered by its own visibility rule (US-06)
+      description: |
+        `Notes` (Accounts and Contacts today) returns `{id, Note_Content, Created_Time, Created_By}` newest first;
+        any other module or list is 404.
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
@@ -685,6 +688,40 @@ paths:
                       data: { type: array, items: { $ref: '#/components/schemas/AnyRecord' } }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+
+    post:
+      tags: [Records]
+      operationId: addNote
+      summary: Add a note to a visible Account or Contact (US-05)
+      description: |
+        Only `related_list = Notes` accepts a POST (else 404), on a visible record of a module that has Notes (else 404).
+        Logs a `note_added` event on the record's timeline.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: array
+                  minItems: 1
+                  maxItems: 1
+                  items:
+                    type: object
+                    required: [Note_Content]
+                    additionalProperties: false
+                    properties:
+                      Note_Content: { type: string, minLength: 1, maxLength: 32000 }
+      responses:
+        '201': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
 
   /{module}/{id}/timeline:
     parameters:

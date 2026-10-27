@@ -20,3 +20,4 @@ export { CreateRecordsInput, createRecords, deleteRecord, UpdateRecordInput, upd
 export { getRecord, ListRecordsInput, listRecords } from "./modules/list.ts";
 export { SearchInput, searchRecords } from "./search/run.ts";
 export { listRelated, listRelatedLists, RelatedInput } from "./modules/related.ts";
+export { addNote, NoteInput } from "./notes.ts";

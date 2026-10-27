@@ -283,7 +283,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: events come newest first and include linked activities. **AC-18** (timeline part): rep B reading rep A's record timeline gets 404.
 - **Done when:** this is the **US-15** timeline API.
 
-#### T3.05 Notes · S
+#### T3.05 Notes · S · ✅
 - **Files:** migration `notes`, related list `Notes` (GET/POST) via T2.10. **Add it to `openapi.yaml`**: the spec has no notes path, and US-05 needs notes to exist.
 - **Tests first:** I: a note on an Account shows on its timeline as `note_added`. `record_visibility` hides notes on records the user can't see.
 - **Done when:** notes can be created from the UI and by import.

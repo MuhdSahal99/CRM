@@ -414,7 +414,7 @@ Postgres `round(numeric, int)` rounds half away from zero, which is half-up for 
 System activities such as "Email sent to X" and "WhatsApp link shared" are `type = 'task'` rows with `status = 'completed'` and `meta` in `timeline_events`. They are never shown as open work.
 
 #### `notes` (AUDIT, SOFT)
-`id`, `org_id`, `record_type` (enum `record_type`), `record_id`, `body text NOT NULL CHECK ≤ 32000`, AUDIT, SOFT. Index `(org_id, record_type, record_id, created_at DESC)`. On lead conversion, notes are re-parented to the contact (US-05). Visibility is restrictive: `record_visibility`.
+`id`, `org_id`, `record_type` (enum `record_type`), `record_id`, `body text NOT NULL CHECK ≤ 32000`, AUDIT, SOFT. Index `(org_id, record_type, record_id, created_at DESC)`. On lead conversion, notes are re-parented to the contact (US-05). Visibility is restrictive: `record_visibility`. A trigger (`check_record_ref`) rejects a note on a record the writer cannot see. There is no `deleted_by` FK yet: the MVP has no note delete.
 
 ### Products, currency, VAT
 

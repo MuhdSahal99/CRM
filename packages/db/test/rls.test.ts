@@ -42,6 +42,7 @@ describe("tenant isolation (ADR-0003)", () => {
       await queryAs(app, { org_id: org, user_id: manager }, `INSERT INTO accounts (id, org_id, owner_id, account_name) VALUES (gen_random_uuid(), $1, $2, 'A')`, [org, manager]);
       await queryAs(app, { org_id: org, user_id: manager }, `INSERT INTO contacts (id, org_id, owner_id, last_name) VALUES (gen_random_uuid(), $1, $2, 'C')`, [org, manager]);
       await queryAs(app, { org_id: org, user_id: manager, see_all: "on" }, `INSERT INTO activities (id, org_id, owner_id, type, subject) VALUES (gen_random_uuid(), $1, $2, 'task', 'T')`, [org, manager]);
+      await queryAs(app, { org_id: org, user_id: manager, see_all: "on" }, `INSERT INTO notes (id, org_id, record_type, record_id, body) SELECT gen_random_uuid(), $1, 'activity', id, 'N' FROM activities WHERE org_id = $1`, [org]);
       await queryAs(app, { org_id: org }, `INSERT INTO idempotency_keys (org_id, user_id, key, request_hash, status) VALUES ($1, $2, 'k', decode('00', 'hex'), 'in_progress')`, [org, manager]);
     }
   });
