@@ -443,8 +443,8 @@ paths:
       tags: [Users]
       operationId: transferRecords
       summary: |
-        Transfer the user's open Leads, Deals, Quotes, Sales Orders and Activities to another user
-        in one transaction. A timeline event is written for each record (US-03). Admin only.
+        Transfer the user's open Leads, Deals, Quotes, Sales Orders and Activities to another active user
+        in one transaction (closed records stay; Quotes and Sales Orders join in T7.07 and T8.03). A timeline event is written for each record (US-03). Admin only.
       parameters:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -470,7 +470,7 @@ paths:
                     items:
                       type: object
                       properties:
-                        module: { $ref: '#/components/schemas/ModuleName' }
+                        module: { type: string, enum: [Leads, Deals, Quotes, Sales_Orders, Activities] }
                         count: { type: integer, minimum: 0 }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }

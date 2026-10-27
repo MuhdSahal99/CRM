@@ -53,7 +53,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
       </div>
       <EditUser
         user={{ id: user.id, name: user.name, role: user.role, managerId: user.manager?.id ?? null, status: user.status }}
-        managers={managers}
+        managers={managers} recipients={people.filter((p) => p.id !== user.id).map((p) => ({ id: p.id, name: p.name }))}
         isSelf={user.id === ctx.userId}
       />
     </div>

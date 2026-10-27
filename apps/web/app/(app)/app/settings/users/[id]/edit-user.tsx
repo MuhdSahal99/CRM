@@ -7,13 +7,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { callApi, fieldErrors } from "@/lib/api-client";
 import { ManagerField, type Person, RoleField } from "../user-fields";
 
-type Props = { user: { id: string; name: string; role: string; managerId: string | null; status: string }; managers: Person[]; isSelf: boolean };
+type Props = { user: { id: string; name: string; role: string; managerId: string | null; status: string }; managers: Person[]; recipients: Person[]; isSelf: boolean };
 
-/** US-03: change role and manager; deactivate after a confirmation. The transfer of their records comes with T5.10. */
-export function EditUser({ user, managers, isSelf }: Props) {
+/** US-03: change role and manager; deactivate after a confirmation, optionally transferring their open records first (T5.10). */
+export function EditUser({ user, managers, recipients, isSelf }: Props) {
   const t = useTranslations("users");
   const tCommon = useTranslations("common");
   const router = useRouter();
@@ -23,6 +24,7 @@ export function EditUser({ user, managers, isSelf }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failed, setFailed] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [transferTo, setTransferTo] = useState("");
 
   async function onSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,6 +45,14 @@ export function EditUser({ user, managers, isSelf }: Props) {
 
   async function onDeactivate() {
     setPending("deactivate");
+    if (transferTo) {
+      const moved = await callApi("POST", `/users/${user.id}/actions/transfer`, { to_user_id: transferTo }, { "idempotency-key": crypto.randomUUID() });
+      if (moved.status !== 200) {
+        setPending(null);
+        setConfirming(false);
+        return setFailed(true); // not deactivated: the records and the account stay as they were
+      }
+    }
     const { status } = await callApi("POST", `/users/${user.id}/actions/deactivate`);
     setPending(null);
     setConfirming(false);
@@ -89,6 +99,18 @@ export function EditUser({ user, managers, isSelf }: Props) {
                 <DialogTitle>{t("confirmTitle", { name: user.name })}</DialogTitle>
                 <DialogDescription>{t("confirmDescription")}</DialogDescription>
               </DialogHeader>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="transfer-to">{t("transferTo")}</Label>
+                <select id="transfer-to" className="h-9 rounded-md border bg-background px-2 text-sm" value={transferTo} onChange={(e) => setTransferTo(e.target.value)}>
+                  <option value="">{t("transferNone")}</option>
+                  {recipients.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-sm text-muted-foreground">{t("transferHelp")}</p>
+              </div>
               <DialogFooter>
                 <DialogClose asChild>
                   <Button variant="outline">{tCommon("cancel")}</Button>

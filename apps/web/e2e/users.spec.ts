@@ -70,3 +70,16 @@ test("T1.26: an admin changes a user's manager, then deactivates them after conf
   await expect(other.locator("#login-error")).toHaveText("This account has been deactivated. Ask your admin.");
   await other.close();
 });
+
+test("T5.10 (US-03): the deactivate dialog can transfer the user's open records first", async ({ page }) => {
+  const leaver = await createDisposableRep();
+  await signInToApp(page, "admin@saqient.test");
+  await page.goto(`/app/settings/users/${leaver.id}`);
+  await page.getByRole("button", { name: "Deactivate" }).click();
+  const confirm = page.getByRole("dialog", { name: "Deactivate E2E Rep?" });
+  await confirm.getByLabel("Transfer their open records to").selectOption({ label: "Saqient Admin" });
+  await noPageScroll(page);
+  await confirm.getByRole("button", { name: "Deactivate" }).click();
+  await expect(confirm).toBeHidden();
+  await expect(page.getByText("Deactivated", { exact: true })).toBeVisible();
+});

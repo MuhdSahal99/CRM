@@ -387,13 +387,13 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** E: change the stage on the detail page and see the probability update and a timeline entry.
 - **Done when:** **US-07** passes end to end.
 
-#### T5.10 Transfer ownership · M
+#### T5.10 Transfer ownership · M · ✅
 - **Files:** `apps/web/app/api/v1/users/[id]/actions/transfer/route.ts`, `packages/core/src/users/transfer.ts` (a list of transferable tables: leads, deals, activities), and a transfer step in the deactivate UI.
 - **Tests first:** I: every **open** lead, deal and activity owned by rep A now belongs to rep C, with one `owner_transferred` event per record, in one transaction. Closed records don't move. A rep calling it → 403.
 - **Done when:** **US-03** is met for the existing modules. T7.07 and T8.03 add quotes and SOs.
 
 ### Checkpoint: slice 5
-- [ ] US-07, US-02 (private), US-05 (full) and US-03 (transfer) pass. AC-11/13/17 are green.
+- [x] US-07, US-02 (private), US-05 (full) and US-03 (transfer) pass. AC-11/13/17 are green.
 
 ---
 

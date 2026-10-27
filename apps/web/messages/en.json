@@ -506,7 +506,10 @@
     "deactivate": "Deactivate",
     "confirmTitle": "Deactivate {name}?",
     "confirmDescription": "They are signed out everywhere and cannot sign in again. You can't undo this from here.",
-    "deactivated": "{name} has been deactivated."
+    "deactivated": "{name} has been deactivated.",
+    "transferTo": "Transfer their open records to",
+    "transferNone": "Do not transfer",
+    "transferHelp": "Open leads, deals and activities move to this person. Closed records stay."
   },
   "fields": {
     "Accounts": {
