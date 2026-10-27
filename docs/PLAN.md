@@ -320,7 +320,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a lead whose email matches an existing Contact gets the "attach to existing" offer. A company matching an Account by `lower(name)` gets that account offered.
 - **Done when:** the response matches `openapi.yaml`.
 
-#### T4.04 Convert: Account and Contact in one transaction · M
+#### T4.04 Convert: Account and Contact in one transaction · M · ✅
 - **Files:** `apps/web/app/api/v1/Leads/[id]/actions/convert/route.ts`, `packages/core/src/leads/convert.ts`.
 - **Tests first:** I: exactly 1 Account and 1 Contact are created. Attach-existing creates no new Contact. The lead is flagged with `converted_*`. A `converted` event is written. A failure injected after the Account insert leaves **no** Account, Contact or flag behind (rollback).
 - **Done when:** convert is idempotent with `Idempotency-Key`.
