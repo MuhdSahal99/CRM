@@ -118,23 +118,23 @@ describe("Deals API", () => {
     expect((await related(manager)).json().data).toHaveLength(1);
   });
 
-  it("the Kanban total is null for a role that cannot see Amount", async () => {
+  it.each(["Amount", "Probability"])("when a role cannot see %s: the Kanban total is null and Expected_Revenue is hidden", async (hidden) => {
     const [auth, app] = [await connectAsAuth(), await connectAsApp()];
     const { rows } = await auth.query(`SELECT user_id, org_id FROM member WHERE role = 'admin' AND org_id = (SELECT org_id FROM member m JOIN "user" u ON u.id = m.user_id WHERE u.email = 'admin@saqient.test') LIMIT 1`);
     await auth.end();
     const admin = { org_id: rows[0].org_id, user_id: rows[0].user_id, role: "admin", see_all: "on" };
     const set = (access: string) => queryAs(app, admin, `INSERT INTO field_permissions (org_id, field_id, role, access)
-      SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = 'Deals' AND f.api_name = 'Amount'
-      ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access]);
-    const board = async () => (await call(kanbanRoute, "GET", `/Deals/kanban?pipeline_id=${pipeline.id}`, { cookie: repA })).json().data as { sum_amount_omr: string | null }[];
+      SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = 'Deals' AND f.api_name = $2
+      ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access, hidden]);
+    const board = async () => (await call(kanbanRoute, "GET", `/Deals/kanban?pipeline_id=${pipeline.id}`, { cookie: repA })).json().data as { sum_amount_omr: string | null; deals: object[] }[];
     await set("hidden");
     try {
-      expect((await board()).every((c) => c.sum_amount_omr === null)).toBe(true);
-      const id = (await call(moduleRoute, "GET", "/Deals", { cookie: repA, params: { module: "Deals" } })).json().data[0];
-      expect(Object.keys(id)).not.toContain("Amount");
-      expect(Object.keys(id)).not.toContain("Expected_Revenue"); // derived from Amount
-      const kanban = (await call(kanbanRoute, "GET", `/Deals/kanban?pipeline_id=${pipeline.id}`, { cookie: repA })).json().data as { deals: object[] }[];
-      expect(kanban.flatMap((c) => c.deals).every((d) => !("Expected_Revenue" in d) && !("Amount" in d))).toBe(true);
+      const columns = await board();
+      if (hidden === "Amount") expect(columns.every((c) => c.sum_amount_omr === null)).toBe(true);
+      const list = (await call(moduleRoute, "GET", "/Deals", { cookie: repA, params: { module: "Deals" } })).json().data[0];
+      expect(Object.keys(list)).not.toContain(hidden);
+      expect(Object.keys(list)).not.toContain("Expected_Revenue"); // derived from Amount and Probability
+      expect(columns.flatMap((c) => c.deals).every((d) => !(hidden in d) && !("Expected_Revenue" in d))).toBe(true);
     } finally {
       await set("read_write");
       await app.end();

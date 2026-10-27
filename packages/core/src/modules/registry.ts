@@ -101,7 +101,8 @@ export function moduleDef(name: string): ModuleDef {
   return def;
 }
 
-const DERIVED_FROM: Record<string, string> = { Expected_Revenue: "Amount" };
+/** Computed fields and the fields they are computed from, per module: hidden when any source is hidden. */
+const DERIVED_FROM: Record<string, Record<string, string[]>> = { Deals: { Expected_Revenue: ["Amount", "Probability"] } };
 
 export type Field = FieldDef & { lookupModule: string | null };
 
@@ -118,7 +119,8 @@ export async function loadFields(tx: Tx, module: string): Promise<Field[]> {
     LEFT JOIN field_permissions fp ON fp.field_id = f.id AND fp.role = current_setting('app.role', true)
     WHERE m.api_name = ${module} AND COALESCE(fp.access, 'read_write') <> 'hidden'`);
   // A field computed from a hidden one would leak it (Expected_Revenue = Amount x Probability): hide it too.
-  return rows.filter((f) => !(DERIVED_FROM[f.apiName] && module === "Deals" && !rows.some((r) => r.apiName === DERIVED_FROM[f.apiName])));
+  const derived = DERIVED_FROM[module] ?? {};
+  return rows.filter((f) => !derived[f.apiName]?.some((source) => !rows.some((r) => r.apiName === source)));
 }
 
 type Row = Record<string, unknown> & { id: string; custom: Record<string, unknown> };
