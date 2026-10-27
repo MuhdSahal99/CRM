@@ -84,13 +84,17 @@ export function authOptions({ db, redis, secret, baseURL }: AuthDeps) {
 export const createAuth = (deps: AuthDeps) => betterAuth(authOptions(deps));
 
 let appAuth: ReturnType<typeof createAuth> | undefined;
+let authDb: Db | undefined;
+
+/** The crm_auth pool Better Auth uses; membership resolution (resolveContext) shares it. */
+export const getAuthDb = (): Db => (authDb ??= createDb(parseConfig(process.env).DATABASE_AUTH_URL));
 
 /** The app's Better Auth instance, built on first use so `next build` never needs runtime secrets. */
 export function getAuth(): ReturnType<typeof createAuth> {
   if (!appAuth) {
     const config = parseConfig(process.env);
     appAuth = createAuth({
-      db: createDb(config.DATABASE_AUTH_URL),
+      db: getAuthDb(),
       redis: new Redis(config.REDIS_URL),
       secret: config.BETTER_AUTH_SECRET,
       baseURL: config.BETTER_AUTH_URL,

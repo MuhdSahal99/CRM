@@ -25,20 +25,3 @@ test("landing page renders and the sample invoice recomputes", async ({ page }, 
   await page.screenshot({ path: info.outputPath(`${info.project.name}.png`), fullPage: true });
   expect(errors).toEqual([]);
 });
-
-test("login posts to the real auth endpoint and shows its failure", async ({ page }, info) => {
-  await page.goto("/login");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign in");
-  await noPageScroll(page);
-
-  const req = page.waitForRequest((r) => r.url().endsWith("/api/auth/sign-in/email") && r.method() === "POST");
-  await page.getByLabel("Email").fill("rep@example.com");
-  await page.getByLabel("Password").fill("not-a-real-password");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  expect((await req).postDataJSON()).toMatchObject({ email: "rep@example.com", rememberMe: true });
-
-  // No auth backend until slice 1: the form must refuse, never let the user through.
-  await expect(page.getByRole("alert")).toBeVisible();
-  await expect(page).toHaveURL(/\/login$/);
-  await page.screenshot({ path: info.outputPath(`${info.project.name}-login.png`), fullPage: true });
-});

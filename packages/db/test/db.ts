@@ -56,3 +56,6 @@ export async function queryAs(client: pg.Client, settings: Record<string, string
     await client.query("COMMIT");
   }
 }
+
+/** The one password every test seeds with: seed() never changes an existing account, so the first seeder wins. */
+export const TEST_SEED_PASSWORD = "test-seed-password";

@@ -436,5 +436,10 @@
       "unavailable": "Sign-in is not available right now. Try again in a few minutes."
     },
     "photoAlt": "Muttrah Corniche in Muscat, with the fort on the hill and gulls over the water"
+  },
+  "app": {
+    "metaTitle": "Home · Saqient CRM",
+    "title": "Welcome to Saqient CRM",
+    "lead": "Your leads, deals and documents will appear here."
   }
 }

@@ -26,8 +26,7 @@ export function LoginForm() {
     setError(null);
     const r = await signInEmail({ email: String(form.get("email")), password: String(form.get("password")), rememberMe: remember });
     if (r.ok) {
-      // The app shell does not exist yet; land on the home page until it does.
-      router.push("/");
+      router.push("/app");
       router.refresh();
       return;
     }

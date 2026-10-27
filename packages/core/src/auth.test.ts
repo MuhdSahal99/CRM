@@ -1,13 +1,12 @@
 import { createDb, type Db, schema } from "@crm/db";
 import { seed } from "@crm/db/seed";
-import { requireEnv, testUrlFor } from "@crm/db/testing";
+import { requireEnv, TEST_SEED_PASSWORD as PASSWORD, testUrlFor } from "@crm/db/testing";
 import { getAuthTables } from "better-auth/db";
 import { Redis } from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { authOptions, createAuth } from "./auth";
 
 const BASE = "http://localhost:3000";
-const PASSWORD = "auth-test-password";
 const randomIp = () => `10.${Array.from({ length: 3 }, () => Math.floor(Math.random() * 256)).join(".")}`;
 
 describe("Better Auth server (T1.09, ADR-0004)", () => {
