@@ -25,6 +25,9 @@ Use these for manual testing, E2E and the visibility matrix: rep A vs rep B (pri
 
 ## Launch checklist
 
-- [ ] **Reverse proxy overwrites `X-Forwarded-For`** with the real client address (nginx: `proxy_set_header X-Forwarded-For $remote_addr;`, not `$proxy_add_x_forwarded_for`). The sign-in rate limit (AC-31) keys on that header; if the proxy appends, a client can fake a new IP per request and the limit never triggers. The app must not be reachable except through the proxy.
+- [ ] **Client IP for the sign-in rate limit (AC-31) is trustworthy.** Better Auth 1.7.7 reads `X-Forwarded-For` and, unless `trustedProxies` is set, trusts it only when it holds exactly one address. So:
+  - The app port is reachable **only through the reverse proxy** (firewall / bind to localhost). Otherwise a client sends its own single fake IP per request and the per-IP limit never triggers (the per-account limit still holds).
+  - Set `advanced.ipAddress.trustedProxies` in `packages/core/src/auth.ts` to the proxy's address once hosting is decided. Better Auth then takes the right-most address that is not the proxy, which is correct whether the proxy overwrites or appends the header.
+  - Without `trustedProxies`, the proxy must **overwrite** the header (nginx: `proxy_set_header X-Forwarded-For $remote_addr;`). If it appends (`$proxy_add_x_forwarded_for`), every request lands in one shared bucket and the whole org is locked out after 10 attempts in 15 minutes.
 - [ ] `BETTER_AUTH_URL` is the public `https://` origin (Better Auth trusts only this origin for cookie-bearing requests).
 - [ ] No seed has run against the prod database (`member` has no `*.test` emails).
