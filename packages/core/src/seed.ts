@@ -46,6 +46,9 @@ export async function seedAll(authDb: Db, appDb: Db, password: string): Promise<
         const contact = { First_Name: "Ahmed", Last_Name: "Al Balushi", Mobile: "9123 4567", Mailing_Country: "OM", Account_Name: { id: first!.details.id } };
         await createRecords(tx, ctx, "Contacts", { data: [contact] });
       }
+      if ((await tx.execute(sql`SELECT 1 FROM leads LIMIT 1`)).rows.length === 0) {
+        await createRecords(tx, ctx, "Leads", { data: [{ First_Name: "Salim", Last_Name: "Al Rawahi", Company: "Rawahi Contracting", Lead_Status: "Not Contacted", Lead_Source: "Trade Show" }] });
+      }
       if (SAMPLE_ACTIVITIES[rep.email] && (await tx.execute(sql`SELECT 1 FROM activities LIMIT 1`)).rows.length === 0) {
         for (const [module, record] of SAMPLE_ACTIVITIES[rep.email]!) await createRecords(tx, ctx, module, { data: [record] });
       }

@@ -601,6 +601,33 @@
       "All_day": "All day",
       "Venue": "Location",
       "Status": "Status"
+    },
+    "Leads": {
+      "Owner": "Lead Owner",
+      "Salutation": "Salutation",
+      "First_Name": "First Name",
+      "Last_Name": "Last Name",
+      "Company": "Company",
+      "Designation": "Title",
+      "Email": "Email",
+      "Secondary_Email": "Secondary Email",
+      "Phone": "Phone",
+      "Mobile": "Mobile",
+      "Fax": "Fax",
+      "Website": "Website",
+      "Lead_Source": "Lead Source",
+      "Lead_Status": "Lead Status",
+      "Industry": "Industry",
+      "Rating": "Rating",
+      "Annual_Revenue": "Annual Revenue",
+      "No_of_Employees": "No. of Employees",
+      "Email_Opt_Out": "Email Opt Out",
+      "Street": "Street",
+      "City": "City",
+      "State": "State",
+      "Zip_Code": "Zip Code",
+      "Country": "Country",
+      "Description": "Description"
     }
   },
   "sections": {
@@ -610,7 +637,8 @@
     "description_information": "Description Information",
     "task_information": "Task Information",
     "call_information": "Call Information",
-    "meeting_information": "Meeting Information"
+    "meeting_information": "Meeting Information",
+    "lead_information": "Lead Information"
   },
   "picklists": {
     "Account_Type": {
@@ -711,6 +739,16 @@
       "inbound": "Inbound",
       "outbound": "Outbound",
       "missed": "Missed"
+    },
+    "Lead_Status": {
+      "not_contacted": "Not Contacted",
+      "attempted_to_contact": "Attempted to Contact",
+      "contact_in_future": "Contact in Future",
+      "contacted": "Contacted",
+      "pre_qualified": "Pre-Qualified",
+      "not_qualified": "Not Qualified",
+      "junk_lead": "Junk Lead",
+      "lost_lead": "Lost Lead"
     }
   },
   "related": {

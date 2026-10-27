@@ -50,7 +50,7 @@ export async function listRecords(tx: Tx, ctx: TenantContext, module: string, in
   const dir = input.sort_order === "asc" ? sql`ASC` : sql`DESC`;
   const mine = input.cvid === "my" ? sql`AND owner_id = ${ctx.userId}` : sql``;
   const { rows } = await tx.execute(sql`
-    SELECT * FROM ${def.table} WHERE ${def.scope} AND deleted_at IS NULL ${mine}
+    SELECT * FROM ${def.table} WHERE ${def.scope} AND ${def.listScope} AND deleted_at IS NULL ${mine}
     ORDER BY ${sql.identifier(column)} ${dir} NULLS LAST, id ${dir} ${limitOffset(input)}`);
   const wanted = input.fields?.split(",").map((f) => f.trim());
   return pageOf(await toApi(tx, wanted ? fields.filter((f) => wanted.includes(f.apiName)) : fields, rows as Parameters<typeof toApi>[2]), input);

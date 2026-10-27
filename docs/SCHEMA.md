@@ -279,6 +279,7 @@ A missing row means `read_write`.
   - `(org_id, lower(email))`
   - GIN trigram on `(company || ' ' || last_name)`
 - **Trigger:** `leads_converted_readonly` blocks UPDATEs of a converted lead (US-05).
+- `converted_deal_id` has no FK until `deals` exists (T5.02).
 
 #### `accounts` (REC, ZOHO), public in org
 | Column | Type | Constraints |
@@ -655,3 +656,4 @@ Re-importing the same file creates no duplicates. Rows are upserted on `UNIQUE (
 | 0010 | 2026-10-27 | `idempotency_keys`: enum `idempotency_status`; PK `(org_id, user_id, key)`, composite FK → `member` ON DELETE CASCADE, `expires_at` defaults to `now() + 7 days`; `crm_app` SELECT/INSERT/UPDATE/DELETE; RLS + FORCE + `tenant_isolation` (the service filters by user). Expired keys are replaced on reuse until the purge job lands (slice 8) | 2 |
 | 0011 | 2026-10-27 | `contacts`: REC + ZOHO columns, mailing/other address groups, CHECK `mobile ~ '^[+][1-9][0-9]{6,14}$'` (E.164), CHECKs on email length, reporting_to ≠ id and description; hand-written composite `contacts_account_fk` and `contacts_reporting_to_fk` ON DELETE SET NULL (column); list/email/account/trigram (`coalesce(first_name,'') \|\| ' ' \|\| last_name`) indexes, partial unique `zoho_id`; audit trigger; `crm_app` SELECT/INSERT/UPDATE; RLS + FORCE + `tenant_isolation` (public in org); `app.can_see` gains `contact`. `converted_from_lead_id` has no FK until `leads` exists (slice 4) | 2 |
 | 0015 | 2026-10-28 | `invitation_token`: `invitation.token_hash` (SHA-256 of the random accept token) with a UNIQUE index | 4 |
+| 0016 | 2026-10-28 | `leads`: REC + ZOHO columns, converted_* composite FKs (RESTRICT), `contacts_converted_from_lead_fk`, trigger `leads_converted_readonly` (restrict_violation), RLS `tenant_isolation` + restrictive `owner_visibility`, `app.can_see` knows `lead` | 4 |

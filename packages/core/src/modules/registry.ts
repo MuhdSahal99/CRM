@@ -18,6 +18,8 @@ export type ModuleDef = {
   nameFields: string[];
   /** Narrows a table shared by several modules (Tasks, Calls and Meetings are `activities`) to this module's rows. */
   scope: SQL;
+  /** Extra filter for the default list only (not for reading one record). */
+  listScope: SQL;
   /** Column values every row of this module has, whatever the client sends (the activity `type`). */
   fixed: Record<string, unknown>;
   /** Columns metadata may write (buildRecordSchema's allowlist): never tenancy, audit, soft-delete or import columns. */
@@ -34,27 +36,30 @@ const entry = (table: PgTable, recordType: ModuleDef["recordType"], name: SQL, n
   name,
   nameFields,
   scope: sql`true`,
+  listScope: sql`true`,
   fixed: {},
   writable: Object.values(getTableColumns(table)).filter((c) => !SERVER_COLUMNS.has(c.name)),
   ...extra,
 });
 
-/** US-06: a mobile is stored as E.164, read in the mailing country unless it is already international. */
-function contactMobile(record: Record<string, unknown>, before?: Record<string, unknown>) {
+/** US-06: a mobile is stored as E.164, read in the record's country (api_name `field`, column `column`) unless it is already international. */
+const mobileIn = (field: string, column: string) => (record: Record<string, unknown>, before?: Record<string, unknown>) => {
   if (typeof record.Mobile !== "string") return record;
-  const country = "Mailing_Country" in record ? record.Mailing_Country : before?.mailing_country;
+  const country = field in record ? record[field] : before?.[column];
   const mobile = toE164(record.Mobile, typeof country === "string" ? country : null);
   if (!mobile) throw new ApiError(422, "INVALID_DATA", "Enter a valid mobile number: with its country code, or set the mailing country.", { api_name: "Mobile" });
   return { ...record, Mobile: mobile };
-}
+};
 
 /** Tasks, Calls and Meetings: one table, one module each (SCHEMA § activities). */
 const activity = (type: string) => entry(schema.activities, "activity", sql`subject`, ["Subject"], { scope: sql`type = ${type}`, fixed: { type } });
 
 const MODULES = new Map<string, ModuleDef>([
+  // Converted leads leave the default list (US-05); GET /Leads/{id} still reads them.
+  ["Leads", entry(schema.leads, "lead", sql`(coalesce(first_name, '') || ' ' || last_name)`, ["First_Name", "Last_Name"], { normalise: mobileIn("Country", "country"), listScope: sql`NOT is_converted` })],
   ["Accounts", entry(schema.accounts, "account", sql`account_name`, ["Account_Name"])],
     // Same expression as contacts_name_trgm_idx, so word search can use the index.
-  ["Contacts", entry(schema.contacts, "contact", sql`(coalesce(first_name, '') || ' ' || last_name)`, ["First_Name", "Last_Name"], { normalise: contactMobile })],
+  ["Contacts", entry(schema.contacts, "contact", sql`(coalesce(first_name, '') || ' ' || last_name)`, ["First_Name", "Last_Name"], { normalise: mobileIn("Mailing_Country", "mailing_country") })],
   ["Tasks", activity("task")],
   ["Calls", activity("call")],
   ["Meetings", activity("meeting")],

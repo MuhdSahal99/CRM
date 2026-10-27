@@ -32,6 +32,7 @@ export const SYSTEM_PICKLISTS: Record<string, string[]> = {
   Call_Status: ["Planned", "Held", "Cancelled"],
   Meeting_Status: ["Planned", "Held", "Cancelled"],
   Call_Type: ["Inbound", "Outbound", "Missed"],
+  Lead_Status: ["Not Contacted", "Attempted to Contact", "Contact in Future", "Contacted", "Pre-Qualified", "Not Qualified", "Junk Lead", "Lost Lead"],
   Lead_Source: ["Advertisement", "Cold Call", "Employee Referral", "External Referral", "Online Store", "Partner", "Public Relations",
     "Sales Email Alias", "Seminar Partner", "Internal Seminar", "Trade Show", "Web Download", "Web Research", "Chat"],
 };
@@ -42,6 +43,34 @@ const links: Spec[] = [{ api: "Who_Id", type: "polymorphic", col: "who_id" }, { 
 const when = (api: string, col: string, req?: true): Spec => ({ api, type: "datetime", col, req });
 
 export const SYSTEM_FIELDS: Record<string, Section[]> = {
+  Leads: [
+    {
+      label: "lead_information",
+      fields: [
+        owner,
+        pick("Salutation", "salutation"),
+        text("First_Name", "first_name", 40),
+        text("Last_Name", "last_name", 80, true),
+        text("Company", "company", 100, true),
+        text("Designation", "designation", 100),
+        { api: "Email", type: "email", col: "email", max: 100 },
+        { api: "Secondary_Email", type: "email", col: "secondary_email", max: 100 },
+        { api: "Phone", type: "phone", col: "phone", max: 30 },
+        { api: "Mobile", type: "phone", col: "mobile", max: 30 }, // stored as E.164 (US-06)
+        { api: "Fax", type: "phone", col: "fax", max: 30 },
+        { api: "Website", type: "url", col: "website", max: 120 },
+        pick("Lead_Source", "lead_source"),
+        pick("Lead_Status", "lead_status"),
+        pick("Industry", "industry"),
+        pick("Rating", "rating"),
+        { api: "Annual_Revenue", type: "currency", col: "annual_revenue" },
+        { api: "No_of_Employees", type: "integer", col: "no_of_employees" },
+        { api: "Email_Opt_Out", type: "boolean", col: "email_opt_out" },
+      ],
+    },
+    { label: "address_information", fields: [text("Street", "street", 250), text("City", "city", 30), text("State", "state", 30), text("Zip_Code", "zip_code", 30), text("Country", "country", 2)] },
+    description,
+  ],
   Accounts: [
     {
       label: "account_information",

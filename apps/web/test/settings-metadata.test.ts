@@ -10,7 +10,7 @@ describe("settings metadata endpoints (T1.19)", () => {
   let auth: Awaited<ReturnType<typeof connectAsAuth>>;
   let rep: string;
 
-  /** Adds a custom picklist field to `orgId`'s Leads module, as that org's admin. */
+  /** Adds a custom picklist field to `orgId`'s Quotes module (no system fields yet), as that org's admin. */
   async function addField(orgId: string, apiName: string) {
     const { rows } = await auth.query("SELECT user_id FROM member WHERE org_id = $1 AND role = 'admin' LIMIT 1", [orgId]);
     const ctx = { org_id: orgId, user_id: rows[0].user_id, role: "admin" };
@@ -19,7 +19,7 @@ describe("settings metadata endpoints (T1.19)", () => {
       v AS (INSERT INTO picklist_values (id, org_id, picklist_id, value, label_key, sort_order, is_active)
             SELECT gen_random_uuid(), $1, p.id, x.value, 'v', x.n, x.active FROM p, (VALUES ('north', 1, true), ('gone', 2, false)) AS x(value, n, active))
       INSERT INTO fields (id, org_id, module_id, api_name, label_key, data_type, is_system, picklist_id)
-      SELECT gen_random_uuid(), $1, m.id, $2, 'fields.region', 'picklist', false, p.id FROM modules m, p WHERE m.api_name = 'Leads'`, [orgId, apiName]);
+      SELECT gen_random_uuid(), $1, m.id, $2, 'fields.region', 'picklist', false, p.id FROM modules m, p WHERE m.api_name = 'Quotes'`, [orgId, apiName]);
   }
 
   beforeAll(async () => {
@@ -42,7 +42,7 @@ describe("settings metadata endpoints (T1.19)", () => {
   });
 
   it("a rep lists only their own org's fields, with active picklist values and their access", async () => {
-    const res = await call(fieldsRoute, "GET", "/settings/fields?module=Leads", { cookie: rep });
+    const res = await call(fieldsRoute, "GET", "/settings/fields?module=Quotes", { cookie: rep });
     expect(res.status).toBe(200);
     expect(res.json().data).toEqual([
       expect.objectContaining({
@@ -57,9 +57,9 @@ describe("settings metadata endpoints (T1.19)", () => {
   });
 
   it("a module that exists only in another org returns 404", async () => {
-    // A bare org (no provisioning) whose user can sign in: Leads exists in Saqient and Demo, not here.
+    // A bare org (no provisioning) whose user can sign in: Quotes exists in Saqient and Demo, not here.
     const { email } = await createSignInUser(auth, await createOrg(auth), "admin");
-    const res = await call(fieldsRoute, "GET", "/settings/fields?module=Leads", { cookie: await signIn(email) });
+    const res = await call(fieldsRoute, "GET", "/settings/fields?module=Quotes", { cookie: await signIn(email) });
     expect(res.status).toBe(404);
   });
 

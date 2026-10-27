@@ -305,7 +305,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 4: Leads and conversion (US-04, US-05 without deal)
 
-#### T4.01 Leads table and create · M
+#### T4.01 Leads table and create · M · ✅
 - **Files:** `schema/leads.ts`, migration (`leads_converted_readonly` trigger, `owner_visibility`), metadata seed, `packages/core/src/modules/leads.ts`.
 - **Tests first:** I + U: missing `Last_Name` **and** `Company` → 422 with an error on each field (**US-04**). Rep B gets 404 on rep A's lead.
 - **Done when:** Leads CRUD works through the registry. Lists exclude converted leads by default.
