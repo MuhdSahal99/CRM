@@ -48,6 +48,10 @@ describe("users API (T1.20)", () => {
     expect(rows[0]).toEqual({ org_id: saqient, email: "new.rep@saqient.test", role: "rep", status: "pending", manager_id: ids["manager@saqient.test"] });
     const list = await call(usersRoute, "GET", "/users", { cookie: admin });
     expect(list.json().data).toContainEqual(expect.objectContaining({ email: "new.rep@saqient.test", status: "invited" }));
+    // The invitation id is the secret in the accept link, so only admins may see pending invitations.
+    const rep = await signIn("rep.a@saqient.test");
+    const asRep = await call(usersRoute, "GET", "/users", { cookie: rep });
+    expect(asRep.json().data.filter((u: { status: string }) => u.status === "invited")).toEqual([]);
   });
 
   it("T2.02: an invite retried with the same Idempotency-Key replays the first answer", async () => {

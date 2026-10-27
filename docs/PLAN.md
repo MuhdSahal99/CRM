@@ -299,7 +299,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Done when:** **US-15** passes end to end.
 
 ### Checkpoint: slice 3
-- [ ] US-15 passes. AC-18 (timeline) is green.
+- [x] US-15 passes. AC-18 (timeline) is green.
 
 ---
 

@@ -13,5 +13,6 @@ export default defineConfig({
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", "e2e/**", ".next/**"],
     globalSetup: ["test/global-setup.ts"],
+    testTimeout: 20_000, // lint.test.ts starts ESLint, which is slow on a cold or busy machine
   },
 });

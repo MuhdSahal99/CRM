@@ -21,14 +21,15 @@ export const UpdateUserInput = z.object({ data: z.array(z.object({ role: RoleNam
 
 const INVITE_TTL_DAYS = 7;
 
-// Members of the current org (org_users is RLS-scoped) plus, unless filtered by status, pending invitations.
+// Members of the current org (org_users is RLS-scoped) plus, for admins and unless filtered by status, pending invitations.
 const USERS = sql`
   SELECT u.id, u.name, u.email, u.role, u.status,
     CASE WHEN mgr.id IS NULL THEN NULL ELSE json_build_object('id', mgr.id, 'name', mgr.name) END AS manager
   FROM (
     SELECT id, name, email, role, manager_id, status FROM org_users
     UNION ALL
-    SELECT id, COALESCE(name, email), email, role, manager_id, 'invited' FROM invitation WHERE status = 'pending' AND expires_at > now()
+    SELECT id, COALESCE(name, email), email, role, manager_id, 'invited' FROM invitation
+    WHERE status = 'pending' AND expires_at > now() AND current_setting('app.role', true) = 'admin' -- the id is the secret in the accept link: admins only
   ) u LEFT JOIN org_users mgr ON mgr.id = u.manager_id`;
 
 /** GET /users: every role may read names for owner pickers. */
