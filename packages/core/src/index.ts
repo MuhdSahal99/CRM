@@ -11,3 +11,5 @@ export { log } from "./log.ts";
 export { recordEvent, type TimelineEvent } from "./timeline.ts";
 export { buildRecordSchema, type FieldDef } from "./metadata/record-schema.ts";
 export { provisionOrg, SYSTEM_MODULES } from "./metadata/seed-org.ts";
+export { seedAll } from "./seed.ts";
+export { listFields, listModules, ModuleName } from "./metadata/settings.ts";

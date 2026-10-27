@@ -1,14 +1,12 @@
 import { readFileSync } from "node:fs";
-import { getAuth, NotFound } from "@crm/core";
-import { createDb } from "@crm/db";
-import { seed } from "@crm/db/seed";
-import { connectAsApp, queryAs, requireEnv, TEST_SEED_PASSWORD, testUrlFor } from "@crm/db/testing";
+import { NotFound } from "@crm/core";
+import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { sql } from "drizzle-orm";
-import { Redis } from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { z } from "zod";
 import { apiRoute } from "../lib/api";
+import { call as callRoute, type RouteModule, signIn } from "./api.ts";
 
 // T1.15, AC-10, PRD M4. For every /api/v1 route file whose OpenAPI path has an {id}, a Demo admin calls it with a
 // Saqient record's id and with a random UUID: the two answers must be byte-identical (a 404 on reads).
@@ -25,9 +23,7 @@ type Ref = { $ref?: string };
 type Param = Ref & { name: string; in: string; schema?: Ref & { enum?: string[] } };
 type Operation = { parameters?: Param[] };
 type PathItem = Operation & { "x-phase"?: number } & Partial<Record<(typeof METHODS)[number], Operation>>;
-type RouteModule = Partial<Record<string, (request: Request, route: { params: Promise<Record<string, string>> }) => Promise<Response>>>;
 
-const BASE = "http://localhost:3000";
 const spec: { paths: Record<string, PathItem> } = parse(readFileSync(new URL("../../../docs/openapi.yaml", import.meta.url), "utf8"));
 const METHODS = ["get", "put", "post", "patch", "delete"] as const;
 
@@ -72,45 +68,20 @@ describe("visibility matrix (T1.15)", () => {
   let saqient: string;
   let demo: string;
 
-  /** The response a Demo admin gets from `mod[method]` at `path` with `params`, as status + body text. */
+  /** The response a Demo admin gets from `mod[method]` at the `path` template with `params`, as status + body text. */
   async function call(mod: RouteModule, method: string, path: string, params: Record<string, string>) {
-    const url = BASE + "/api/v1" + path.replace(/\{(\w+)\}/g, (_, k) => params[k]!);
-    const body = ["GET", "DELETE"].includes(method) ? undefined : "{}";
-    const res = await mod[method]!(new Request(url, { method, body, headers: { cookie, "content-type": "application/json" } }), { params: Promise.resolve(params) });
-    return { status: res.status, body: await res.text() };
+    const body = ["GET", "DELETE"].includes(method) ? undefined : {};
+    const { status, body: text } = await callRoute(mod, method, path.replace(/\{(\w+)\}/g, (_, k) => params[k]!), { cookie, params, body });
+    return { status, body: text };
   }
 
   beforeAll(async () => {
-    // The app's own lazily built auth and crm_app pool, pointed at the test database.
-    const redisUrl = new URL(requireEnv("REDIS_URL"));
-    redisUrl.pathname = "/13"; // own Redis db: sign-in throttle counters outlive the test DB reset
-    Object.assign(process.env, {
-      DATABASE_URL: requireEnv("TEST_DATABASE_URL"),
-      DATABASE_AUTH_URL: testUrlFor("crm_auth", "CRM_AUTH_PASSWORD"),
-      REDIS_URL: redisUrl.href,
-      BETTER_AUTH_SECRET: "test-secret-".padEnd(40, "x"),
-      BETTER_AUTH_URL: BASE,
-    });
-    const redis = new Redis(redisUrl.href);
-    await redis.flushdb();
-    redis.disconnect();
-
-    const authDb = createDb(process.env.DATABASE_AUTH_URL!, { max: 1 });
-    await seed(authDb, TEST_SEED_PASSWORD);
-    const orgId = async (slug: string) => (await authDb.execute<{ id: string }>(sql`SELECT id FROM orgs WHERE slug = ${slug}`)).rows[0]!.id;
-    [saqient, demo] = [await orgId("saqient"), await orgId("demo")];
-    await authDb.$client.end();
-
-    const res = await getAuth().handler(
-      new Request(`${BASE}/api/auth/sign-in/email`, {
-        method: "POST",
-        headers: { "content-type": "application/json", origin: BASE, "x-forwarded-for": "10.13.0.1" },
-        body: JSON.stringify({ email: "admin@demo.test", password: TEST_SEED_PASSWORD }),
-      }),
-    );
-    expect(res.status).toBe(200);
-    cookie = res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
     app = await connectAsApp();
+    const auth = await connectAsAuth();
+    const { rows } = await auth.query("SELECT id, slug FROM orgs WHERE slug IN ('saqient', 'demo')");
+    await auth.end();
+    [saqient, demo] = ["saqient", "demo"].map((slug) => rows.find((r) => r.slug === slug)!.id);
+    cookie = await signIn("admin@demo.test");
   });
   afterAll(() => app?.end());
 
