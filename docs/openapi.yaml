@@ -694,6 +694,10 @@ paths:
       tags: [Records]
       operationId: getTimeline
       summary: Timeline (field changes, stage changes, conversions, sends, activities), newest first (US-15)
+      description: |
+        Stored events of the record plus the activities linked to it (Who_Id or What_Id), each shown as an
+        `activity_logged` event whose `meta` is `{activity_id, type, subject, status}`. Activities are private to their
+        owner and managers (ADR-0005), so a viewer sees only their own on a public record. A record the caller cannot see is 404.
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
@@ -1994,7 +1998,7 @@ components:
             Due_Date: { type: [string, 'null'], format: date }
             Status: { type: string, enum: [Not Started, Deferred, In Progress, Completed, Waiting for input] }
             Priority: { type: string, enum: [Highest, High, Normal, Low, Lowest] }
-            Is_Overdue: { type: boolean, readOnly: true }
+            Is_Overdue: { type: [boolean, 'null'], readOnly: true, description: Null when the caller's role cannot see Due_Date }
     Call:
       allOf:
         - $ref: '#/components/schemas/ActivityBase'
@@ -2024,7 +2028,7 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
-        event_type: { type: string, examples: [updated, stage_changed, converted, email_sent, whatsapp_shared, invoice_issued] }
+        event_type: { type: string, examples: [updated, stage_changed, converted, email_sent, whatsapp_shared, invoice_issued, note_added, activity_logged] }
         actor: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
         occurred_at: { type: string, format: date-time }
         changes:

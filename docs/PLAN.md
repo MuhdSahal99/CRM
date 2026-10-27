@@ -278,7 +278,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: an open task due yesterday (Asia/Muscat) is flagged overdue. Completed and system tasks are excluded (**US-15**).
 - **Done when:** the query uses the `(org_id, owner_id, due_date)` partial index.
 
-#### T3.04 Timeline read API · S
+#### T3.04 Timeline read API · S · ✅
 - **Files:** `apps/web/app/api/v1/[module]/[id]/timeline/route.ts`, `packages/core/src/timeline.ts` (read).
 - **Tests first:** I: events come newest first and include linked activities. **AC-18** (timeline part): rep B reading rep A's record timeline gets 404.
 - **Done when:** this is the **US-15** timeline API.
