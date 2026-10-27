@@ -7,3 +7,4 @@ export { withTenant, type Role, type TenantContext, type Tx } from "./tenant";
 export { roles, type Permission } from "./access";
 export { errorResponse, type Envelope, type Info } from "./http/envelope";
 export { ApiError, Conflict, Forbidden, NotFound, PayloadTooLarge, Unauthorized, readJsonBody, validationError } from "./http/errors";
+export { log } from "./log";

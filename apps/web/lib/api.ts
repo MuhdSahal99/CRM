@@ -2,6 +2,7 @@ import {
   type Envelope,
   errorResponse,
   Forbidden,
+  log,
   type Permission,
   readJsonBody,
   resolveContext,
@@ -28,8 +29,11 @@ type Handler<S extends z.ZodType> = (args: {
  */
 export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission }, handler: Handler<S>) {
   return async (request: Request, route: { params: Promise<Record<string, string>> }): Promise<Response> => {
+    const started = performance.now();
+    let session: TenantContext | null = null;
+    let response: Response;
     try {
-      const ctx = await resolveContext(request.headers);
+      const ctx = (session = await resolveContext(request.headers));
       if (!ctx) throw new Unauthorized();
       if (options.permission && !roles[ctx.role].authorize(options.permission).success) throw new Forbidden();
 
@@ -40,9 +44,13 @@ export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: 
       if (!parsed.success) throw validationError(parsed.error, raw);
 
       const params = await route.params;
-      return Response.json(await withTenant(ctx, (tx) => handler({ ctx, input: parsed.data, params, tx })));
+      response = Response.json(await withTenant(ctx, (tx) => handler({ ctx, input: parsed.data, params, tx })));
     } catch (error) {
-      return errorResponse(error);
+      response = errorResponse(error);
     }
+    // One line per request (ADR-0014); the req serializer keeps only the method and a redacted path.
+    const ms = Math.round(performance.now() - started);
+    log.info({ request_id: crypto.randomUUID(), org_id: session?.orgId, user_id: session?.userId, req: request, status: response.status, ms }, "request");
+    return response;
   };
 }

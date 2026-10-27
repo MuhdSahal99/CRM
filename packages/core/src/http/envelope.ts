@@ -1,3 +1,4 @@
+import { log } from "../log";
 import { ApiError } from "./errors";
 
 export type Info = { page: number; per_page: number; count: number; more_records: boolean };
@@ -7,8 +8,8 @@ export type Envelope = { data: unknown[]; info?: Info };
 
 export function errorResponse(error: unknown): Response {
   if (!(error instanceof ApiError)) {
-    // shortcut: console until the redacting logger (T1.14) replaces it. Never echo the error to the client.
-    console.error(error);
+    // Never echo the error to the client.
+    log.error({ err: error }, "unhandled error");
     error = new ApiError(500, "INTERNAL_ERROR", "Something went wrong. Try again.");
   }
   const { httpStatus, code, message, details } = error as ApiError;
