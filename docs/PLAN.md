@@ -191,7 +191,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 2: Accounts and Contacts (US-06, US-02 public rule)
 
-#### T2.01 Shared record columns and the accounts table · M
+#### T2.01 Shared record columns and the accounts table · M · ✅
 - **Files:** `packages/db/src/schema/_columns.ts` (`AUDIT`, `SOFT`, `REC`, `ZOHO` helpers), `schema/accounts.ts`, migration, metadata seed for Accounts fields and the default layout.
 - **Tests first:** I: the catalog guard passes. The trigram index exists. `parent_account_id = id` is rejected.
 - **Done when:** the table matches SCHEMA §accounts.

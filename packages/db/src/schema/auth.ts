@@ -7,7 +7,7 @@ import { boolean, check, customType, index, pgTable, text, timestamp, unique, uu
 // organizationId → orgId, or the adapter will not find these columns.
 // The composite manager FK (ON DELETE SET NULL (manager_id)) and all grants and RLS are hand-written SQL.
 
-const citext = customType<{ data: string }>({ dataType: () => "citext" });
+export const citext = customType<{ data: string }>({ dataType: () => "citext" });
 const tstz = (name: string) => timestamp(name, { withTimezone: true });
 
 export const user = pgTable("user", {

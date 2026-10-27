@@ -30,6 +30,19 @@ describe("provisionOrg (T1.18)", () => {
     expect(await modules()).toEqual(SYSTEM_MODULES.map((m) => ({ api_name: m.apiName, created_by: admin.userId })));
   });
 
+  it("seeds the Accounts fields, their picklists and one default layout that places every field", async () => {
+    const rows = await withTenant(rep, async (tx) => (await tx.execute<{ api_name: string; column_name: string; placed: number; layouts: number }>(sql`
+      SELECT f.api_name, f.column_name,
+        (SELECT count(*)::int FROM layout_fields lf WHERE lf.field_id = f.id) AS placed,
+        (SELECT count(*)::int FROM layouts l WHERE l.module_id = m.id AND l.is_default) AS layouts
+      FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = 'Accounts'`)).rows, db);
+    expect(rows.find((r) => r.api_name === "Account_Name")).toMatchObject({ column_name: "account_name", placed: 1, layouts: 1 });
+    expect(rows.every((r) => r.placed === 1)).toBe(true);
+    const values = await withTenant(rep, async (tx) => (await tx.execute(sql`
+      SELECT v.value FROM picklist_values v JOIN picklists p ON p.id = v.picklist_id WHERE p.api_name = 'Account_Type' ORDER BY v.sort_order`)).rows, db);
+    expect(values.map((v) => v.value)).toContain("Customer");
+  });
+
   it("is refused for a non-admin (metadata writes are admin-only)", async () => {
     await expect(withTenant(rep, provisionOrg, db)).rejects.toMatchObject({ cause: { message: expect.stringMatching(/row-level security/) } });
   });

@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  type AnyPgColumn,
   boolean,
   check,
   foreignKey,
@@ -11,39 +10,15 @@ import {
   primaryKey,
   smallint,
   text,
-  timestamp,
   unique,
   uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { member, orgs } from "./auth.ts";
+import { AUDIT, auditFks } from "./_columns.ts";
 
 // SCHEMA § Metadata (ADR-0006): modules, fields, picklists and layouts are org-scoped data, not DDL.
 // The api_name immutability triggers, grants and RLS (tenant_isolation + admin_only writes) are hand-written SQL.
-
-const tstz = (name: string) => timestamp(name, { withTimezone: true });
-
-// The trigger app.set_audit_columns() (migration 0007) sets these from the context anyway; this only spares callers.
-const currentUser = sql`NULLIF(current_setting('app.user_id', true), '')::uuid`;
-
-/** org_id plus the AUDIT columns (SCHEMA § Conventions). */
-const tenantAudit = () => ({
-  orgId: uuid("org_id")
-    .notNull()
-    .references(() => orgs.id, { onDelete: "restrict" }),
-  createdAt: tstz("created_at").notNull().defaultNow(),
-  createdBy: uuid("created_by").notNull().$defaultFn(() => currentUser),
-  updatedAt: tstz("updated_at").notNull().defaultNow(),
-  updatedBy: uuid("updated_by").notNull().$defaultFn(() => currentUser),
-  version: integer("version").notNull().default(1),
-});
-
-/** created_by and updated_by are members of the same org: composite FKs, so they cannot name another org's user. */
-const auditFks = (table: string, t: { orgId: AnyPgColumn; createdBy: AnyPgColumn; updatedBy: AnyPgColumn }) => [
-  foreignKey({ name: `${table}_created_by_fk`, columns: [t.orgId, t.createdBy], foreignColumns: [member.orgId, member.userId] }).onDelete("restrict"),
-  foreignKey({ name: `${table}_updated_by_fk`, columns: [t.orgId, t.updatedBy], foreignColumns: [member.orgId, member.userId] }).onDelete("restrict"),
-];
 
 export const fieldType = pgEnum("field_type", [
   "text",
@@ -69,7 +44,7 @@ export const modules = pgTable(
   "modules",
   {
     id: uuid("id").primaryKey(),
-    ...tenantAudit(),
+    ...AUDIT(),
     apiName: varchar("api_name", { length: 60 }).notNull(), // immutable (trigger)
     labelKey: varchar("label_key", { length: 120 }).notNull(), // i18n key
     isCustom: boolean("is_custom").notNull().default(false), // always false in the MVP
@@ -82,7 +57,7 @@ export const picklists = pgTable(
   "picklists",
   {
     id: uuid("id").primaryKey(),
-    ...tenantAudit(),
+    ...AUDIT(),
     apiName: varchar("api_name", { length: 60 }).notNull(),
   },
   (t) => [unique("picklists_org_id_id_key").on(t.orgId, t.id), unique("picklists_org_id_api_name_key").on(t.orgId, t.apiName), ...auditFks("picklists", t)],
@@ -92,7 +67,7 @@ export const picklistValues = pgTable(
   "picklist_values",
   {
     id: uuid("id").primaryKey(),
-    ...tenantAudit(),
+    ...AUDIT(),
     picklistId: uuid("picklist_id").notNull(),
     value: varchar("value", { length: 120 }).notNull(), // stored value, stable: deactivate, never delete
     labelKey: varchar("label_key", { length: 120 }).notNull(),
@@ -112,7 +87,7 @@ export const fields = pgTable(
   "fields",
   {
     id: uuid("id").primaryKey(),
-    ...tenantAudit(),
+    ...AUDIT(),
     moduleId: uuid("module_id").notNull(),
     apiName: varchar("api_name", { length: 60 }).notNull(), // immutable (trigger fields_api_name_immutable)
     labelKey: varchar("label_key", { length: 120 }).notNull(),
@@ -147,7 +122,7 @@ export const layouts = pgTable(
   "layouts",
   {
     id: uuid("id").primaryKey(),
-    ...tenantAudit(),
+    ...AUDIT(),
     moduleId: uuid("module_id").notNull(),
     name: varchar("name", { length: 80 }).notNull(),
     isDefault: boolean("is_default").notNull().default(false),
@@ -164,7 +139,7 @@ export const layoutSections = pgTable(
   "layout_sections",
   {
     id: uuid("id").primaryKey(),
-    ...tenantAudit(),
+    ...AUDIT(),
     layoutId: uuid("layout_id").notNull(),
     labelKey: varchar("label_key", { length: 120 }).notNull(),
     sortOrder: smallint("sort_order").notNull(),
@@ -182,7 +157,7 @@ export const layoutFields = pgTable(
   "layout_fields",
   {
     id: uuid("id").primaryKey(),
-    ...tenantAudit(),
+    ...AUDIT(),
     sectionId: uuid("section_id").notNull(),
     fieldId: uuid("field_id").notNull(),
     sortOrder: smallint("sort_order").notNull(),
@@ -199,7 +174,7 @@ export const layoutFields = pgTable(
 export const fieldPermissions = pgTable(
   "field_permissions",
   {
-    ...tenantAudit(),
+    ...AUDIT(),
     fieldId: uuid("field_id").notNull(),
     role: text("role").notNull(),
     access: text("access").notNull(),
