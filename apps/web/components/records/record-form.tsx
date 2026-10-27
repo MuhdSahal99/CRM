@@ -27,12 +27,18 @@ type Props = {
 const NONE = "none"; // Radix Select has no empty value
 const NUMERIC = ["integer", "decimal", "currency", "percent"];
 const isLookup = (f: FieldMeta) => f.data_type === "lookup" || f.data_type === "user_lookup";
-const editable = (f: FieldMeta) => !f.read_only && f.access === "read_write" && f.data_type !== "autonumber";
+// A polymorphic link (Who_Id, What_Id) is set from the record it is logged on, not typed in a form.
+const editable = (f: FieldMeta) => !f.read_only && f.access === "read_write" && f.data_type !== "autonumber" && f.data_type !== "polymorphic";
+
+/** An ISO instant as a datetime-local value in the browser's zone, and back (the server takes an offset). */
+const toLocalInput = (iso: string) => new Date(new Date(iso).getTime() - new Date(iso).getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+const fromLocalInput = (v: string) => (Number.isNaN(new Date(v).getTime()) ? v : new Date(v).toISOString());
 
 /** A stored value as the form holds it: ids for lookups, booleans for checkboxes, strings for the rest. */
 function initial(f: FieldMeta, v: unknown): Value {
   if (f.data_type === "boolean") return v === true;
   if (isLookup(f)) return (v as Lookup | null)?.id ?? "";
+  if (f.data_type === "datetime" && typeof v === "string") return toLocalInput(v);
   return v == null ? "" : String(v);
 }
 
@@ -42,6 +48,7 @@ function toApi(f: FieldMeta, v: Value): unknown {
   if (v === "") return null;
   if (isLookup(f)) return { id: v };
   if (f.data_type === "integer" && /^-?\d+$/.test(v as string)) return Number(v);
+  if (f.data_type === "datetime") return fromLocalInput(v as string);
   return v; // the server validates and answers 422 per field
 }
 
@@ -163,7 +170,7 @@ function Field({ field: f, value, onChange, options, error }: FieldProps) {
   } else if (NUMERIC.includes(f.data_type)) {
     control = text({ inputMode: "decimal", className: "text-end tabular-nums" });
   } else {
-    control = text({ type: f.data_type === "email" ? "email" : f.data_type === "url" ? "url" : f.data_type === "date" ? "date" : "text" });
+    control = text({ type: f.data_type === "email" ? "email" : f.data_type === "url" ? "url" : f.data_type === "date" ? "date" : f.data_type === "datetime" ? "datetime-local" : "text" });
   }
   return (
     <div className={cn("flex flex-col gap-1.5", f.data_type === "textarea" && "sm:col-span-full")}>

@@ -1,12 +1,14 @@
-import { getRecord, listRelated, listRelatedLists, NotFound, withTenant } from "@crm/core";
+import { getRecord, listRelated, listRelatedLists, listTimeline, NotFound, withTenant } from "@crm/core";
 import { ChevronLeftIcon, PencilIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { ActivityDialog } from "@/components/records/activity-dialog";
 import { RecordDetail } from "@/components/records/record-detail";
 import { RelatedTabs } from "@/components/records/related-tabs";
+import { Timeline, type TimelineItem } from "@/components/records/timeline";
 import { Button } from "@/components/ui/button";
 import { isRecordModule, moduleMeta, type RecordData, recordTitle } from "@/lib/records";
 import { requireContext } from "@/lib/session";
@@ -35,14 +37,16 @@ export default async function RecordPage({ params }: Props) {
           rows: (await listRelated(tx, module, id, r.api_name, { page: 1, per_page: 200 })).data as RecordData[],
         })),
       );
-      return { record: record!, meta: await moduleMeta(tx, module), tabs };
+      // shortcut: the latest 50 events; add paging when a record's history outgrows it.
+      const timeline = (await listTimeline(tx, module, id, { page: 1, per_page: 50 })).data as TimelineItem[];
+      return { record: record!, meta: await moduleMeta(tx, module), tabs, timeline };
     } catch (error) {
       if (error instanceof NotFound) return null; // missing, deleted or not visible: the same 404
       throw error;
     }
   });
   if (!found) notFound();
-  const { record, meta, tabs } = found;
+  const { record, meta, tabs, timeline } = found;
   const t = await getTranslations();
 
   return (
@@ -53,15 +57,19 @@ export default async function RecordPage({ params }: Props) {
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{recordTitle(meta, record)}</h1>
-        <Button asChild variant="outline">
-          <Link href={`/app/${module}/${id}/edit`}>
-            <PencilIcon aria-hidden />
-            {t("records.edit")}
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {(module === "Accounts" || module === "Contacts") && <ActivityDialog module={module} id={id} />}
+          <Button asChild variant="outline">
+            <Link href={`/app/${module}/${id}/edit`}>
+              <PencilIcon aria-hidden />
+              {t("records.edit")}
+            </Link>
+          </Button>
+        </div>
       </div>
       <RecordDetail sections={meta.sections} record={record} />
       <RelatedTabs module={module} id={id} tabs={tabs} />
+      <Timeline items={timeline} fields={meta.fields} />
     </div>
   );
 }

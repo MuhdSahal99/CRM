@@ -288,7 +288,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a note on an Account shows on its timeline as `note_added`. `record_visibility` hides notes on records the user can't see.
 - **Done when:** notes can be created from the UI and by import.
 
-#### T3.06 UI: timeline and quick-add activity · M
+#### T3.06 UI: timeline and quick-add activity · M · ✅
 - **Files:** `components/records/timeline.tsx`, `activity-dialog.tsx`, added to the record detail.
 - **Tests first:** E (w360, w1440): log a call on a Contact, and it appears at the top of the timeline.
 - **Done when:** the timeline shows field changes, activities and notes.

@@ -24,6 +24,6 @@ export async function listMyTasks(tx: Tx, ctx: TenantContext, view: "my_open" | 
     ORDER BY ${dated ? sql`due_date NULLS LAST` : sql`created_at`}, id ${limitOffset(page)}`);
   const { data, info } = pageOf(rows as Record<string, unknown>[], page);
   const records = await toApi(tx, fields, data as Parameters<typeof toApi>[2]);
-  return { data: records.map((r, i) => ({ ...r, Is_Overdue: dated ? data[i]!.is_overdue === true : null })), info };
+  return { data: records.map((r, i): typeof r => ({ ...r, Is_Overdue: dated ? data[i]!.is_overdue === true : null })), info };
 }
 

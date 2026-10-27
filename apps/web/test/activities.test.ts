@@ -58,7 +58,7 @@ describe("activities API (T3.02)", () => {
 
   it("a call needs Call_Type, Call_Start_Time and Call_Duration_Seconds", async () => {
     for (const missing of ["Call_Type", "Call_Start_Time", "Call_Duration_Seconds"]) {
-      const { [missing]: _, ...rest } = samples[1]![1];
+      const rest = Object.fromEntries(Object.entries(samples[1]![1]).filter(([k]) => k !== missing));
       const res = await create(repA, "Calls", rest);
       expect(res.status, missing).toBe(422);
       expect(res.json()).toMatchObject({ details: { api_name: missing } });

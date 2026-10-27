@@ -447,7 +447,8 @@
     "home": "Home",
     "account": "Account",
     "signOut": "Sign out",
-    "users": "Users"
+    "users": "Users",
+    "activities": "My Activities"
   },
   "modules": {
     "Leads": "Leads",
@@ -565,13 +566,51 @@
       "Other_Zip": "Other Zip",
       "Other_Country": "Other Country",
       "Description": "Description"
+    },
+    "Tasks": {
+      "Owner": "Task Owner",
+      "Subject": "Subject",
+      "Who_Id": "Name",
+      "What_Id": "Related To",
+      "Description": "Description",
+      "Due_Date": "Due Date",
+      "Status": "Status",
+      "Priority": "Priority"
+    },
+    "Calls": {
+      "Owner": "Call Owner",
+      "Subject": "Subject",
+      "Who_Id": "Name",
+      "What_Id": "Related To",
+      "Description": "Description",
+      "Call_Type": "Call Type",
+      "Call_Purpose": "Call Purpose",
+      "Call_Start_Time": "Call Start Time",
+      "Call_Duration_Seconds": "Call Duration (seconds)",
+      "Call_Result": "Call Result",
+      "Status": "Status"
+    },
+    "Meetings": {
+      "Owner": "Host",
+      "Subject": "Subject",
+      "Who_Id": "Name",
+      "What_Id": "Related To",
+      "Description": "Description",
+      "Start_DateTime": "From",
+      "End_DateTime": "To",
+      "All_day": "All day",
+      "Venue": "Location",
+      "Status": "Status"
     }
   },
   "sections": {
     "account_information": "Account Information",
     "contact_information": "Contact Information",
     "address_information": "Address Information",
-    "description_information": "Description Information"
+    "description_information": "Description Information",
+    "task_information": "Task Information",
+    "call_information": "Call Information",
+    "meeting_information": "Meeting Information"
   },
   "picklists": {
     "Account_Type": {
@@ -643,6 +682,35 @@
       "web_download": "Web Download",
       "web_research": "Web Research",
       "chat": "Chat"
+    },
+    "Task_Status": {
+      "not_started": "Not Started",
+      "deferred": "Deferred",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "waiting_for_input": "Waiting for input"
+    },
+    "Task_Priority": {
+      "highest": "Highest",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low",
+      "lowest": "Lowest"
+    },
+    "Call_Status": {
+      "planned": "Planned",
+      "held": "Held",
+      "cancelled": "Cancelled"
+    },
+    "Meeting_Status": {
+      "planned": "Planned",
+      "held": "Held",
+      "cancelled": "Cancelled"
+    },
+    "Call_Type": {
+      "inbound": "Inbound",
+      "outbound": "Outbound",
+      "missed": "Missed"
     }
   },
   "related": {
@@ -663,7 +731,10 @@
     "editTitle": "Edit {name}",
     "singular": {
       "Accounts": "Account",
-      "Contacts": "Contact"
+      "Contacts": "Contact",
+      "Tasks": "Task",
+      "Calls": "Call",
+      "Meetings": "Meeting"
     },
     "saving": "Saving…",
     "required": "Required",
@@ -671,5 +742,44 @@
     "conflict": "Someone else changed this record. Reload the page to see their changes, then try again.",
     "edit": "Edit",
     "add": "Add {name}"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "empty": "Nothing has happened here yet.",
+    "by": "by {name}",
+    "system": "System",
+    "created": "Created",
+    "updated": "Updated",
+    "deleted": "Deleted",
+    "restored": "Restored",
+    "note_added": "Note added",
+    "activity_logged": "{type} logged",
+    "activity_completed": "Activity completed",
+    "owner_transferred": "Owner changed",
+    "converted": "Converted",
+    "stage_changed": "Stage changed",
+    "imported": "Imported",
+    "types": {
+      "task": "Task",
+      "call": "Call",
+      "meeting": "Meeting"
+    }
+  },
+  "activities": {
+    "log": "Log activity",
+    "logTitle": "Log an activity",
+    "logDescription": "Add a task, call or meeting linked to this record.",
+    "type": "Type",
+    "duration": "Duration (minutes)",
+    "submit": "Log",
+    "title": "My Activities",
+    "overdue": "Overdue",
+    "dueOn": "Due {date}",
+    "noDueDate": "No due date",
+    "complete": "Complete",
+    "completeTask": "Complete {subject}",
+    "empty": "You have no open tasks.",
+    "failed": "Something went wrong. Try again.",
+    "list": "Open tasks"
   }
 }
