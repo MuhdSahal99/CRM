@@ -325,7 +325,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: exactly 1 Account and 1 Contact are created. Attach-existing creates no new Contact. The lead is flagged with `converted_*`. A `converted` event is written. A failure injected after the Account insert leaves **no** Account, Contact or flag behind (rollback).
 - **Done when:** convert is idempotent with `Idempotency-Key`.
 
-#### T4.05 Convert: move notes and activities, block edits · S
+#### T4.05 Convert: move notes and activities, block edits · S · ✅
 - **Files:** `packages/core/src/leads/convert.ts`.
 - **Tests first:** I: the lead's notes and activities now point at the Contact. **AC-24**: PUT on, or a second convert of, a converted lead → 409 `INVALID_STATE`. Direct SQL UPDATE raises in the trigger.
 - **Done when:** **US-05** is met except for the deal option.

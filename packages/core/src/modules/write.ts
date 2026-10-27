@@ -25,6 +25,7 @@ function parse(fields: Field[], module: string, input: Record<string, unknown>, 
 /** A constraint the database enforces, reported on the field it concerns (AC-13, AC-22: a lookup into another org). */
 export function dbError(error: unknown, table: PgTable, fields: Field[]): never {
   const cause = (error as { cause?: { code?: string; constraint?: string; column?: string } }).cause;
+  if (cause?.code === "23001") throw new Conflict("INVALID_STATE", "This record is read-only: it was converted."); // leads_converted_readonly (AC-24)
   if (cause?.code === "23502") {
     throw new ApiError(422, "MANDATORY_NOT_FOUND", "This field cannot be empty.", { api_name: fields.find((f) => f.columnName === cause.column)?.apiName });
   }
@@ -82,6 +83,7 @@ export async function updateRecord(tx: Tx, module: string, id: string, input: z.
   if (!v.success) throw validationError(v.error, { version });
   const before = (await tx.execute<Row>(sql`SELECT * FROM ${def.table} WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL FOR UPDATE`)).rows[0];
   if (!before) throw new NotFound();
+  if (before.is_converted) throw new Conflict("INVALID_STATE", "This lead is converted and read-only."); // AC-24: checked first, whatever version the client sent
   if (before.version !== v.data.version) throw new Conflict("VERSION_CONFLICT", "This record was changed by someone else. Reload it and try again.");
   const row = parse(fields, module, changes, before);
   if (row.custom) row.custom = { ...before.custom, ...(row.custom as object) };
@@ -103,7 +105,7 @@ export async function deleteRecord(tx: Tx, module: string, id: string) {
   const def = moduleDef(module);
   const { rows } = await tx.execute(sql`
     UPDATE ${def.table} SET deleted_at = now(), deleted_by = NULLIF(current_setting('app.user_id', true), '')::uuid, version = version + 1
-    WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL RETURNING id`);
+    WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL RETURNING id`).catch((e) => dbError(e, def.table, []));
   if (rows.length === 0) throw new NotFound();
   await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "deleted" });
   return [{ code: "SUCCESS", status: "success", details: { id } }];

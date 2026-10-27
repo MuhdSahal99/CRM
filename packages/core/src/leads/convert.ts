@@ -92,9 +92,14 @@ export async function convertLead(tx: Tx, ctx: TenantContext, id: string, input:
     await tx.execute(sql`UPDATE contacts SET converted_from_lead_id = ${id} WHERE id = ${contactId}`);
   }
 
+  // The lead's history follows the person: its notes and the activities linked to it now belong to the Contact.
+  // shortcut: an activity owned by someone outside the caller's visibility stays on the lead; US-05 has no cross-owner case yet.
+  const notes = await tx.execute(sql`UPDATE notes SET record_type = 'contact', record_id = ${contactId} WHERE record_type = 'lead' AND record_id = ${id} RETURNING 1`);
+  const activities = await tx.execute(sql`UPDATE activities SET who_type = 'contact', who_id = ${contactId} WHERE who_type = 'lead' AND who_id = ${id} RETURNING 1`);
+
   await tx.execute(sql`
     UPDATE leads SET is_converted = true, converted_at = now(), converted_by = ${ctx.userId}, converted_account_id = ${accountId},
       converted_contact_id = ${contactId}, version = version + 1 WHERE id = ${id}`);
-  await recordEvent(tx, { recordType: "lead", recordId: id, eventType: "converted", meta: { account_id: accountId, contact_id: contactId } });
+  await recordEvent(tx, { recordType: "lead", recordId: id, eventType: "converted", meta: { account_id: accountId, contact_id: contactId, notes_moved: notes.rows.length, activities_moved: activities.rows.length } });
   return [{ Accounts: accountId, Contacts: contactId, Deals: null }];
 }

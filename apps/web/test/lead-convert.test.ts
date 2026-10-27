@@ -1,5 +1,7 @@
 import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import * as notesRoute from "../app/api/v1/[module]/[id]/[related_list]/route";
+import * as recordRoute from "../app/api/v1/[module]/[id]/route";
 import * as convertRoute from "../app/api/v1/Leads/[id]/actions/convert/route";
 import * as optionsRoute from "../app/api/v1/Leads/[id]/__conversion_options/route";
 import * as moduleRoute from "../app/api/v1/[module]/route";
@@ -73,17 +75,18 @@ describe("lead conversion (US-05)", () => {
         .toEqual({ account_id: Accounts, email: `hind-${run}@example.test`, mobile: "+96891230000", mailing_city: "Muscat", converted_from_lead_id: lead });
       expect((await rows("SELECT is_converted, converted_account_id, converted_contact_id, converted_by IS NOT NULL AS by FROM leads WHERE id = $1", [lead]))[0])
         .toEqual({ is_converted: true, converted_account_id: Accounts, converted_contact_id: Contacts, by: true });
-      expect(await rows("SELECT meta FROM timeline_events WHERE record_id = $1 AND event_type = 'converted'", [lead])).toEqual([{ meta: { account_id: Accounts, contact_id: Contacts } }]);
+      expect(await rows("SELECT meta FROM timeline_events WHERE record_id = $1 AND event_type = 'converted'", [lead])).toEqual([{ meta: { account_id: Accounts, contact_id: Contacts, notes_moved: 0, activities_moved: 0 } }]);
     });
 
     it("attaching existing records creates no new Account or Contact", async () => {
       const account = await create(repA, "Accounts", { Account_Name: `Existing ${run}` });
       const contact = await create(repA, "Contacts", { Last_Name: `Existing${run}` });
       const lead = await create(repA, "Leads", { Last_Name: `Attach${run}`, Company: `Existing ${run}` });
-      const before = await rows("SELECT (SELECT count(*) FROM accounts)::int AS a, (SELECT count(*) FROM contacts)::int AS c");
       const res = await convert(repA, lead, { Accounts: { id: account }, Contacts: { id: contact } });
       expect(res.json().data[0]).toMatchObject({ Accounts: account, Contacts: contact });
-      expect(await rows("SELECT (SELECT count(*) FROM accounts)::int AS a, (SELECT count(*) FROM contacts)::int AS c")).toEqual(before);
+      // The lead's own name and company would have made a second Account and a Contact "Attach...": there are none.
+      expect(await rows("SELECT (SELECT count(*) FROM accounts WHERE account_name = $1)::int AS a, (SELECT count(*) FROM contacts WHERE last_name IN ($2, $3))::int AS c", [`Existing ${run}`, `Existing${run}`, `Attach${run}`]))
+        .toEqual([{ a: 1, c: 1 }]);
     });
 
     it("rolls everything back when a step after the Account insert fails", async () => {
@@ -112,6 +115,29 @@ describe("lead conversion (US-05)", () => {
       const lead = await create(repA, "Leads", { Last_Name: `Hidden${run}`, Company: `Hidden Co ${run}` });
       expect((await convert(repB, lead)).status).toBe(404);
       expect(await rows("SELECT count(*)::int AS n FROM accounts WHERE account_name = $1", [`Hidden Co ${run}`])).toEqual([{ n: 0 }]);
+    });
+  });
+  describe("T4.05 notes, activities and the read-only lead", () => {
+    it("moves the lead's notes and activities to the Contact; a second convert and a PUT are 409; direct SQL raises", async () => {
+      const anyMember = (await rows("SELECT user_id FROM member LIMIT 1"))[0].user_id;
+      const lead = await create(repA, "Leads", { Last_Name: `Move${run}`, Company: `Move Co ${run}` });
+      const note = await call(notesRoute, "POST", `/Leads/${lead}/Notes`, { cookie: repA, params: { module: "Leads", id: lead, related_list: "Notes" }, body: { data: [{ Note_Content: "Called, wants a quote" }] } });
+      expect(note.status, note.body).toBe(201);
+      const task = await create(repA, "Tasks", { Subject: `Follow up ${run}`, Who_Id: { id: lead, module: "Leads" } });
+
+      const { Contacts } = (await convert(repA, lead)).json().data[0];
+      expect(await rows("SELECT record_type, record_id FROM notes WHERE body = 'Called, wants a quote' AND record_id IN ($1, $2)", [lead, Contacts])).toEqual([{ record_type: "contact", record_id: Contacts }]);
+      expect(await rows("SELECT who_type, who_id FROM activities WHERE id = $1", [task])).toEqual([{ who_type: "contact", who_id: Contacts }]);
+
+      const second = await convert(repA, lead);
+      expect(second.status).toBe(409);
+      expect(second.json().code).toBe("INVALID_STATE");
+      const put = await call(recordRoute, "PUT", `/Leads/${lead}`, { cookie: repA, params: { module: "Leads", id: lead }, body: { data: [{ Company: "Changed", version: 3 }] } });
+      expect(put.status).toBe(409);
+      expect(put.json().code).toBe("INVALID_STATE");
+      const del = await call(recordRoute, "DELETE", `/Leads/${lead}`, { cookie: repA, params: { module: "Leads", id: lead } });
+      expect(del.status).toBe(409);
+      await expect(queryAs(app, { org_id: saqient, user_id: anyMember, role: "admin", see_all: "on" }, "UPDATE leads SET company = 'Direct' WHERE id = $1", [lead])).rejects.toThrow(/converted lead cannot be changed/);
     });
   });
 });
