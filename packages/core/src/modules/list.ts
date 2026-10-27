@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { listMyTasks } from "../activities/mine.ts";
 import { ApiError, NotFound } from "../http/errors.ts";
 import type { TenantContext, Tx } from "../tenant.ts";
 import { loadFields, moduleDef, toApi } from "./registry.ts";
@@ -24,7 +25,7 @@ export const ListRecordsInput = z.object({
   sort_by: z.string().max(60).optional(),
   sort_order: z.enum(["asc", "desc"]).default("desc"),
   fields: z.string().max(2000).optional(),
-  cvid: z.enum(["all", "my", "recently_created", "recently_modified"]).optional(), // shortcut: system views only, no saved custom views
+  cvid: z.enum(["all", "my", "my_open", "overdue", "recently_created", "recently_modified"]).optional(), // shortcut: system views only, no saved custom views
 });
 
 /** page/per_page → LIMIT one extra row, so more_records is exact without a count query. */
@@ -37,6 +38,10 @@ export const limitOffset = ({ page, per_page }: { page: number; per_page: number
 /** GET /{module}: a page of visible records. sort_by is allowlisted against the module's column-backed fields (AC-36). */
 export async function listRecords(tx: Tx, ctx: TenantContext, module: string, input: z.infer<typeof ListRecordsInput>) {
   const def = moduleDef(module);
+  if (input.cvid === "my_open" || input.cvid === "overdue") {
+    if (module !== "Tasks") throw new ApiError(422, "INVALID_DATA", "This view is only for Tasks.", { api_name: "cvid" });
+    return listMyTasks(tx, ctx, input.cvid, input);
+  }
   const fields = await loadFields(tx, module);
   const sortable = new Map<string, string>([["Created_Time", "created_at"], ["Modified_Time", "updated_at"]]);
   for (const f of fields) if (f.isSystem) sortable.set(f.apiName, f.columnName!);

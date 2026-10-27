@@ -501,7 +501,8 @@ paths:
         - name: cvid
           in: query
           description: |
-            Custom view id. System views: `all`, `my`, `my_open`, `overdue` (activities),
+            Custom view id. System views: `all`, `my`, `my_open`, `overdue` (Tasks only, else 422: my open tasks, oldest due
+            date first, with `Is_Overdue` computed against today in Asia/Muscat),
             `converted` (Leads; converted leads are excluded from every other view, US-05),
             `recently_created`, `recently_modified`.
           schema: { type: string, maxLength: 60 }

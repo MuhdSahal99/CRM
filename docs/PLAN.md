@@ -273,7 +273,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: CRUD works for each type. A call needs `call_type`, `call_start_at` and duration. The visibility matrix covers all three.
 - **Done when:** activities link to Lead, Contact, Account, Deal, Quote, SO or Invoice through `who`/`what`. Types that don't exist yet are added to the enum by their own slice.
 
-#### T3.03 My Activities: open and overdue · S
+#### T3.03 My Activities: open and overdue · S · ✅
 - **Files:** `packages/core/src/activities/mine.ts`, `GET /Tasks?view=my_open` (add the param to `openapi.yaml` if it's missing).
 - **Tests first:** I: an open task due yesterday (Asia/Muscat) is flagged overdue. Completed and system tasks are excluded (**US-15**).
 - **Done when:** the query uses the `(org_id, owner_id, due_date)` partial index.

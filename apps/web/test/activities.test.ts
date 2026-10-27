@@ -95,4 +95,32 @@ describe("activities API (T3.02)", () => {
     expect(await list(repB)).not.toContain(id);
     expect(await list(repA)).toContain(id);
   });
+
+  // T3.03: "today" is a business date in Asia/Muscat.
+  const muscatDay = (offset: number) => new Date(Date.now() + offset * 864e5).toLocaleDateString("sv", { timeZone: "Asia/Muscat" });
+
+  it("US-15: my_open lists my open tasks, flags the overdue ones and leaves out completed and other people's", async () => {
+    const rep = await signIn("rep.b@saqient.test");
+    const mk = async (record: Record<string, unknown>) => idOf(await create(rep, "Tasks", record));
+    const [yesterday, tomorrow, undated, done] = [
+      await mk({ Subject: "Due yesterday", Due_Date: muscatDay(-1) }),
+      await mk({ Subject: "Due tomorrow", Due_Date: muscatDay(1) }),
+      await mk({ Subject: "No date" }),
+      await mk({ Subject: "Done", Due_Date: muscatDay(-1), Status: "Completed" }),
+    ];
+    const theirs = idOf(await create(repA, "Tasks", { Subject: "Rep A's", Due_Date: muscatDay(-1) }));
+    const open = (cookie: string, cvid: string) => call(moduleRoute, "GET", `/Tasks?cvid=${cvid}`, { cookie, params: { module: "Tasks" } }).then((r) => r.json().data as { id: string; Is_Overdue: boolean }[]);
+
+    const mine = await open(rep, "my_open");
+    expect(mine.map((t) => t.id)).toEqual(expect.arrayContaining([yesterday, tomorrow, undated]));
+    expect(mine.map((t) => t.id)).not.toContain(done);
+    expect(mine.map((t) => t.id)).not.toContain(theirs);
+    expect(Object.fromEntries(mine.map((t) => [t.id, t.Is_Overdue]))).toMatchObject({ [yesterday]: true, [tomorrow]: false, [undated]: false });
+    expect(mine.findIndex((t) => t.id === yesterday)).toBeLessThan(mine.findIndex((t) => t.id === tomorrow)); // oldest due date first
+
+    const overdue = (await open(rep, "overdue")).map((t) => t.id);
+    expect(overdue).toContain(yesterday);
+    expect(overdue).not.toContain(tomorrow);
+    expect((await call(moduleRoute, "GET", "/Contacts?cvid=my_open", { cookie: rep, params: { module: "Contacts" } })).status).toBe(422);
+  });
 });
