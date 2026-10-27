@@ -794,7 +794,7 @@ paths:
       summary: Convert a lead into Account + Contact (+ optional Deal) in one transaction (US-05)
       description: |
         - `Accounts`/`Contacts` set to `{id}` attaches to an existing record; omitted or `null` creates a new one.
-        - `Deals` omitted or `null` → no Deal is created (a Deal object is refused with 422 until T5.07). If `Deal_Name` is omitted it defaults to the lead's Company.
+        - `Deals` omitted or `null` → no Deal is created. If `Deal_Name` is omitted it defaults to the lead's Company.
         - The lead's notes and activities are re-parented to the Contact. The lead is flagged converted and is
           then read-only.
         - On any failure nothing is created (single transaction).

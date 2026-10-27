@@ -14,10 +14,14 @@
   "stages": {
     "qualification": "Qualification",
     "needs_analysis": "Needs Analysis",
-    "proposal": "Proposal/Price Quote",
-    "negotiation": "Negotiation/Review",
+    "value_proposition": "Value Proposition",
+    "identify_decision_makers": "Identify Decision Makers",
+    "perception_analysis": "Perception Analysis",
+    "proposal_price_quote": "Proposal/Price Quote",
+    "negotiation_review": "Negotiation/Review",
     "closed_won": "Closed Won",
-    "closed_lost": "Closed Lost"
+    "closed_lost": "Closed Lost",
+    "closed_lost_to_competition": "Closed Lost to Competition"
   },
   "lineItems": {
     "product": "Product",
@@ -628,6 +632,25 @@
       "Zip_Code": "Zip Code",
       "Country": "Country",
       "Description": "Description"
+    },
+    "Deals": {
+      "Owner": "Deal Owner",
+      "Deal_Name": "Deal Name",
+      "Account_Name": "Account Name",
+      "Contact_Name": "Contact Name",
+      "Contact_Role": "Contact Role",
+      "Type": "Type",
+      "Lead_Source": "Lead Source",
+      "Amount": "Amount",
+      "Closing_Date": "Closing Date",
+      "Pipeline": "Pipeline",
+      "Stage": "Stage",
+      "Probability": "Probability (%)",
+      "Expected_Revenue": "Expected Revenue",
+      "Forecast_Category": "Forecast Category",
+      "Next_Step": "Next Step",
+      "Reason_For_Loss": "Reason for Loss",
+      "Description": "Description"
     }
   },
   "sections": {
@@ -638,7 +661,8 @@
     "task_information": "Task Information",
     "call_information": "Call Information",
     "meeting_information": "Meeting Information",
-    "lead_information": "Lead Information"
+    "lead_information": "Lead Information",
+    "deal_information": "Deal Information"
   },
   "picklists": {
     "Account_Type": {
@@ -749,10 +773,29 @@
       "not_qualified": "Not Qualified",
       "junk_lead": "Junk Lead",
       "lost_lead": "Lost Lead"
+    },
+    "Deal_Type": {
+      "new_business": "New Business",
+      "existing_business": "Existing Business"
+    },
+    "Reason_For_Loss": {
+      "price": "Price",
+      "competitor": "Competitor",
+      "no_budget": "No Budget",
+      "no_decision": "No Decision",
+      "other": "Other"
+    },
+    "Forecast_Category": {
+      "pipeline": "Pipeline",
+      "best_case": "Best Case",
+      "committed": "Committed",
+      "closed": "Closed",
+      "omitted": "Omitted"
     }
   },
   "related": {
-    "Contacts": "Contacts"
+    "Contacts": "Contacts",
+    "Deals": "Deals"
   },
   "records": {
     "name": "Name",
@@ -773,7 +816,8 @@
       "Contacts": "Contact",
       "Tasks": "Task",
       "Calls": "Call",
-      "Meetings": "Meeting"
+      "Meetings": "Meeting",
+      "Deals": "Deal"
     },
     "saving": "Saving…",
     "required": "Required",
@@ -854,6 +898,11 @@
     "attachContact": "Attach to existing contact: {name}",
     "submit": "Convert lead",
     "failed": "The lead could not be converted. Try again.",
-    "gone": "This lead was already converted. Reload the page."
+    "gone": "This lead was already converted. Reload the page.",
+    "createDeal": "Also create a deal",
+    "dealName": "Deal name",
+    "closingDate": "Closing date",
+    "stage": "Stage",
+    "amount": "Amount (OMR)"
   }
 }

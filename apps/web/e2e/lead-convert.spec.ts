@@ -55,3 +55,21 @@ test("T4.06 (US-05): a lead whose email matches a Contact can be attached to it"
   await dialog.getByRole("button", { name: "Convert lead" }).click();
   await expect(page).toHaveURL(contactUrl, { timeout: 30_000 });
 });
+
+test("T5.07 (US-05): convert a lead and create a deal named after the company", async ({ page }) => {
+  const run = crypto.randomUUID().slice(0, 8);
+  const company = `Deal Co ${run}`;
+  await signInToApp(page, "rep.a@saqient.test");
+  await createLead(page, `Dealee ${run}`, company, `dealee-${run}@example.test`);
+  await page.getByRole("button", { name: "Convert", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Convert lead" });
+  await dialog.getByLabel("Also create a deal").click();
+  await expect(dialog.getByLabel("Deal name")).toHaveValue(company);
+  await dialog.getByLabel("Amount (OMR)").fill("1500.000");
+  await noPageScroll(page);
+  await dialog.getByRole("button", { name: "Convert lead" }).click();
+  await expect(page).toHaveURL(/\/app\/Contacts\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+
+  await page.goto("/app/Deals");
+  await expect(page.getByRole("link", { name: company }).filter({ visible: true }).first()).toBeVisible({ timeout: 30_000 });
+});

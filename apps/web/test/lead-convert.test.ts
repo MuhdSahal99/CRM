@@ -5,6 +5,7 @@ import * as recordRoute from "../app/api/v1/[module]/[id]/route";
 import * as convertRoute from "../app/api/v1/Leads/[id]/actions/convert/route";
 import * as optionsRoute from "../app/api/v1/Leads/[id]/%5F%5Fconversion_options/route";
 import * as moduleRoute from "../app/api/v1/[module]/route";
+import * as pipelineRoute from "../app/api/v1/settings/pipeline/route";
 import { call, signIn } from "./api.ts";
 
 // T4.03 - T4.05 (US-05): converting a lead. Cross-org ids are covered by the visibility matrix.
@@ -75,7 +76,7 @@ describe("lead conversion (US-05)", () => {
         .toEqual({ account_id: Accounts, email: `hind-${run}@example.test`, mobile: "+96891230000", mailing_city: "Muscat", converted_from_lead_id: lead });
       expect((await rows("SELECT is_converted, converted_account_id, converted_contact_id, converted_by IS NOT NULL AS by FROM leads WHERE id = $1", [lead]))[0])
         .toEqual({ is_converted: true, converted_account_id: Accounts, converted_contact_id: Contacts, by: true });
-      expect(await rows("SELECT meta FROM timeline_events WHERE record_id = $1 AND event_type = 'converted'", [lead])).toEqual([{ meta: { account_id: Accounts, contact_id: Contacts, notes_moved: 0, activities_moved: 0 } }]);
+      expect(await rows("SELECT meta FROM timeline_events WHERE record_id = $1 AND event_type = 'converted'", [lead])).toEqual([{ meta: { account_id: Accounts, contact_id: Contacts, deal_id: null, notes_moved: 0, activities_moved: 0 } }]);
     });
 
     it("attaching existing records creates no new Account or Contact", async () => {
@@ -99,7 +100,7 @@ describe("lead conversion (US-05)", () => {
       expect(await rows("SELECT 1 FROM timeline_events WHERE record_id = $1 AND event_type = 'converted'", [lead])).toEqual([]);
     });
 
-    it("is idempotent with an Idempotency-Key, and a Deal object is refused until T5.07", async () => {
+    it("is idempotent with an Idempotency-Key, and an incomplete Deal object is refused", async () => {
       const lead = await create(repA, "Leads", { Last_Name: `Idem${run}`, Company: `Idem Co ${run}` });
       const headers = { "idempotency-key": `convert-${run}-0001` };
       const first = await convert(repA, lead, {}, headers);
@@ -109,6 +110,41 @@ describe("lead conversion (US-05)", () => {
       expect(await rows("SELECT count(*)::int AS n FROM accounts WHERE account_name = $1", [`Idem Co ${run}`])).toEqual([{ n: 1 }]);
       const other = await create(repA, "Leads", { Last_Name: `Deal${run}`, Company: "Deal Co" });
       expect((await convert(repA, other, { Deals: { Closing_Date: "2026-12-01" } })).status).toBe(422);
+    });
+
+    describe("T5.07 Create Deal", () => {
+      const pipeline = async () => {
+        const res = await call(pipelineRoute, "GET", "/settings/pipeline", { cookie: repA });
+        return res.json().data[0] as { id: string };
+      };
+
+      it("ticked: exactly 1 Account, 1 Contact and 1 Deal; Deal Name defaults to the Company; unticked: no deal", async () => {
+        const p = await pipeline();
+        const lead = await create(repA, "Leads", { Last_Name: `DealA${run}`, Company: `Acme ${run}` });
+        const res = await convert(repA, lead, { Deals: { Closing_Date: "2026-12-01", Pipeline: { id: p.id }, Stage: "Qualification", Amount: "5000.000" } });
+        expect(res.status, res.body).toBe(200);
+        const { Accounts, Contacts, Deals } = res.json().data[0];
+        expect(await rows("SELECT count(*)::int AS n FROM deals WHERE deal_name = $1", [`Acme ${run}`])).toEqual([{ n: 1 }]);
+        expect((await rows("SELECT account_id, contact_id, probability, converted_from_lead_id FROM deals WHERE id = $1", [Deals]))[0])
+          .toEqual({ account_id: Accounts, contact_id: Contacts, probability: 10, converted_from_lead_id: lead });
+        expect((await rows("SELECT converted_deal_id FROM leads WHERE id = $1", [lead]))[0]).toEqual({ converted_deal_id: Deals });
+        const plain = await create(repA, "Leads", { Last_Name: `DealB${run}`, Company: `NoDeal ${run}` });
+        expect((await convert(repA, plain)).json().data[0].Deals).toBeNull();
+        expect(await rows("SELECT count(*)::int AS n FROM deals WHERE deal_name = $1", [`NoDeal ${run}`])).toEqual([{ n: 0 }]);
+      });
+
+      it("rolls back the Account, Contact and lead when the deal insert fails", async () => {
+        const p = await pipeline();
+        const lead = await create(repA, "Leads", { Last_Name: `DealC${run}`, Company: `Rolled ${run}` });
+        const res = await convert(repA, lead, { Deals: { Closing_Date: "2026-12-01", Pipeline: { id: p.id }, Stage: "No Such Stage" } });
+        expect(res.status).toBe(422);
+        expect(await rows("SELECT count(*)::int AS n FROM accounts WHERE account_name = $1", [`Rolled ${run}`])).toEqual([{ n: 0 }]);
+        expect(await rows("SELECT is_converted FROM leads WHERE id = $1", [lead])).toEqual([{ is_converted: false }]);
+        // A deal-side failure after the deal is created (a bad amount reaches the database) leaves nothing either.
+        const second = await convert(repA, lead, { Deals: { Closing_Date: "2026-12-01", Pipeline: { id: p.id }, Stage: "Closed Lost" } });
+        expect(second.status).toBe(422); // Closed Lost needs a reason: no deal, no account
+        expect(await rows("SELECT count(*)::int AS n FROM accounts WHERE account_name = $1", [`Rolled ${run}`])).toEqual([{ n: 0 }]);
+      });
     });
 
     it("another rep gets 404 and nothing is created", async () => {

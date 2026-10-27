@@ -372,7 +372,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-17**: rep B listing `/Accounts/{X}/Deals`, where the deals are rep A's, gets an empty list.
 - **Done when:** **US-06** related lists are filtered by visibility.
 
-#### T5.07 Lead convert: Create Deal option · S
+#### T5.07 Lead convert: Create Deal option · S · ✅
 - **Files:** `packages/core/src/leads/convert.ts`, `convert-dialog.tsx`, `e2e/lead-convert.spec.ts`.
 - **Tests first:** I: with "Create Deal" ticked → exactly 1 Account, 1 Contact and 1 Deal, and Deal Name defaults to "Acme". Unticked → no deal. The rollback test covers the deal insert too. E (w360, w1440): convert with a deal.
 - **Done when:** **US-05** is fully met.

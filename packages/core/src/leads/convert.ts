@@ -40,12 +40,22 @@ export async function getConversionOptions(tx: Tx, id: string) {
 }
 
 const IdRef = z.object({ id: z.uuid() });
+/** The "Create Deal" option (reference §3.1). Stage is the stage api_value; OMR is the only currency until T6.04. */
+const DealOption = z.strictObject({
+  Deal_Name: z.string().min(1).max(120).optional(), // defaults to the lead's Company
+  Closing_Date: z.iso.date(),
+  Pipeline: IdRef,
+  Stage: z.string().max(60),
+  Amount: z.string().regex(/^\d{1,15}(\.\d{1,3})?$/).optional(),
+  Currency: z.literal("OMR").optional(),
+  Contact_Role: z.string().max(60).optional(),
+});
 export const ConvertLeadInput = z.object({
   data: z.array(z.object({
     Accounts: IdRef.nullish(), // {id} attaches to that Account; omitted or null creates one
     Contacts: IdRef.nullish(),
     assign_to: IdRef.optional(), // owner of the new records; the lead's owner by default
-    Deals: z.null().optional(), // T5.07 adds the deal option; until then a Deal object is a 422, not silently ignored
+    Deals: DealOption.nullish(), // omitted or null: no Deal
   })).length(1),
 });
 
@@ -92,6 +102,21 @@ export async function convertLead(tx: Tx, ctx: TenantContext, id: string, input:
     await tx.execute(sql`UPDATE contacts SET converted_from_lead_id = ${id} WHERE id = ${contactId}`);
   }
 
+  let dealId: string | null = null;
+  if (choice.Deals) {
+    const d = choice.Deals;
+    const stage = (await tx.execute<{ id: string }>(sql`SELECT id FROM stages WHERE pipeline_id = ${d.Pipeline.id} AND api_value = ${d.Stage} AND is_active`)).rows[0];
+    if (!stage) throw new ApiError(422, "INVALID_DATA", "The pipeline or stage does not exist.", { api_name: "Deals" });
+    dealId = (await createRecords(tx, ctx, "Deals", {
+      data: [{
+        Deal_Name: d.Deal_Name ?? lead.company, Account_Name: { id: accountId }, Contact_Name: { id: contactId }, Closing_Date: d.Closing_Date,
+        Stage: { id: stage.id }, ...(d.Amount ? { Amount: d.Amount } : {}), ...(d.Contact_Role ? { Contact_Role: d.Contact_Role } : {}),
+        ...carry(lead, { lead_source: "Lead_Source" }), Owner,
+      }],
+    }))[0]!.details.id;
+    await tx.execute(sql`UPDATE deals SET converted_from_lead_id = ${id} WHERE id = ${dealId}`);
+  }
+
   // The lead's history follows the person: its notes and the activities linked to it now belong to the Contact.
   // shortcut: an activity owned by someone outside the caller's visibility stays on the lead; US-05 has no cross-owner case yet.
   const notes = await tx.execute(sql`UPDATE notes SET record_type = 'contact', record_id = ${contactId} WHERE record_type = 'lead' AND record_id = ${id} RETURNING 1`);
@@ -99,7 +124,7 @@ export async function convertLead(tx: Tx, ctx: TenantContext, id: string, input:
 
   await tx.execute(sql`
     UPDATE leads SET is_converted = true, converted_at = now(), converted_by = ${ctx.userId}, converted_account_id = ${accountId},
-      converted_contact_id = ${contactId}, version = version + 1 WHERE id = ${id}`);
-  await recordEvent(tx, { recordType: "lead", recordId: id, eventType: "converted", meta: { account_id: accountId, contact_id: contactId, notes_moved: notes.rows.length, activities_moved: activities.rows.length } });
-  return [{ Accounts: accountId, Contacts: contactId, Deals: null }];
+      converted_contact_id = ${contactId}, converted_deal_id = ${dealId}, version = version + 1 WHERE id = ${id}`);
+  await recordEvent(tx, { recordType: "lead", recordId: id, eventType: "converted", meta: { account_id: accountId, contact_id: contactId, deal_id: dealId, notes_moved: notes.rows.length, activities_moved: activities.rows.length } });
+  return [{ Accounts: accountId, Contacts: contactId, Deals: dealId }];
 }
