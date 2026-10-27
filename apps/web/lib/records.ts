@@ -1,6 +1,6 @@
-import { listFields, listLayouts, nameFieldsOf, RECORD_MODULES, type Tx } from "@crm/core";
+import { listFields, listLayouts, listRecords, listUsers, nameFieldsOf, RECORD_MODULES, type TenantContext, type Tx } from "@crm/core";
 
-// Metadata as the record pages use it (ADR-0006): fields from /settings/fields, grouped by the default layout.
+// Metadata as the record pages use it (ADR-0006).: fields from /settings/fields, grouped by the default layout.
 
 export type FieldMeta = {
   api_name: string;
@@ -46,4 +46,23 @@ export function listColumns(meta: ModuleMeta): FieldMeta[] {
     first((f) => f.data_type === "lookup"),
     first((f) => f.data_type === "user_lookup"),
   ].filter((f): f is FieldMeta => Boolean(f));
+}
+
+/**
+ * What each lookup on the form may point at: org users for user lookups, visible records for record lookups.
+ * shortcut: the 200 most recently changed records per lookup; swap in a search combobox once orgs outgrow it.
+ */
+export async function lookupOptions(tx: Tx, ctx: TenantContext, meta: ModuleMeta): Promise<Record<string, Lookup[]>> {
+  const options: Record<string, Lookup[]> = {};
+  for (const f of meta.sections.flatMap((s) => s.fields)) {
+    if (f.data_type === "user_lookup") {
+      const { data } = await listUsers(tx, { status: "active", page: 1, per_page: 200 });
+      options[f.api_name] = (data as Lookup[]).map((u) => ({ id: u.id, name: u.name }));
+    } else if (f.data_type === "lookup" && f.lookup_module && isRecordModule(f.lookup_module)) {
+      const target = await moduleMeta(tx, f.lookup_module);
+      const { data } = await listRecords(tx, ctx, f.lookup_module, { page: 1, per_page: 200, sort_order: "desc" });
+      options[f.api_name] = data.map((r) => ({ id: r.id as string, name: recordTitle(target, r) }));
+    }
+  }
+  return options;
 }

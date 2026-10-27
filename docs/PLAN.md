@@ -246,7 +246,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** E (w360: card list; w1440: table): Accounts list, Load more / pagination, and the empty state.
 - **Done when:** columns come from the layout metadata, with no per-module code.
 
-#### T2.12 UI: metadata-driven record form · M
+#### T2.12 UI: metadata-driven record form · M · ✅
 - **Files:** `components/records/record-form.tsx`, `app/(app)/[module]/new/page.tsx`, `[id]/edit/page.tsx`.
 - **Tests first:** E: submitting with an empty required field shows the server's 422 error under that field, linked with `aria-describedby`. Phone inputs are `type=tel`, `dir=ltr`.
 - **Done when:** the form renders from the layout (DESIGN_SYSTEM §Forms).
