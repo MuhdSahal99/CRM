@@ -226,7 +226,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: `word`, `email`, `phone` and `criteria` all work on Accounts. Rep B finds rep A's account (**US-02**). Results go through the same visibility path as lists.
 - **Done when:** private modules reuse this unchanged (AC-11 is completed in T5.04).
 
-#### T2.08 Phone normalisation · XS
+#### T2.08 Phone normalisation · XS · ✅
 - **Files:** `packages/core/src/phone.ts` (libphonenumber-js, a new dependency; check with Context7).
 - **Tests first:** U: `"9xxx xxxx"` with OM → `+968…`. A UAE number with AE → `+971…`. Garbage → a validation error.
 - **Done when:** the output matches the SCHEMA E.164 CHECK (**US-06**).

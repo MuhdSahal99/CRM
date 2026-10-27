@@ -15,6 +15,7 @@ Versions were checked with `npm view` on 2026-10-27, and APIs were checked in Co
 | Monorepo | pnpm workspaces | pnpm 12.x | [0001](adr/0001-modular-monolith-nextjs-pnpm.md) |
 | Web + API | Next.js App Router (React) | next 16.4.x, react 19.3.x | [0001](adr/0001-modular-monolith-nextjs-pnpm.md) |
 | Validation | Zod (shared client and server) | 4.6.x | [0015](adr/0015-rest-api-zoho-shape-openapi.md) |
+| Phone numbers | libphonenumber-js (E.164 normalisation, US-06) | 1.13.x | — |
 | Database | PostgreSQL | 16 | [0002](adr/0002-postgresql-16-drizzle.md) |
 | ORM and migrations | Drizzle ORM, drizzle-kit | 0.45.x / 0.31.x (stable, not v1 beta) | [0002](adr/0002-postgresql-16-drizzle.md) |
 | Auth | Better Auth (email/password, `organization`, `admin` plugins) | 1.7.x | [0004](adr/0004-auth-better-auth.md) |
