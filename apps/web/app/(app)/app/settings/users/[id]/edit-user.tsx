@@ -63,7 +63,8 @@ export function EditUser({ user, managers, isSelf }: Props) {
             {t("failed")}
           </p>
         )}
-        <RoleField value={role} onChange={setRole} />
+        {/* The API refuses a change to your own role, so the last admin cannot lock the org out. */}
+        {!isSelf && <RoleField value={role} onChange={setRole} />}
         <ManagerField value={managerId} onChange={setManagerId} people={managers} error={errors.manager_id} />
         <div>
           <Button type="submit" disabled={pending !== null || !active}>

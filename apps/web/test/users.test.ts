@@ -71,6 +71,18 @@ describe("users API (T1.20)", () => {
     await put(repB, { role: "rep" }); // leave the seed as it was for other files
   });
 
+  it("an admin cannot change their own role (409), so the org keeps its admin", async () => {
+    const self = ids["admin@saqient.test"]!;
+    expect((await put(self, { role: "rep" })).status).toBe(409);
+    expect((await put(self, { manager_id: null })).status).toBe(200); // other changes to yourself are fine
+  });
+
+  it("a second invite for a pending invitation's email is refused", async () => {
+    const email = `twice-${crypto.randomUUID()}@saqient.test`;
+    expect((await invite(admin, { email, name: "Twice", role: "rep" })).json().data[0].code).toBe("SUCCESS");
+    expect((await invite(admin, { email, name: "Twice", role: "admin" })).json().data[0].code).toBe("DUPLICATE_DATA");
+  });
+
   it("a rep cannot change roles (403)", async () => {
     const id = ids["rep.a@saqient.test"]!;
     expect((await call(userRoute, "PUT", `/users/${id}`, { cookie: rep, params: { id }, body: { data: [{ role: "admin" }] } })).status).toBe(403);

@@ -50,9 +50,12 @@ export async function getUser(tx: Tx, id: string) {
 export async function inviteUsers(tx: Tx, ctx: TenantContext, input: z.infer<typeof InviteUsersInput>, baseUrl: string) {
   const outcomes = [];
   for (const person of input.data) {
-    const taken = await tx.execute(sql`SELECT 1 FROM org_users WHERE email = ${person.email}`);
+    const taken = await tx.execute(sql`
+      SELECT 1 FROM org_users WHERE email = ${person.email}
+      UNION ALL SELECT 1 FROM invitation WHERE email = ${person.email} AND status = 'pending' AND expires_at > now()`);
     if (taken.rows.length > 0) {
-      outcomes.push({ code: "DUPLICATE_DATA", status: "error", message: "This email already belongs to a member.", details: { api_name: "email" } });
+      const message = "This email already belongs to a member or has a pending invitation.";
+      outcomes.push({ code: "DUPLICATE_DATA", status: "error", message, details: { api_name: "email" } });
       continue;
     }
     if (person.manager_id && (await tx.execute(sql`SELECT 1 FROM org_users WHERE id = ${person.manager_id}`)).rows.length === 0) {
@@ -76,12 +79,18 @@ export async function inviteUsers(tx: Tx, ctx: TenantContext, input: z.infer<typ
   return outcomes;
 }
 
-/** PUT /users/{id} (Admin): role and/or reporting manager, logged as role_changed. Cycles are refused (T1.12). */
-export async function updateUser(tx: Tx, id: string, input: z.infer<typeof UpdateUserInput>) {
+/**
+ * PUT /users/{id} (Admin): role and/or reporting manager, logged as role_changed. Cycles are refused (T1.12).
+ * An admin cannot change their own role: demoting the last admin would lock the org out of user management.
+ */
+export async function updateUser(tx: Tx, ctx: TenantContext, id: string, input: z.infer<typeof UpdateUserInput>) {
   const change = input.data[0]!;
   const { rows } = await tx.execute<{ role: string; manager_id: string | null }>(sql`SELECT role, manager_id FROM member WHERE user_id = ${id} FOR UPDATE`);
   const before = rows[0];
   if (!before) throw new NotFound();
+  if (id === ctx.userId && change.role !== undefined && change.role !== before.role) {
+    throw new Conflict("INVALID_STATE", "You cannot change your own role.");
+  }
 
   const after = { role: change.role ?? before.role, manager_id: change.manager_id === undefined ? before.manager_id : change.manager_id };
   try {

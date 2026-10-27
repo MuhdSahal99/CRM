@@ -35,7 +35,7 @@ test("T1.25: the invite form shows the server's error under the field", async ({
   await dialog.getByLabel("Email").fill("rep.b@saqient.test");
   await dialog.getByRole("button", { name: "Send invite" }).click();
   await expect(dialog.getByLabel("Email")).toHaveAttribute("aria-invalid", "true");
-  await expect(dialog.locator("#email-error")).toHaveText("This email already belongs to a member.");
+  await expect(dialog.locator("#email-error")).toHaveText("This email already belongs to a member or has a pending invitation.");
 });
 
 test("T1.25: a rep gets 404 on the users page", async ({ page }) => {

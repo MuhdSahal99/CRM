@@ -1,6 +1,5 @@
 import type { schema } from "@crm/db";
-import { getTableColumns, getTableName } from "drizzle-orm";
-import type { PgTable } from "drizzle-orm/pg-core";
+import type { PgColumn } from "drizzle-orm/pg-core";
 import { z } from "zod";
 
 type FieldType = (typeof schema.fieldType.enumValues)[number];
@@ -17,9 +16,6 @@ export type FieldDef = {
   scale: number | null;
   picklistValues: string[];
 };
-
-// Columns no field may write, even if metadata says so: tenancy, identity, the custom bag and the audit trail.
-const PROTECTED = new Set(["id", "org_id", "custom", "created_at", "created_by", "updated_at", "updated_by", "version", "deleted_at", "deleted_by"]);
 
 function valueSchema(f: FieldDef): z.ZodType {
   const text = f.maxLength ? z.string().max(f.maxLength) : z.string();
@@ -42,15 +38,15 @@ function valueSchema(f: FieldDef): z.ZodType {
 
 /**
  * The server-built input schema for a module (ADR-0006): known api_names only (unknown keys are rejected),
- * required/max_length/picklist rules from metadata, and `toRow` mapping api_name → column or `custom`.
- * A system field's column_name is checked against the table's real columns here, so metadata can never
- * steer a write into another column or into SQL.
+ * required/max_length/picklist rules from metadata, and `toRow` mapping api_name to its column or `custom`.
+ * `writableColumns` is the module service's allowlist: a system field may only map onto one of them, so metadata can
+ * never steer a write into tenancy, audit or server-computed columns (totals, conversion flags) or into SQL.
  */
-export function buildRecordSchema(fields: FieldDef[], table: PgTable) {
-  const columns = new Set(Object.values(getTableColumns(table)).map((c) => c.name));
+export function buildRecordSchema(fields: FieldDef[], writableColumns: PgColumn[]) {
+  const allowed = new Set(writableColumns.map((c) => c.name));
   for (const f of fields.filter((f) => f.isSystem)) {
-    if (!f.columnName || !columns.has(f.columnName) || PROTECTED.has(f.columnName)) {
-      throw new Error(`Field ${f.apiName} maps to column "${f.columnName}", which is not a writable column of ${getTableName(table)}`);
+    if (!f.columnName || !allowed.has(f.columnName)) {
+      throw new Error(`Field ${f.apiName} maps to column "${f.columnName}", which metadata may not write`);
     }
   }
 

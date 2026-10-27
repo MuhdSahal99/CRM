@@ -1,9 +1,17 @@
-import { pgTable, text, uuid, jsonb } from "drizzle-orm/pg-core";
+import { jsonb, numeric, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { buildRecordSchema, type FieldDef } from "./record-schema.ts";
 
-// A stand-in record table: two typed columns plus `custom` (ADR-0006).
-const things = pgTable("things", { id: uuid("id"), orgId: uuid("org_id"), lastName: text("last_name"), company: text("company"), custom: jsonb("custom") });
+// A stand-in record table (ADR-0006): two inputs, plus columns metadata must never reach.
+const things = pgTable("things", {
+  id: uuid("id"),
+  orgId: uuid("org_id"),
+  lastName: text("last_name"),
+  company: text("company"),
+  grandTotal: numeric("grand_total"),
+  custom: jsonb("custom"),
+});
+const WRITABLE = [things.lastName, things.company];
 
 const field = (f: Partial<FieldDef> & Pick<FieldDef, "apiName" | "dataType">): FieldDef => ({
   isSystem: false,
@@ -25,7 +33,7 @@ const FIELDS = [
 ];
 
 describe("buildRecordSchema (T1.18, ADR-0006)", () => {
-  const { schema, toRow } = buildRecordSchema(FIELDS, things);
+  const { schema, toRow } = buildRecordSchema(FIELDS, WRITABLE);
 
   it("maps api_name → column for system fields and into custom for the rest", () => {
     const input = schema.parse({ Last_Name: "Al Balushi", Company: "Acme", Region: "north", Budget: "12.500" });
@@ -49,9 +57,11 @@ describe("buildRecordSchema (T1.18, ADR-0006)", () => {
     expect(schema.safeParse({ Last_Name: "A", Budget: 12.5 }).success).toBe(false);
   });
 
-  it("refuses a system field mapped to a missing or protected column", () => {
+  it("refuses a system field mapped to a column outside the service's allowlist", () => {
     const evil = field({ apiName: "Evil", dataType: "text", isSystem: true, columnName: "org_id" });
-    expect(() => buildRecordSchema([evil], things)).toThrow(/org_id/);
-    expect(() => buildRecordSchema([{ ...evil, columnName: "no_such_column" }], things)).toThrow(/no_such_column/);
+    expect(() => buildRecordSchema([evil], WRITABLE)).toThrow(/org_id/);
+    // A real column the server computes: client totals are never trusted (CLAUDE.md).
+    expect(() => buildRecordSchema([{ ...evil, columnName: "grand_total" }], WRITABLE)).toThrow(/grand_total/);
+    expect(() => buildRecordSchema([{ ...evil, columnName: "no_such_column" }], WRITABLE)).toThrow(/no_such_column/);
   });
 });
