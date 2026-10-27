@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "tsc --noEmit && eslint .",
+    "check": "next typegen && tsc --noEmit && eslint .",
     "test": "vitest run",
     "e2e": "playwright test"
   },
