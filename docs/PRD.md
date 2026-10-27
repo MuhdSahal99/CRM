@@ -17,7 +17,7 @@ The MVP must let our reps run the whole sales cycle (Lead → Deal → Quote →
 | Persona | Count (MVP) | Needs | Sees |
 |---|---|---|---|
 | **Sales Rep** | 4 | Capture and qualify leads, work deals through stages, raise quotes, sales orders and invoices, send them to customers by email or WhatsApp, log activities | Own Deals, Quotes, Sales Orders, Invoices; **all** Accounts and Contacts |
-| **Sales Manager** | 1 | Pipeline and forecast for the team in OMR, set quarterly targets, step in on any team deal | Everything owned by their team |
+| **Sales Manager** | 1 | The team's pipeline in OMR (Kanban totals), step in on any team deal. Forecasts and quarterly targets are Phase 2 | Everything owned by their team |
 | **Admin** | 1 (may be the manager) | Users and roles, products and their VAT categories, exchange rates, org settings (VAT number, invoice numbering), CSV import from Zoho | Everything in the org |
 | **Customer** (not a user) | — | Receive a correct, readable Quote or Invoice PDF by email or WhatsApp link | Only the PDF behind a secure, expiring link |
 | **Future tenant admin** (Phase 2+) | — | Same as Admin, for their own company | Their org only. Today this is a design constraint, not a user |
@@ -72,7 +72,7 @@ The reference spec's 12 acceptance tests (§11) are mapped where they apply and 
 - **Given** Rep A owns Deal D, **when** Rep B lists Deals or GETs D, **then** D is absent from the list and the GET returns 404.
 - **Given** Rep A's manager is above A in the role hierarchy, **when** the manager GETs D, **then** it returns 200.
 - **Given** Rep A created Account X, **when** Rep B searches Accounts, **then** X is found.
-- **Given** any list, search, report, forecast, export or PDF endpoint, **when** it is called, **then** the same visibility filter is applied on the server.
+- **Given** any list, search, report, export or PDF endpoint, **when** it is called, **then** the same visibility filter is applied on the server. (Forecasts follow the same rule when they arrive in Phase 2.)
 
 **US-03. Manage users and ownership.** As an Admin, I invite users, assign the Admin, Manager or Rep role and a reporting manager, deactivate users, and transfer a user's records to another owner.
 - **Given** a Rep is being deactivated, **when** the Admin transfers their records to Rep C, **then** every open Lead, Deal, Quote, Sales Order and Activity they owned is owned by C, and the transfer appears on each record's timeline.
@@ -169,19 +169,9 @@ Worked example, Quote in OMR:
 - **Given** a record, **when** its timeline renders, **then** it shows field changes, stage changes, conversions, sends and activities, newest first.
 - ⚠ Email and push reminders for activities are Phase 2. The MVP shows overdue items in-app only.
 
-### E9. Forecasts
+### E9. Forecasts (moved to Phase 2)
 
-**US-16. See the quarter in OMR.** As a Manager, I set a quarterly target per Rep and see each Rep's forecast, plus a team total. *(Ref test 10)*
-- **Given** deals with a Closing Date in Q3, **then** for each Rep:
-  - Achieved = Σ Closed Won
-  - Committed = Σ forecast category Committed
-  - Best Case = Committed + Σ Best Case
-  - Pipeline = Σ open
-  - Gap = Target − Achieved
-  - Every sum uses Deal Amount converted to OMR at each deal's stored rate.
-- **Given** the team view, **then** the Manager's totals equal the sum of their reports.
-- **Given** a Rep views the forecast, **then** they see only their own row.
-- ⚠ The fiscal year starts in January.
+US-16 and its fiscal-year assumption moved to Phase 2 on 2026-10-27; see §5 *Deferred stories*. Story numbers are not reused.
 
 ### E10. Migration from Zoho
 
@@ -216,8 +206,9 @@ Each slice is built end to end (DB → API → UI → tests) and is usable befor
 | 7 | Quotes and the server-side pricing engine | US-10 | 5, 6 |
 | 8 | Sales Orders and Invoices (conversion, numbering, locking, PDF) | US-11, US-12 | 7 |
 | 9 | Sending: SMTP email and WhatsApp links | US-13, US-14 | 8 |
-| 10 | Forecasts | US-16 | 5 |
 | 11 | Zoho CSV import and cutover | US-17 | 2, 4, 5, 6 |
+
+Slice 10 (Forecasts, US-16) moved to Phase 2 on 2026-10-27. Slice numbers are not reused, so they still match `docs/PLAN.md`.
 
 **Go-live gate:**
 - All stories pass their acceptance criteria.
@@ -240,6 +231,23 @@ Each slice is built end to end (DB → API → UI → tests) and is usable befor
 - Self-serve tenant signup and subscription billing
 - Native mobile apps
 - Purchase Orders, Campaigns
+- Forecasts and quarterly targets (US-16, below; moved out of the MVP on 2026-10-27)
+
+#### Deferred stories
+
+Kept as written so Phase 2 can pick them up unchanged. They are **not** built or tested in the MVP.
+
+**US-16. See the quarter in OMR.** As a Manager, I set a quarterly target per Rep and see each Rep's forecast, plus a team total. *(Ref test 10)*
+- **Given** deals with a Closing Date in Q3, **then** for each Rep:
+  - Achieved = Σ Closed Won
+  - Committed = Σ forecast category Committed
+  - Best Case = Committed + Σ Best Case
+  - Pipeline = Σ open
+  - Gap = Target − Achieved
+  - Every sum uses Deal Amount converted to OMR at each deal's stored rate.
+- **Given** the team view, **then** the Manager's totals equal the sum of their reports.
+- **Given** a Rep views the forecast, **then** they see only their own row.
+- ⚠ The fiscal year starts in January.
 
 ## 6. Success metrics
 
@@ -268,3 +276,10 @@ Each slice is built end to end (DB → API → UI → tests) and is usable befor
 | OQ-09 | Which SMTP provider and sending domain should we use (with SPF/DKIM configured)? | Ops | US-13 |
 | OQ-10 | The final reason for rebuilding (working assumption: sell it later) | Founders | Phase 2 priorities |
 | OQ-11 | Which accounting system to sync with in Phase 2 | Finance | Phase 2 |
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-10-27 | Approved. |
+| 2026-10-27 | **Scope change:** Forecasts move to Phase 2. US-16 (manager sets quarterly targets per Rep; per-Rep and team forecast in OMR) and its "fiscal year starts in January" assumption move to §5 *Deferred stories*. Slice 10 leaves the MVP. No success metric referred to forecasts, so §6 is unchanged. Deal stages still set Probability and Forecast Category (US-07): those are deal fields, not the Forecasts module. |

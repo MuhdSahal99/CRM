@@ -21,6 +21,8 @@ info:
     - State-changing actions accept `Idempotency-Key` (client-generated, one per intent, retained 7 days).
     - Not in the MVP (no PRD story): bulk `PUT /{module}`, `POST /{module}/actions/mass_update`,
       `PUT /{module}/{id}/{related_list}/{related_id}`.
+    - **Phase 2 (documented, not built in the MVP):** `GET /forecasts`, `PUT /forecasts/targets` (US-16, moved out
+      of the MVP on 2026-10-27). They carry `x-phase: 2`; MVP routes, tests and the visibility matrix skip them.
 servers:
   - url: https://crm.example.com/api/v1
     description: Placeholder host. The real hostname is decided with ADR-0013.
@@ -36,6 +38,7 @@ tags:
   - name: Settings
   - name: Users
   - name: Forecasts
+    description: Phase 2. Documented but not built in the MVP (PRD changelog, 2026-10-27).
   - name: Imports
   - name: Public
 
@@ -1113,13 +1116,15 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
-  # ---------------------------------------------------------------- forecasts (US-16)
+  # ---------------------------------------------------------------- forecasts (US-16): PHASE 2, not built in the MVP
   /forecasts:
     get:
       tags: [Forecasts]
       operationId: getForecast
-      summary: Quarterly forecast per visible user, in OMR
+      x-phase: 2
+      summary: "Phase 2: quarterly forecast per visible user, in OMR"
       description: |
+        **Phase 2. Not built in the MVP** (scope change 2026-10-27).
         Deals whose Closing_Date falls in the quarter: Achieved = Σ Closed Won; Committed = Σ Committed;
         Best Case = Committed + Σ Best Case; Pipeline = Σ open; Gap = Target − Achieved. Each deal's amount is
         converted at its stored rate. A Rep sees only their own row. The team total equals the sum of the rows.
@@ -1151,7 +1156,9 @@ paths:
     put:
       tags: [Forecasts]
       operationId: setForecastTargets
-      summary: Set quarterly targets for users in the caller's team (Manager or Admin)
+      x-phase: 2
+      summary: "Phase 2: set quarterly targets for users in the caller's team (Manager or Admin)"
+      description: "**Phase 2. Not built in the MVP** (scope change 2026-10-27)."
       requestBody:
         required: true
         content:
@@ -2031,6 +2038,7 @@ components:
         created_by: { $ref: '#/components/schemas/Lookup' }
         created_at: { type: string, format: date-time }
     ForecastRow:
+      description: Phase 2 (forecasts are not built in the MVP).
       type: object
       required: [target, achieved, committed, best_case, pipeline, gap]
       properties:

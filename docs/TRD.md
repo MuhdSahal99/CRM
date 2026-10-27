@@ -122,7 +122,7 @@ flowchart LR
   | Private | Leads, Deals, Quotes, Sales Orders, Invoices, Activities |
 
   Private modules get an extra `AS RESTRICTIVE` RLS policy `owner_visibility`. The service layer applies the same predicate.
-- **404, never 403, for records you cannot see.** The same filter applies to list, search, related lists, timeline, forecast, export, PDF download and share-link creation.
+- **404, never 403, for records you cannot see.** The same filter applies to list, search, related lists, timeline, export, PDF download and share-link creation, and to forecasts when they arrive in Phase 2 (moved out of the MVP on 2026-10-27).
 - **Transfer (US-03).** An Admin-only service reassigns open Leads, Deals, Quotes, Sales Orders and Activities in one transaction and writes a timeline row per record.
 
 ## Metadata-driven modules
@@ -131,7 +131,7 @@ flowchart LR
 
 - **Metadata as data.** `modules`, `fields`, `picklists`, `picklist_values`, `layouts`, `layout_sections`, `layout_fields` and `field_permissions` are org-scoped data. Standard fields are seeded per org as `is_system` rows that point at real columns.
 - **Storage.** Standard modules use typed columns plus `custom jsonb`. Custom field values live in `custom`, keyed by `api_name`. They are validated by a Zod schema the server builds from metadata, and unknown keys are rejected.
-- **UI from metadata.** Form, detail, list and filter UIs render from layouts. Lead convert, deal stages, line items and forecasts are bespoke code.
+- **UI from metadata.** Form, detail, list and filter UIs render from layouts. Lead convert, deal stages and line items are bespoke code, as forecasts will be in Phase 2 (moved out of the MVP on 2026-10-27).
 - **Phase 2.** The admin UI only inserts and updates metadata rows. It needs no DDL, except an optional expression index for a hot custom field, added by migration.
 - **Not in MVP.** Custom modules: `modules.is_custom` exists, but there is no generic record store yet.
 
@@ -277,7 +277,7 @@ CLAUDE.md rule: any dev-only relaxation must be a **typed config flag**, marked 
 | US-13 email | `POST /{Module}/{id}/actions/send_email` | `email_sends`, `activities` |
 | US-14 WhatsApp | `POST /{Module}/{id}/share_links`, `DELETE …/{link_id}`, `GET /s/{token}` | `share_links`, `files`, `activities` |
 | US-15 activities + timeline | `/Tasks`, `/Calls`, `/Meetings`, `GET /{Module}/{id}/timeline` | `activities`, `timeline_events` |
-| US-16 forecasts | `GET /forecasts`, `PUT /forecasts/targets` | `forecast_targets`, `deals` |
+| US-16 forecasts: **Phase 2**, not built in the MVP (scope change 2026-10-27) | `GET /forecasts`, `PUT /forecasts/targets` (`x-phase: 2`) | `forecast_targets` (Phase 2), `deals` |
 | US-17 Zoho import | `/imports` (upload, dry run, confirm, errors CSV) | `import_jobs`, `import_rows`, `zoho_id` columns |
 
 ## Key decisions (see adr/)

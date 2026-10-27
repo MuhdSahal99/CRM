@@ -1,6 +1,6 @@
 # Schema
 
-Status: **Design** (2026-10-27). The target for slices 1–11; what is already migrated is listed in the migrations log at the end.
+Status: **Design** (2026-10-27). The target for slices 1–9 and 11. Slice 10 (Forecasts) moved to Phase 2 on 2026-10-27: its parts are kept below and marked **Phase 2**, and are not built in the MVP. What is already migrated is listed in the migrations log at the end.
 Design: `docs/TRD.md` · Decisions: `docs/adr/` (tenancy [0003](adr/0003-tenancy-org-id-row-level-security.md), visibility [0005](adr/0005-rbac-and-record-visibility.md), metadata [0006](adr/0006-metadata-driven-fields-and-layouts.md), money [0007](adr/0007-money-vat-currency.md), numbering [0008](adr/0008-gap-free-invoice-numbering-and-locking.md), share links [0009](adr/0009-pdf-share-tokens.md))
 
 PostgreSQL 16. Required extensions: `pg_trgm` (name search), `citext` (emails).
@@ -34,7 +34,7 @@ PostgreSQL 16. Required extensions: `pg_trgm` (name search), `citext` (emails).
 | `owner_visibility` (**restrictive**) | `leads`, `deals`, `quotes`, `sales_orders`, `invoices`, `activities` | `current_setting('app.see_all', true) = 'on' OR owner_id = ANY (app.visible_owner_ids())` |
 | `parent_visibility` (**restrictive**) | `quote_lines`, `sales_order_lines`, `invoice_lines` | `EXISTS (SELECT 1 FROM <parent> p WHERE p.id = <parent_id>)`. The subquery is itself RLS-filtered |
 | `record_visibility` (**restrictive**) | `notes`, `files`, `share_links`, `email_sends`, `timeline_events` | `app.can_see(record_type, record_id)`. This is a `STABLE SECURITY INVOKER` function doing an `EXISTS` on the right table, so that table's RLS applies |
-| `target_visibility` (**restrictive**) | `forecast_targets` | `see_all OR user_id = ANY (app.visible_owner_ids())` |
+| `target_visibility` (**restrictive**), **Phase 2** | `forecast_targets` | `see_all OR user_id = ANY (app.visible_owner_ids())` |
 | `admin_only` (**restrictive**) | `import_jobs`, `import_rows`, `org_settings` (write), metadata tables (write) | `current_setting('app.role', true) = 'admin'` |
 
 `app.org_id()` is `NULLIF(current_setting('app.org_id', true), '')::uuid`: a pooled connection reads a finished transaction's setting back as `''`, which must match nothing rather than raise (ADR-0003 amendment). `app.visible_owner_ids()` parses `current_setting('app.visible_owner_ids', true)` into `uuid[]` the same way (NULL when unset). Both live in schema `app` (USAGE for `crm_app` only). All tables use `ENABLE` + `FORCE ROW LEVEL SECURITY`. A CI test fails if any table with an `org_id` column is missing RLS, FORCE or `tenant_isolation`.
@@ -103,7 +103,7 @@ erDiagram
   files ||--o{ share_links : "exposed by"
   files |o--o{ email_sends : attached
   invoices |o--o| files : "issued PDF"
-  member ||--o{ forecast_targets : "target for"
+  member ||--o{ forecast_targets : "target for (Phase 2)"
   import_jobs ||--o{ import_rows : has
   files ||--o{ import_jobs : "source CSV"
 ```
@@ -137,7 +137,7 @@ RLS for `crm_app`: `id = app.org_id` (read only). There is no soft delete: a ten
 | country | char(2) | NOT NULL DEFAULT 'OM' |
 | vat_number | varchar(20) | NULL (seller VATIN on tax invoices) |
 | base_currency | char(3) | NOT NULL DEFAULT 'OMR', CHECK = 'OMR' (MVP) |
-| fiscal_year_start_month | smallint | NOT NULL DEFAULT 1, CHECK 1–12 |
+| fiscal_year_start_month | smallint | NOT NULL DEFAULT 1, CHECK 1–12. Read only by forecasts (Phase 2) |
 | share_link_ttl_days | smallint | NOT NULL DEFAULT 7, CHECK 1–30 |
 | smtp_host, smtp_username, smtp_from_email, smtp_from_name | text | NULL |
 | smtp_port | int | NULL, CHECK 1–65535 |
@@ -354,7 +354,7 @@ Indexes: `(org_id, lower(email)) WHERE deleted_at IS NULL` (convert match, US-05
 | type, lead_source | varchar(60) | |
 | amount | numeric(18,3) | CHECK ≥ 0 |
 | currency, currency_scale, exchange_rate | | see conventions; captured on create (US-09) |
-| amount_omr | numeric(18,3) | GENERATED ALWAYS AS `round(amount * exchange_rate, 3)` STORED (forecasts, Kanban Σ) |
+| amount_omr | numeric(18,3) | GENERATED ALWAYS AS `round(amount * exchange_rate, 3)` STORED (Kanban Σ; forecasts use it in Phase 2) |
 | closing_date | date | **NOT NULL** |
 | pipeline_id | uuid | NOT NULL, composite FK RESTRICT |
 | stage_id | uuid | NOT NULL, composite FK → stages RESTRICT |
@@ -370,7 +370,7 @@ Indexes: `(org_id, lower(email)) WHERE deleted_at IS NULL` (convert match, US-05
 Postgres `round(numeric, int)` rounds half away from zero, which is half-up for the non-negative values allowed here. That makes it consistent with the pricing engine.
 
 - **Indexes:**
-  - `(org_id, owner_id, closing_date) WHERE deleted_at IS NULL` (forecast)
+  - `(org_id, owner_id, closing_date) WHERE deleted_at IS NULL` (forecast; **Phase 2**, created with slice 10)
   - `(org_id, pipeline_id, stage_id) WHERE deleted_at IS NULL` (Kanban)
   - `(org_id, account_id)`
   - GIN trigram on `deal_name`
@@ -530,9 +530,11 @@ All money columns are written only by the pricing engine. Lock triggers block ch
 
 Trigger `sequence_monotonic`: `NEW.next_value ≥ OLD.next_value`.
 
-### Forecasts
+### Forecasts (Phase 2)
 
-#### `forecast_targets` (AUDIT)
+**Phase 2: not built in the MVP** (scope change 2026-10-27, PRD changelog). Kept here as the design for slice 10. No MVP migration creates this table.
+
+#### `forecast_targets` (AUDIT), Phase 2
 `id`, `org_id`, `user_id` (composite FK → member), `year smallint CHECK 2000–2100`, `quarter smallint CHECK 1–4`, `target_omr numeric(18,3) NOT NULL CHECK ≥ 0`. UNIQUE `(org_id, user_id, year, quarter)`. Achieved, Committed, Best Case, Pipeline and Gap are **computed** from `deals.amount_omr` per request (US-16) and never stored. The fiscal year starts in January (`org_settings`).
 
 ### Files, sending, share links

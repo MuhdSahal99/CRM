@@ -1,6 +1,7 @@
 # Implementation Plan: Saqient Sales CRM MVP
 
 Status: **Draft for approval** (2026-10-27). No code is written until this plan is approved.
+**Tasks:** 112 in the MVP across slices 1–9 and 11, plus 3 in slice 10, deferred to Phase 2 (2026-10-27 scope change, PRD changelog).
 Inputs: `docs/PRD.md` §5 (slice order), `docs/TRD.md`, `docs/SCHEMA.md`, `docs/openapi.yaml`, `docs/adr/`, `docs/THREAT_MODEL.md` (abuse cases `AC-xx`), `docs/DESIGN_SYSTEM.md`.
 
 ## How to read this plan
@@ -29,7 +30,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
                │                         ├─► T5 Deals/Pipeline ◄───────(Create-Deal option)┘
                │                         │        │
                └─► T6 Products/VAT/FX ───┴────────┴─► T7 Quotes + pricing ─► T8 SO/Invoice/PDF ─► T9 Email/WhatsApp
-                                                  T5 ─► T10 Forecasts
+                                                  T5 ─► T10 Forecasts (Deferred to Phase 2)
                                     T2, T4, T5, T6 ─► T11 Zoho import + cutover
 ```
 
@@ -611,25 +612,27 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ---
 
-## Slice 10: Forecasts (US-16)
+## Slice 10: Forecasts (US-16): Deferred to Phase 2
 
-#### T10.01 Forecast targets · S
+**Deferred to Phase 2** (scope change 2026-10-27, PRD changelog). Don't build these tasks in the MVP: they aren't in the task count, the go-live gate, or the T1.15 visibility matrix. They're kept here so Phase 2 can start from them. `forecast_targets` and the `/forecasts` paths stay documented in SCHEMA.md and openapi.yaml, marked Phase 2.
+
+#### T10.01 Forecast targets · S · Deferred to Phase 2
 - **Files:** migration `forecast_targets` (`target_visibility`), `apps/web/app/api/v1/forecasts/targets/route.ts`.
 - **Tests first:** I: the manager sets a target for their own reports. Setting one for another team's rep → 404. A rep → 403. An admin can set any.
 - **Done when:** targets are stored per user, year and quarter.
 
-#### T10.02 Forecast computation · M
+#### T10.02 Forecast computation · M · Deferred to Phase 2
 - **Files:** `apps/web/app/api/v1/forecasts/route.ts`, `packages/core/src/forecasts.ts`.
 - **Tests first:** I: for Q3 deals, Achieved, Committed, Best Case (Committed + Σ best case), Pipeline and Gap are computed in OMR at each deal's stored rate. The manager's totals equal the sum of their reports. A rep sees only their own row (**US-16**). The fiscal year starts in January.
 - **Done when:** nothing is stored; everything is computed per request from `amount_omr`.
 
-#### T10.03 UI: forecast page · M
+#### T10.03 UI: forecast page · M · Deferred to Phase 2
 - **Files:** `app/(app)/forecasts/page.tsx` (DataTable plus a Column chart with a data table), target edit dialog.
 - **Tests first:** E (w360, w1440): the manager sees the team and the total, and edits a target. A rep sees one row.
 - **Done when:** **US-16** passes end to end.
 
 ### Checkpoint: slice 10
-- [ ] US-16 passes.
+- Deferred to Phase 2. US-16 is not part of the MVP go-live gate.
 
 ---
 
@@ -716,10 +719,12 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 | OQ-08 business hours | ⚠ monitoring only | T11.12 |
 | OQ-09 SMTP provider | ⛔ prod email config | T9.01 |
 
+No open question maps to slice 10. The PRD assumption that the fiscal year starts in January moved to Phase 2 with US-16 (2026-10-27), so it no longer affects any MVP task.
+
 ## Not in this plan
 
 - **Production infrastructure.** Deferred by decision (2026-10-27): hosting is chosen at go-live, likely a single server rather than the AWS layout in TRD/ADR-0013. It will be planned as a later task once OQ-03 is answered. Until then, the app keeps to portable pieces only (Postgres, Redis, S3-compatible storage, SMTP), so it runs on either.
-- **Phase 2 items** from PRD §5.
+- **Phase 2 items** from PRD §5, including slice 10 (Forecasts), which is deferred but kept above for reference.
 
 ## Risks
 
