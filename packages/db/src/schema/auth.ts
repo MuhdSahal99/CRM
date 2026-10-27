@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, customType, index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, customType, index, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 // Better Auth 1.7 tables (ADR-0004), from `npx auth generate` then aligned with docs/SCHEMA.md:
 // timestamptz, citext emails, RESTRICT on org FKs, our three roles, and no DB id default (the app sets UUID v7).
@@ -130,8 +130,10 @@ export const invitation = pgTable(
     // Ours, not Better Auth's: what the Admin chose at invite time, applied to the membership on accept (US-03).
     name: text("name"),
     managerId: uuid("manager_id"), // composite FK (org_id, manager_id) → member(org_id, user_id), in SQL
+    tokenHash: text("token_hash"), // SHA-256 hex of the random accept token; the token itself is never stored
   },
   (t) => [
+    uniqueIndex("invitation_token_hash_key").on(t.tokenHash),
     index("invitation_org_id_email_idx").on(t.orgId, t.email),
     check("invitation_role_check", sql`${t.role} IN ('admin', 'manager', 'rep')`),
     check("invitation_status_check", sql`${t.status} IN ('pending', 'accepted', 'rejected', 'canceled')`),

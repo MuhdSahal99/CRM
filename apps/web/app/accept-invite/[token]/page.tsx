@@ -11,9 +11,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // US-03: public page behind the emailed link. An unknown, used or expired link is a plain 404.
-export default async function AcceptInvitePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const invitation = await getInvitation(getAuthDb(), id);
+export default async function AcceptInvitePage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  const invitation = await getInvitation(getAuthDb(), token);
   if (!invitation) notFound();
   const t = await getTranslations("accept");
   const tBrand = await getTranslations("brand");
@@ -26,7 +26,7 @@ export default async function AcceptInvitePage({ params }: { params: Promise<{ i
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-16">
         <h1 className="text-[2rem] leading-tight font-semibold tracking-tight">{t("title")}</h1>
         <p className="mt-2 mb-8 text-base text-muted-foreground">{t("lead", { org: invitation.orgName })}</p>
-        <AcceptForm id={id} email={invitation.email} name={invitation.name ?? ""} />
+        <AcceptForm token={token} email={invitation.email} name={invitation.name ?? ""} />
       </div>
     </main>
   );

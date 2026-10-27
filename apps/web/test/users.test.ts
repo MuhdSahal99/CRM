@@ -43,12 +43,12 @@ describe("users API (T1.20)", () => {
     const res = await invite(admin, { email: "new.rep@saqient.test", name: "New Rep", role: "rep", manager_id: ids["manager@saqient.test"] });
     expect(res.status).toBe(201);
     const [outcome] = res.json().data;
-    expect(outcome).toMatchObject({ code: "SUCCESS", details: { accept_url: `http://localhost:3000/accept-invite/${outcome.details.id}` } });
+    expect(outcome).toMatchObject({ code: "SUCCESS", details: { accept_url: expect.stringMatching(/^http:\/\/localhost:3000\/accept-invite\/[A-Za-z0-9_-]{43}$/) } });
     const { rows } = await auth.query("SELECT org_id, email, role, status, manager_id FROM invitation WHERE id = $1", [outcome.details.id]);
     expect(rows[0]).toEqual({ org_id: saqient, email: "new.rep@saqient.test", role: "rep", status: "pending", manager_id: ids["manager@saqient.test"] });
     const list = await call(usersRoute, "GET", "/users", { cookie: admin });
     expect(list.json().data).toContainEqual(expect.objectContaining({ email: "new.rep@saqient.test", status: "invited" }));
-    // The invitation id is the secret in the accept link, so only admins may see pending invitations.
+    // Pending invitations are admin-only.
     const rep = await signIn("rep.a@saqient.test");
     const asRep = await call(usersRoute, "GET", "/users", { cookie: rep });
     expect(asRep.json().data.filter((u: { status: string }) => u.status === "invited")).toEqual([]);

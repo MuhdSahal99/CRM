@@ -1539,7 +1539,7 @@ components:
             id: { type: string, format: uuid }
             version: { type: integer }
             api_name: { type: string }
-            accept_url: { type: string, format: uri, description: 'POST /users only: the link that accepts the invitation (sent by email from T9.04)' }
+            accept_url: { type: string, format: uri, description: 'POST /users only: the link that accepts the invitation: /accept-invite/{token}, a random 256-bit single-use token (only its SHA-256 is stored; it is not the invitation id). Sent by email from T9.04' }
 
     # ------------------------------------------------------------ primitives
     ModuleName:

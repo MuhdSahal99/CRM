@@ -20,7 +20,7 @@ test("T1.25: an admin sees the org's users and invites a rep", async ({ page }) 
   await page.getByRole("option", { name: "Sales Manager" }).click();
   await dialog.getByRole("button", { name: "Send invite" }).click();
 
-  await expect(dialog.getByLabel("Invitation link")).toHaveValue(/\/accept-invite\/[0-9a-f-]{36}$/);
+  await expect(dialog.getByLabel("Invitation link")).toHaveValue(/\/accept-invite\/[A-Za-z0-9_-]{43}$/);
   await dialog.getByRole("button", { name: "Close" }).first().click();
   await expect(page.getByText(email).filter({ visible: true }).first()).toBeVisible();
   await noPageScroll(page);

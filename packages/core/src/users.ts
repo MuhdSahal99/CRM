@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { getAuthDb } from "./auth.ts";
 import { ApiError, Conflict, NotFound } from "./http/errors.ts";
+import { hashInviteToken, newInviteToken } from "./invitations.ts";
 import type { TenantContext, Tx } from "./tenant.ts";
 import { recordEvent } from "./timeline.ts";
 
@@ -29,7 +30,7 @@ const USERS = sql`
     SELECT id, name, email, role, manager_id, status FROM org_users
     UNION ALL
     SELECT id, COALESCE(name, email), email, role, manager_id, 'invited' FROM invitation
-    WHERE status = 'pending' AND expires_at > now() AND current_setting('app.role', true) = 'admin' -- the id is the secret in the accept link: admins only
+    WHERE status = 'pending' AND expires_at > now() AND current_setting('app.role', true) = 'admin' -- admins only
   ) u LEFT JOIN org_users mgr ON mgr.id = u.manager_id`;
 
 /** GET /users: every role may read names for owner pickers. */
@@ -64,6 +65,7 @@ export async function inviteUsers(tx: Tx, ctx: TenantContext, input: z.infer<typ
       continue;
     }
     const id = newId();
+    const token = newInviteToken();
     await tx.insert(schema.invitation).values({
       id,
       orgId: ctx.orgId,
@@ -74,8 +76,9 @@ export async function inviteUsers(tx: Tx, ctx: TenantContext, input: z.infer<typ
       status: "pending",
       expiresAt: new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000),
       inviterId: ctx.userId,
+      tokenHash: hashInviteToken(token),
     });
-    outcomes.push({ code: "SUCCESS", status: "success", details: { id, accept_url: `${baseUrl}/accept-invite/${id}` } });
+    outcomes.push({ code: "SUCCESS", status: "success", details: { id, accept_url: `${baseUrl}/accept-invite/${token}` } });
   }
   return outcomes;
 }

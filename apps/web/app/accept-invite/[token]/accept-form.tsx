@@ -13,7 +13,7 @@ import { acceptInvite } from "./actions";
 type Failure = "invalid" | "gone" | "taken" | "unavailable";
 
 /** Sets the invited person's name and password, then signs them in and opens the app. */
-export function AcceptForm({ id, email, name }: { id: string; email: string; name: string }) {
+export function AcceptForm({ token, email, name }: { token: string; email: string; name: string }) {
   const t = useTranslations("accept");
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -25,7 +25,7 @@ export function AcceptForm({ id, email, name }: { id: string; email: string; nam
     const password = String(form.get("password"));
     setPending(true);
     setError(null);
-    const created = await acceptInvite(id, { name: String(form.get("name")), password }).catch(() => ({ ok: false, reason: "unavailable" }) as const);
+    const created = await acceptInvite(token, { name: String(form.get("name")), password }).catch(() => ({ ok: false, reason: "unavailable" }) as const);
     if (!created.ok) {
       setError(created.reason);
       setPending(false);
