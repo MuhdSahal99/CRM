@@ -216,7 +216,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a stale `version` → 409. The `updated` event carries `{api_name:[old,new]}`. Soft delete hides the record from lists, and its GET returns 404.
 - **Done when:** PUT works as a partial update (ADR-0015).
 
-#### T2.06 Criteria parser · M
+#### T2.06 Criteria parser · M · ✅
 - **Files:** `packages/core/src/search/criteria.ts` (+ test).
 - **Tests first:** U: Zoho syntax → AST. Unknown fields and operators are rejected. **AC-36**: `((Email:equals:x') or 1=1--))` → error. **AC-34**: 50 levels of nesting → error. Values become bind parameters only.
 - **Done when:** the parser has no path that concatenates strings into SQL.
