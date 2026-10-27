@@ -15,3 +15,6 @@ export { provisionOrg, SYSTEM_MODULES } from "./metadata/seed-org.ts";
 export { seedAll } from "./seed.ts";
 export { listFields, listModules, ModuleName } from "./metadata/settings.ts";
 export { deactivateUser, getMe, getUser, InviteUsersInput, inviteUsers, ListUsersInput, listUsers, RoleName, UpdateUserInput, updateUser } from "./users.ts";
+export { RECORD_MODULES } from "./modules/registry.ts";
+export { CreateRecordsInput, createRecords } from "./modules/write.ts";
+export { getRecord } from "./modules/list.ts";

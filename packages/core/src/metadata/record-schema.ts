@@ -31,7 +31,7 @@ function valueSchema(f: FieldDef): z.ZodType {
     case "integer": return z.int();
     case "decimal": case "currency": case "percent": return decimal; // money and rates travel as strings (ADR-0007)
     case "boolean": return z.boolean();
-    case "lookup": case "user_lookup": return z.uuid();
+    case "lookup": case "user_lookup": return z.object({ id: z.uuid() }); // Lookup {id}; the name is read-only
     default: return text; // text, textarea, phone (autonumber is read-only, so never an input)
   }
 }
@@ -59,8 +59,9 @@ export function buildRecordSchema(fields: FieldDef[], writableColumns: PgColumn[
     toRow(input: Record<string, unknown>): Record<string, unknown> {
       const row: Record<string, unknown> = {};
       const custom: Record<string, unknown> = {};
-      for (const [apiName, value] of Object.entries(input)) {
+      for (let [apiName, value] of Object.entries(input)) {
         const f = byApiName.get(apiName)!;
+        if (f.dataType === "lookup" || f.dataType === "user_lookup") value = (value as { id: string } | null)?.id ?? null;
         if (f.isSystem) row[f.columnName!] = value;
         else custom[apiName] = value;
       }

@@ -57,6 +57,15 @@ describe("buildRecordSchema (T1.18, ADR-0006)", () => {
     expect(schema.safeParse({ Last_Name: "A", Budget: 12.5 }).success).toBe(false);
   });
 
+  it("takes a lookup as {id} and stores the id", () => {
+    const owner = field({ apiName: "Owner", dataType: "user_lookup", isSystem: true, columnName: "company" });
+    const { schema, toRow } = buildRecordSchema([owner], WRITABLE);
+    const id = crypto.randomUUID();
+    expect(toRow(schema.parse({ Owner: { id, name: "ignored" } }))).toEqual({ company: id });
+    expect(toRow(schema.parse({ Owner: null }))).toEqual({ company: null });
+    expect(schema.safeParse({ Owner: id }).success).toBe(false);
+  });
+
   it("refuses a system field mapped to a column outside the service's allowlist", () => {
     const evil = field({ apiName: "Evil", dataType: "text", isSystem: true, columnName: "org_id" });
     expect(() => buildRecordSchema([evil], WRITABLE)).toThrow(/org_id/);

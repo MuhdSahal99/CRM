@@ -201,7 +201,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a replay returns the stored response. **AC-28**: the same key with a different body → 422 `IDEMPOTENCY_KEY_REUSED`. A request still in flight → 409.
 - **Done when:** create, convert, issue, cancel, mark_paid, send_email and share-link create can opt in (ADR-0015).
 
-#### T2.03 Module registry and create/read for Accounts · M
+#### T2.03 Module registry and create/read for Accounts · M · ✅
 - **Files:** `packages/core/src/modules/{registry.ts,accounts.ts}`, `apps/web/app/api/v1/[module]/route.ts` (POST), `[module]/[id]/route.ts` (GET).
 - **Tests first:** I: a missing `Account_Name` → 422 on that field. **AC-22**: an `Owner.id` from another org → 422. A `created` timeline event is written. GET returns `data:[record]`.
 - **Done when:** the generic routes dispatch through the registry. Later modules only add a registry entry.

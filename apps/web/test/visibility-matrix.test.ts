@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { NotFound } from "@crm/core";
+import { NotFound, RECORD_MODULES } from "@crm/core";
 import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -44,7 +44,9 @@ function expand(path: string): Record<string, string>[] {
   const params = [item.parameters, ...METHODS.map((m) => item[m]?.parameters)].flat().filter((p): p is Param => Boolean(p)).map(ref);
   let combos: Record<string, string>[] = [{}];
   for (const p of params) {
-    const values: string[] | undefined = p.in === "path" && p.schema ? ref(p.schema).enum : undefined;
+    let values: string[] | undefined = p.in === "path" && p.schema ? ref(p.schema).enum : undefined;
+    // Generic record routes serve only registered modules; the rest are a plain 404 until their slice adds an entry.
+    if (p.name === "module") values = values?.filter((m) => RECORD_MODULES.includes(m));
     if (values) combos = combos.flatMap((c) => values.map((v) => ({ ...c, [p.name]: v })));
   }
   return combos;

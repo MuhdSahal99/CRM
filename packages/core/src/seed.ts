@@ -2,7 +2,17 @@ import { createDb, type Db } from "@crm/db";
 import { SEED_ORGS, seed } from "@crm/db/seed";
 import { sql } from "drizzle-orm";
 import { provisionOrg } from "./metadata/seed-org.ts";
+import { createRecords } from "./modules/write.ts";
 import { withTenant } from "./tenant.ts";
+
+/** Sample records per seeded org, created by its first rep through the record service (skipped once any exist). */
+const SAMPLE_ACCOUNTS: Record<string, Record<string, unknown>[]> = {
+  "rep.a@saqient.test": [
+    { Account_Name: "Al Noor Trading LLC", Industry: "Retail", Billing_City: "Muscat", Billing_Country: "OM" },
+    { Account_Name: "Gulf Horizon Logistics", Industry: "Transportation", Billing_City: "Dubai", Billing_Country: "AE" },
+  ],
+  "rep@demo.test": [{ Account_Name: "Demo Customer", Billing_Country: "OM" }],
+};
 
 /**
  * Dev and test data (docs/PRODUCTION_READINESS.md § Seeded test users): users and orgs as crm_auth, then each
@@ -16,6 +26,14 @@ export async function seedAll(authDb: Db, appDb: Db, password: string): Promise<
     ORDER BY m.org_id, m.created_at`);
   for (const { org_id, user_id } of rows) {
     await withTenant({ orgId: org_id, userId: user_id, role: "admin", visibleOwnerIds: [user_id], seeAll: true }, provisionOrg, appDb);
+  }
+  const reps = await authDb.execute<{ org_id: string; user_id: string; email: string }>(sql`
+    SELECT m.org_id, m.user_id, u.email FROM member m JOIN "user" u ON u.id = m.user_id WHERE u.email IN ${Object.keys(SAMPLE_ACCOUNTS)}`);
+  for (const rep of reps.rows) {
+    const ctx = { orgId: rep.org_id, userId: rep.user_id, role: "rep" as const, visibleOwnerIds: [rep.user_id], seeAll: false };
+    await withTenant(ctx, async (tx) => {
+      if ((await tx.execute(sql`SELECT 1 FROM accounts LIMIT 1`)).rows.length === 0) await createRecords(tx, ctx, "Accounts", { data: SAMPLE_ACCOUNTS[rep.email]! });
+    }, appDb);
   }
 }
 
