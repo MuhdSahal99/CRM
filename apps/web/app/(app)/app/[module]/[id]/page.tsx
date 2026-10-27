@@ -1,4 +1,4 @@
-import { getRecord, listRelated, listRelatedLists, listTimeline, NotFound, withTenant } from "@crm/core";
+import { getRecord, listPipelines, listRelated, listRelatedLists, listTimeline, NotFound, withTenant } from "@crm/core";
 import { ChevronLeftIcon, PencilIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { ConvertDialog } from "@/components/records/convert-dialog";
+import { StageControl } from "@/components/deals/stage-control";
 import { ActivityDialog } from "@/components/records/activity-dialog";
 import { RecordDetail } from "@/components/records/record-detail";
 import { RelatedTabs } from "@/components/records/related-tabs";
@@ -41,14 +42,15 @@ export default async function RecordPage({ params }: Props) {
       );
       // shortcut: the latest 50 events; add paging when a record's history outgrows it.
       const timeline = (await listTimeline(tx, module, id, { page: 1, per_page: 50 })).data as TimelineItem[];
-      return { record: record!, meta: await moduleMeta(tx, module), tabs, timeline };
+      const pipeline = module === "Deals" ? ((await listPipelines(tx)) as { is_default: boolean; stages: { id: string; name_key: string; record_category: string }[] }[]).find((p) => p.is_default) : undefined;
+      return { record: record!, meta: await moduleMeta(tx, module), tabs, timeline, stages: pipeline?.stages ?? [] };
     } catch (error) {
       if (error instanceof NotFound) return null; // missing, deleted or not visible: the same 404
       throw error;
     }
   });
   if (!found) notFound();
-  const { record, meta, tabs, timeline } = found;
+  const { record, meta, tabs, timeline, stages } = found;
   const t = await getTranslations();
   const converted = module === "Leads" && record.Converted === true; // US-05 / AC-24: a converted lead is read-only
 
@@ -74,6 +76,15 @@ export default async function RecordPage({ params }: Props) {
           )}
         </div>
       </div>
+      {module === "Deals" && stages.length > 0 && (
+        <StageControl
+          id={id}
+          version={record.version}
+          stageId={(record.Stage as { id: string } | null)?.id ?? ""}
+          stages={stages}
+          reasons={meta.fields.find((f) => f.api_name === "Reason_For_Loss")?.picklist_values ?? []}
+        />
+      )}
       <RecordDetail sections={meta.sections} record={record} />
       <RelatedTabs module={module} id={id} tabs={tabs} />
       <Timeline items={timeline} fields={meta.fields} />

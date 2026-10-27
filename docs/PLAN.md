@@ -382,7 +382,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** E (w360, w1440): move a deal with the "Move to stage" menu, and the column counts and Σ OMR refresh. Closed Lost opens the reason dialog, and Cancel leaves the deal where it was.
 - **Done when:** this is the PRD E11 US-07 flow, with no page-level horizontal scroll (the board scrolls inside itself).
 
-#### T5.09 UI: Deal detail and stage history · S
+#### T5.09 UI: Deal detail and stage history · S · ✅
 - **Files:** `app/(app)/Deals/[id]/page.tsx` (reuses the record detail and adds a stage control).
 - **Tests first:** E: change the stage on the detail page and see the probability update and a timeline entry.
 - **Done when:** **US-07** passes end to end.

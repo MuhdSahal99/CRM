@@ -47,3 +47,17 @@ test("T5.08 (US-07): move a deal with the Move to stage menu; Closed Lost asks f
   await expect(inColumn("Closed Lost")).toBeVisible({ timeout: 30_000 });
   await noPageScroll(page);
 });
+
+test("T5.09 (US-07): change the stage on the detail page and see the probability and a timeline entry", async ({ page }) => {
+  const name = `Detail Deal ${crypto.randomUUID().slice(0, 8)}`;
+  await signInToApp(page, "rep.a@saqient.test");
+  const id = await createDeal(page, name);
+  await page.goto(`/app/Deals/${id}`);
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("10", { exact: true }).first()).toBeVisible(); // Probability from Qualification
+  await noPageScroll(page);
+  await page.getByLabel("Change stage").selectOption({ label: "Proposal/Price Quote" });
+  await expect(page.getByText("75", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Stage changed").first()).toBeVisible();
+  await noPageScroll(page);
+});
