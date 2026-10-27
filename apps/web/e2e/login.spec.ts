@@ -1,29 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { noPageScroll, PASSWORD, phoneAndDesktop, signIn } from "./helpers";
 
-// Seeded users (docs/PRODUCTION_READINESS.md); the password comes from SEED_PASSWORD in the root .env.local.
-const PASSWORD = process.env.SEED_PASSWORD ?? "";
-
-test.beforeEach(async ({ page }, info) => {
-  test.skip(!/^w(360|1440)-light$/.test(info.project.name), "T1.10 runs at phone and desktop widths; colour scheme is irrelevant");
-  if (!PASSWORD) throw new Error("SEED_PASSWORD is not set (root .env.local)");
-  // Each test is its own client IP: every local request otherwise shares one per-IP sign-in bucket (AC-31, 10 per 15 min).
-  await page.setExtraHTTPHeaders({ "x-forwarded-for": `10.${Array.from({ length: 3 }, () => Math.floor(Math.random() * 256)).join(".")}` });
-});
-
-async function signIn(page: Page, email: string, password: string) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
-}
-
-async function noPageScroll(page: Page) {
-  const { scrollWidth, innerWidth } = await page.evaluate(() => ({
-    scrollWidth: document.scrollingElement!.scrollWidth,
-    innerWidth: window.innerWidth,
-  }));
-  expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
-}
+phoneAndDesktop();
 
 test("a seeded rep signs in and lands on /app", async ({ page }) => {
   await signIn(page, "rep.a@saqient.test", PASSWORD);
