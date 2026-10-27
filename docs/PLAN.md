@@ -315,7 +315,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a converted lead appears only in this view.
 - **Done when:** **US-05** (converted view) is met.
 
-#### T4.03 Conversion options · S
+#### T4.03 Conversion options · S · ✅
 - **Files:** `apps/web/app/api/v1/Leads/[id]/__conversion_options/route.ts`.
 - **Tests first:** I: a lead whose email matches an existing Contact gets the "attach to existing" offer. A company matching an Account by `lower(name)` gets that account offered.
 - **Done when:** the response matches `openapi.yaml`.
