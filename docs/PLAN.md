@@ -330,13 +330,13 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: the lead's notes and activities now point at the Contact. **AC-24**: PUT on, or a second convert of, a converted lead → 409 `INVALID_STATE`. Direct SQL UPDATE raises in the trigger.
 - **Done when:** **US-05** is met except for the deal option.
 
-#### T4.06 UI: lead convert dialog · M
-- **Files:** `app/(app)/Leads/[id]/convert-dialog.tsx`.
+#### T4.06 UI: lead convert dialog · M · ✅
+- **Files:** `components/records/convert-dialog.tsx` (shown on the generic record page).
 - **Tests first:** E (w360, w1440): convert a lead and land on the new Contact. The attach-existing path works.
 - **Done when:** this is the PRD E11 US-05 phone flow, minus the deal checkbox, which comes in T5.07.
 
 ### Checkpoint: slice 4
-- [ ] US-04 passes, and US-05 passes except "Create Deal". AC-24 is green.
+- [x] US-04 passes, and US-05 passes except "Create Deal". AC-24 is green.
 
 ---
 

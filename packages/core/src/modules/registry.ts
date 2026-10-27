@@ -138,6 +138,7 @@ export async function toApi(tx: Tx, fields: Field[], rows: Row[]) {
       Modified_Time: iso(r.updated_at),
       Created_By: ref(r.created_by),
       Modified_By: ref(r.updated_by),
+      ...("is_converted" in r ? { Converted: r.is_converted } : {}), // Leads: a converted lead is read-only (US-05)
     };
     for (const f of fields) {
       if (f.dataType === "polymorphic") record[f.apiName] = value(f, r) === null ? null : { ...ref(value(f, r)), module: linkModule(f, r) };

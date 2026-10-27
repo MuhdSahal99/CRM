@@ -31,7 +31,7 @@ const METHODS = ["get", "put", "post", "patch", "delete"] as const;
 const routes = Object.entries(import.meta.glob<RouteModule>("../app/api/v1/**/route.ts")).map(([file, load]) => ({
   file,
   load,
-  path: file.replace(/^\.\.\/app\/api\/v1/, "").replace(/\/route\.ts$/, "").replace(/\[(\w+)\]/g, "{$1}"),
+  path: file.replace(/^\.\.\/app\/api\/v1/, "").replace(/\/route\.ts$/, "").replaceAll("%5F", "_").replace(/\[(\w+)\]/g, "{$1}"),
 }));
 
 /** Follows a local `#/components/...` $ref. */

@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as notesRoute from "../app/api/v1/[module]/[id]/[related_list]/route";
 import * as recordRoute from "../app/api/v1/[module]/[id]/route";
 import * as convertRoute from "../app/api/v1/Leads/[id]/actions/convert/route";
-import * as optionsRoute from "../app/api/v1/Leads/[id]/__conversion_options/route";
+import * as optionsRoute from "../app/api/v1/Leads/[id]/%5F%5Fconversion_options/route";
 import * as moduleRoute from "../app/api/v1/[module]/route";
 import { call, signIn } from "./api.ts";
 

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { ConvertDialog } from "@/components/records/convert-dialog";
 import { ActivityDialog } from "@/components/records/activity-dialog";
 import { RecordDetail } from "@/components/records/record-detail";
 import { RelatedTabs } from "@/components/records/related-tabs";
 import { Timeline, type TimelineItem } from "@/components/records/timeline";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { isRecordModule, moduleMeta, type RecordData, recordTitle } from "@/lib/records";
 import { requireContext } from "@/lib/session";
@@ -48,6 +50,7 @@ export default async function RecordPage({ params }: Props) {
   if (!found) notFound();
   const { record, meta, tabs, timeline } = found;
   const t = await getTranslations();
+  const converted = module === "Leads" && record.Converted === true; // US-05 / AC-24: a converted lead is read-only
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,12 +62,16 @@ export default async function RecordPage({ params }: Props) {
         <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{recordTitle(meta, record)}</h1>
         <div className="flex flex-wrap gap-2">
           {(module === "Accounts" || module === "Contacts") && <ActivityDialog module={module} id={id} />}
-          <Button asChild variant="outline">
-            <Link href={`/app/${module}/${id}/edit`}>
-              <PencilIcon aria-hidden />
-              {t("records.edit")}
-            </Link>
-          </Button>
+          {converted && <Badge variant="secondary">{t("records.converted")}</Badge>}
+          {module === "Leads" && !converted && <ConvertDialog id={id} company={String(record.Company ?? "")} name={recordTitle(meta, record)} />}
+          {!converted && (
+            <Button asChild variant="outline">
+              <Link href={`/app/${module}/${id}/edit`}>
+                <PencilIcon aria-hidden />
+                {t("records.edit")}
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
       <RecordDetail sections={meta.sections} record={record} />

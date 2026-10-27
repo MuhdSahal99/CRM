@@ -27,12 +27,17 @@ export default async function RecordListPage({ params, searchParams }: Props) {
   const { meta, page } = await withTenant(ctx, async (tx) => ({ meta: await moduleMeta(tx, module), page: await listRecords(tx, ctx, module, input) }));
   const t = await getTranslations();
   const label = t(`modules.${module}`);
-  const href = (n: number) => `/app/${module}?page=${n}${input.per_page === 20 ? "" : `&per_page=${input.per_page}`}`;
+  const href = (n: number) => `/app/${module}?page=${n}${input.per_page === 20 ? "" : `&per_page=${input.per_page}`}${input.cvid === "converted" ? "&cvid=converted" : ""}`;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{label}</h1>
+        {module === "Leads" && (
+          <Button asChild variant="link" className="me-auto">
+            <Link href={input.cvid === "converted" ? "/app/Leads" : "/app/Leads?cvid=converted"}>{t(input.cvid === "converted" ? "records.allLeads" : "records.convertedLeads")}</Link>
+          </Button>
+        )}
         <Button asChild>
           <Link href={`/app/${module}/new`}>
             <PlusIcon aria-hidden />

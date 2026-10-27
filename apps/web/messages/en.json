@@ -768,6 +768,7 @@
     "newTitle": "New {name}",
     "editTitle": "Edit {name}",
     "singular": {
+      "Leads": "Lead",
       "Accounts": "Account",
       "Contacts": "Contact",
       "Tasks": "Task",
@@ -779,7 +780,10 @@
     "none": "None",
     "conflict": "Someone else changed this record. Reload the page to see their changes, then try again.",
     "edit": "Edit",
-    "add": "Add {name}"
+    "add": "Add {name}",
+    "convertedLeads": "Converted leads",
+    "allLeads": "Open leads",
+    "converted": "Converted"
   },
   "timeline": {
     "title": "Timeline",
@@ -836,5 +840,20 @@
       "taken": "An account with this email already exists. Sign in instead.",
       "unavailable": "Something went wrong. Try again in a few minutes."
     }
+  },
+  "convert": {
+    "open": "Convert",
+    "title": "Convert lead",
+    "description": "Create an Account and a Contact from this lead, or attach it to ones you already have.",
+    "loading": "Looking for matches…",
+    "account": "Account",
+    "contact": "Contact",
+    "newAccount": "Create new account: {name}",
+    "newContact": "Create new contact: {name}",
+    "attachAccount": "Attach to existing account: {name}",
+    "attachContact": "Attach to existing contact: {name}",
+    "submit": "Convert lead",
+    "failed": "The lead could not be converted. Try again.",
+    "gone": "This lead was already converted. Reload the page."
   }
 }
