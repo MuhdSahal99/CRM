@@ -36,7 +36,8 @@ describe("products (T6.05)", () => {
   });
 
   it("a product without a VAT category is 422; a duplicate code, case-insensitive, is 422", async () => {
-    const { VAT_Category: _omitted, ...noVat } = { ...good, Product_Code: "NV-1" };
+    const noVat: Record<string, unknown> = { ...good, Product_Code: "NV-1" };
+    delete noVat.VAT_Category;
     const res = await post(admin, noVat);
     expect(res.status).toBe(422);
     expect(JSON.stringify(res.json())).toContain("VAT_Category");

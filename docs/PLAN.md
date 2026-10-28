@@ -429,13 +429,13 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** E (w360, w1440): the admin creates a product with Zero-rated VAT, and a rep sees it read-only.
 - **Done when:** **US-08** passes end to end.
 
-#### T6.07 UI: admin settings for org, VAT and exchange rates · M
+#### T6.07 UI: admin settings for org, VAT and exchange rates · M · ✅
 - **Files:** `app/(app)/settings/{org,vat,exchange-rates}/page.tsx`.
 - **Tests first:** E: the admin adds an AED rate, and the rate list shows it with its effective date.
 - **Done when:** **US-09** passes end to end.
 
 ### Checkpoint: slice 6
-- [ ] US-08 and US-09 pass. AC-35/46 are green.
+- [x] US-08 and US-09 pass. AC-35/46 are green.
 
 ---
 

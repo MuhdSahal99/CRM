@@ -472,6 +472,56 @@
     "Calls": "Calls",
     "Meetings": "Meetings"
   },
+  "settings": {
+    "failed": "Something went wrong. Try again.",
+    "effectiveFrom": "Effective from",
+    "addRate": "Add rate",
+    "org": {
+      "metaTitle": "Organisation · Saqient CRM",
+      "title": "Organisation settings",
+      "save": "Save settings",
+      "saved": "Settings saved.",
+      "conflict": "Someone else changed these settings. Reload the page, then try again.",
+      "failed": "Something went wrong. Try again.",
+      "secretSet": "An SMTP password is configured. It is never shown.",
+      "secretNotSet": "No SMTP password is configured yet.",
+      "fields": {
+        "legal_name": "Legal name",
+        "vat_number": "VAT number (seller)",
+        "address_line1": "Address line 1",
+        "address_line2": "Address line 2",
+        "city": "City",
+        "postal_code": "Postal code",
+        "country": "Country code",
+        "share_link_ttl_days": "Share link validity (days)",
+        "smtp_host": "SMTP host",
+        "smtp_port": "SMTP port",
+        "smtp_username": "SMTP username",
+        "smtp_from_email": "From email",
+        "smtp_from_name": "From name"
+      }
+    },
+    "vat": {
+      "metaTitle": "VAT rates · Saqient CRM",
+      "title": "VAT rates",
+      "help": "A new rate applies from its effective date. Documents already issued keep the rate they used.",
+      "caption": "VAT rates by category",
+      "empty": "No VAT rates yet.",
+      "category": "Category",
+      "rate": "Rate (%)",
+      "categories": { "standard": "Standard", "zero_rated": "Zero-rated" }
+    },
+    "fx": {
+      "metaTitle": "Exchange rates · Saqient CRM",
+      "title": "Exchange rates",
+      "help": "OMR per 1 unit of the currency. A deal or document takes the rate in force when it is created.",
+      "caption": "Exchange rate history",
+      "empty": "No exchange rates yet. Enter one before creating AED or INR deals.",
+      "currency": "Currency",
+      "rate": "Rate (OMR per 1)",
+      "enteredBy": "Entered by"
+    }
+  },
   "users": {
     "metaTitle": "Users · Saqient CRM",
     "title": "Users",
