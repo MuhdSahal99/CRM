@@ -129,6 +129,9 @@ describe("quotes API (T7.05, T7.06)", () => {
       const q = (await get(repA, id)).json().data[0];
       for (const hidden of ["Adjustment", "Grand_Total", "Grand_Total_OMR", "Line_Items", "VAT_Summary"]) expect(q, hidden).not.toHaveProperty(hidden);
       expect(q).toHaveProperty("Sub_Total");
+      // Lines drive the totals: without access to them, Line_Items writes are refused on create and update.
+      expect((await post(repA, { ...base(), Line_Items: fixture() })).status).toBe(403);
+      expect((await put(repA, id, { version: 1, Line_Items: fixture() })).status).toBe(403);
     } finally {
       await setAdjustment("read_write");
     }

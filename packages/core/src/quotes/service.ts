@@ -1,7 +1,7 @@
 import { newId } from "@crm/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
-import { ApiError, validationError } from "../http/errors.ts";
+import { ApiError, Forbidden, validationError } from "../http/errors.ts";
 import { captureCurrency } from "../money/fx.ts";
 import { type PricedDocument, type PricingLineInput, priceDocument, priceFromOmr } from "../money/pricing.ts";
 import { DiscountValue, fitsScale, Money, Quantity } from "../money/schemas.ts";
@@ -33,6 +33,12 @@ const bad = (message: string, api_name: string) => new ApiError(422, "INVALID_DA
 
 /** The quote rules that need the database: runs on the parsed header (`row`) before it is written; fills the money columns. */
 export async function quoteChecks(tx: Tx, row: Record<string, unknown>, before: Record<string, unknown> | undefined, extra: QuoteExtra) {
+  if (extra.lines !== undefined) {
+    // Line_Items is not a metadata field, so field permissions are applied here: lines drive every total, so the caller must see
+    // Grand_Total with all its sources (loadFields hides Grand_Total when one is hidden) and be allowed to write the Adjustment.
+    const fields = new Map((await loadFields(tx, "Quotes")).map((f) => [f.apiName, f]));
+    if (!["Grand_Total", "Sub_Total", "VAT_Total"].every((n) => fields.has(n)) || !fields.get("Adjustment") || fields.get("Adjustment")!.readOnly) throw new Forbidden();
+  }
   const stage = (before?.quote_stage ?? "draft") as string;
   if (before && row.currency !== undefined && row.currency !== before.currency && stage !== "draft") {
     throw bad("The currency can only change while the quote is a draft.", "Currency");
