@@ -68,6 +68,8 @@ describe("tenant isolation (ADR-0003)", () => {
         SELECT gen_random_uuid(), $1, $2, 'I', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), 'OMR', 3, 1, 1, 0, 1, 0, 1`, [org, manager]);
       await queryAs(app, admin, `INSERT INTO invoice_lines (id, org_id, invoice_id, line_no, product_id, quantity, list_price, amount, discount_amount, net_amount, vat_category, vat_amount, line_total)
         SELECT gen_random_uuid(), $1, (SELECT id FROM invoices WHERE org_id = $1), 1, (SELECT id FROM products WHERE org_id = $1 LIMIT 1), 1, 1, 1, 0, 1, 'exempt', 0, 1`, [org]);
+      await queryAs(app, admin, `INSERT INTO files (id, org_id, kind, record_type, record_id, storage_key, filename, content_type, created_by)
+        SELECT gen_random_uuid(), $1, 'invoice_pdf', 'account', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), 'org/' || $1::text || '/invoice_pdf/' || gen_random_uuid()::text, 'f.pdf', 'application/pdf', $2`, [org, manager]);
       await queryAs(app, { org_id: org }, `INSERT INTO document_sequences (org_id, doc_type, prefix) VALUES ($1, 'quote', 'QT-')`, [org]);
       await queryAs(app, { org_id: org }, `INSERT INTO idempotency_keys (org_id, user_id, key, request_hash, status) VALUES ($1, $2, 'k', decode('00', 'hex'), 'in_progress')`, [org, manager]);
     }
