@@ -524,7 +524,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-26**: 20 concurrent issues with random injected rollbacks give contiguous numbers with no duplicates. **AC-27**: two calls with the same key give one number, and the second returns the stored response. A non-draft → 409.
 - **Done when:** **US-12** numbering is met. ⛔ **OQ-06** (format and start number) must be set before go-live. The mechanism doesn't wait for it. ⚠ **OQ-01** may add e-invoicing fields. *Human check: review the issuing transaction and the concurrency test.*
 
-#### T8.07 Cancel and mark paid · S
+#### T8.07 Cancel and mark paid · S ✅
 - **Files:** `Invoices/[id]/actions/{cancel,mark_paid}/route.ts`.
 - **Tests first:** I: **AC-25**: cancel writes its timeline row in the same transaction, and the number is kept. Mark paid writes `invoice_paid`. paid → cancelled is allowed only for an admin.
 - **Done when:** **US-12** status flow is met. ⚠ **OQ-05**: credit notes may replace or extend cancel.

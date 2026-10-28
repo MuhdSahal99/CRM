@@ -32,3 +32,4 @@ export { CreateExchangeRatesInput, createExchangeRates, exchangeRateFor, ListExc
 export { ConvertQuoteInput, ConvertSalesOrderInput, convertQuote, convertSalesOrder } from "./conversions.ts";
 export { TransitionSalesOrderInput, transitionSalesOrder } from "./sales-orders.ts";
 export { IssueInvoiceInput, issueInvoice } from "./invoices/issue.ts";
+export { CancelInvoiceInput, MarkPaidInput, cancelInvoice, markInvoicePaid } from "./invoices/status.ts";
