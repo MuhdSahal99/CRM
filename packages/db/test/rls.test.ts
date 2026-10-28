@@ -60,6 +60,10 @@ describe("tenant isolation (ADR-0003)", () => {
         SELECT gen_random_uuid(), $1, $2, 'Q', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), 'OMR', 3, 1, 1, 0, 1, 0, 1, 'Q-1'`, [org, manager]);
       await queryAs(app, admin, `INSERT INTO quote_lines (id, org_id, quote_id, line_no, product_id, quantity, list_price, amount, discount_amount, net_amount, vat_category, vat_amount, line_total)
         SELECT gen_random_uuid(), $1, (SELECT id FROM quotes WHERE org_id = $1), 1, (SELECT id FROM products WHERE org_id = $1 LIMIT 1), 1, 1, 1, 0, 1, 'exempt', 0, 1`, [org]);
+      await queryAs(app, admin, `INSERT INTO sales_orders (id, org_id, owner_id, subject, account_id, currency, currency_scale, exchange_rate, sub_total, vat_total, grand_total, vat_total_omr, grand_total_omr, so_number)
+        SELECT gen_random_uuid(), $1, $2, 'S', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), 'OMR', 3, 1, 1, 0, 1, 0, 1, 'SO-1'`, [org, manager]);
+      await queryAs(app, admin, `INSERT INTO sales_order_lines (id, org_id, sales_order_id, line_no, product_id, quantity, list_price, amount, discount_amount, net_amount, vat_category, vat_amount, line_total)
+        SELECT gen_random_uuid(), $1, (SELECT id FROM sales_orders WHERE org_id = $1), 1, (SELECT id FROM products WHERE org_id = $1 LIMIT 1), 1, 1, 1, 0, 1, 'exempt', 0, 1`, [org]);
       await queryAs(app, { org_id: org }, `INSERT INTO document_sequences (org_id, doc_type, prefix) VALUES ($1, 'quote', 'QT-')`, [org]);
       await queryAs(app, { org_id: org }, `INSERT INTO idempotency_keys (org_id, user_id, key, request_hash, status) VALUES ($1, $2, 'k', decode('00', 'hex'), 'in_progress')`, [org, manager]);
     }

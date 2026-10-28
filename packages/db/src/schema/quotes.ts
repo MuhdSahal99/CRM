@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { char, check, date, foreignKey, index, numeric, pgEnum, pgTable, smallint, text, unique, uuid, varchar } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, char, check, date, foreignKey, index, numeric, pgEnum, pgTable, smallint, text, unique, uuid, varchar } from "drizzle-orm/pg-core";
 import { REC, recFks, ZOHO, zohoIdx } from "./_columns.ts";
 import { orgs } from "./auth.ts";
 import { vatCategory } from "./settings.ts";
@@ -19,7 +19,7 @@ const address = (p: "billing" | "shipping") => ({
 const money = (name: string) => numeric(name, { precision: 18, scale: 3 });
 
 /** SCHEMA "Shared header columns" (DOC). */
-const DOC = () => ({
+export const DOC = () => ({
   subject: varchar("subject", { length: 255 }).notNull(),
   accountId: uuid("account_id").notNull(),
   contactId: uuid("contact_id"),
@@ -66,36 +66,42 @@ export const quotes = pgTable(
   ],
 );
 
+/** The line columns shared by quote_lines, sales_order_lines and invoice_lines (SCHEMA "quote_lines, sales_order_lines, invoice_lines"). */
+export const lineColumns = () => ({
+  id: uuid("id").primaryKey(),
+  orgId: uuid("org_id").notNull().references(() => orgs.id, { onDelete: "restrict" }),
+  lineNo: smallint("line_no").notNull(),
+  productId: uuid("product_id").notNull(),
+  description: text("description"),
+  quantity: numeric("quantity", { precision: 14, scale: 3 }).notNull(),
+  listPrice: money("list_price").notNull(),
+  discountType: discountType("discount_type"),
+  discountValue: numeric("discount_value", { precision: 18, scale: 4 }),
+  amount: money("amount").notNull(),
+  discountAmount: money("discount_amount").notNull(),
+  netAmount: money("net_amount").notNull(),
+  vatCategory: vatCategory("vat_category").notNull(),
+  vatRate: numeric("vat_rate", { precision: 7, scale: 4 }),
+  vatAmount: money("vat_amount").notNull(),
+  lineTotal: money("line_total").notNull(),
+});
+
+export const lineChecks = (p: string, t: Record<keyof ReturnType<typeof lineColumns>, AnyPgColumn>) => [
+  check(`${p}_quantity_positive`, sql`${t.quantity} > 0`),
+  check(`${p}_price_nonneg`, sql`${t.listPrice} >= 0`),
+  check(`${p}_discount`, sql`${t.discountValue} IS NULL OR (${t.discountValue} >= 0 AND (${t.discountType} IS DISTINCT FROM 'percent' OR ${t.discountValue} <= 100))`),
+  check(`${p}_net`, sql`${t.netAmount} = ${t.amount} - ${t.discountAmount}`),
+  check(`${p}_vat`, sql`(${t.vatCategory} = 'standard' OR ${t.vatAmount} = 0) AND ((${t.vatCategory} = 'exempt') = (${t.vatRate} IS NULL))`),
+  check(`${p}_total`, sql`${t.lineTotal} = ${t.netAmount} + ${t.vatAmount}`),
+];
+
 export const quoteLines = pgTable(
   "quote_lines",
-  {
-    id: uuid("id").primaryKey(),
-    orgId: uuid("org_id").notNull().references(() => orgs.id, { onDelete: "restrict" }),
-    quoteId: uuid("quote_id").notNull(),
-    lineNo: smallint("line_no").notNull(),
-    productId: uuid("product_id").notNull(),
-    description: text("description"),
-    quantity: numeric("quantity", { precision: 14, scale: 3 }).notNull(),
-    listPrice: money("list_price").notNull(),
-    discountType: discountType("discount_type"),
-    discountValue: numeric("discount_value", { precision: 18, scale: 4 }),
-    amount: money("amount").notNull(),
-    discountAmount: money("discount_amount").notNull(),
-    netAmount: money("net_amount").notNull(),
-    vatCategory: vatCategory("vat_category").notNull(),
-    vatRate: numeric("vat_rate", { precision: 7, scale: 4 }),
-    vatAmount: money("vat_amount").notNull(),
-    lineTotal: money("line_total").notNull(),
-  },
+  { ...lineColumns(), quoteId: uuid("quote_id").notNull() },
   (t) => [
     unique("quote_lines_line_no_key").on(t.orgId, t.quoteId, t.lineNo),
     foreignKey({ name: "quote_lines_quote_fk", columns: [t.orgId, t.quoteId], foreignColumns: [quotes.orgId, quotes.id] }).onDelete("cascade"),
-    check("quote_lines_quantity_positive", sql`${t.quantity} > 0`),
-    check("quote_lines_price_nonneg", sql`${t.listPrice} >= 0`),
-    check("quote_lines_discount", sql`${t.discountValue} IS NULL OR (${t.discountValue} >= 0 AND (${t.discountType} IS DISTINCT FROM 'percent' OR ${t.discountValue} <= 100))`),
-    check("quote_lines_net", sql`${t.netAmount} = ${t.amount} - ${t.discountAmount}`),
-    check("quote_lines_vat", sql`(${t.vatCategory} = 'standard' OR ${t.vatAmount} = 0) AND ((${t.vatCategory} = 'exempt') = (${t.vatRate} IS NULL))`),
-    check("quote_lines_total", sql`${t.lineTotal} = ${t.netAmount} + ${t.vatAmount}`),
+    ...lineChecks("quote_lines", t),
     index("quote_lines_quote_idx").on(t.orgId, t.quoteId),
   ],
 );
