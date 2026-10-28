@@ -70,6 +70,10 @@ describe("tenant isolation (ADR-0003)", () => {
         SELECT gen_random_uuid(), $1, (SELECT id FROM invoices WHERE org_id = $1), 1, (SELECT id FROM products WHERE org_id = $1 LIMIT 1), 1, 1, 1, 0, 1, 'exempt', 0, 1`, [org]);
       await queryAs(app, admin, `INSERT INTO files (id, org_id, kind, record_type, record_id, storage_key, filename, content_type, created_by)
         SELECT gen_random_uuid(), $1, 'invoice_pdf', 'account', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), 'org/' || $1::text || '/invoice_pdf/' || gen_random_uuid()::text, 'f.pdf', 'application/pdf', $2`, [org, manager]);
+      await queryAs(app, admin, `INSERT INTO email_sends (id, org_id, record_type, record_id, file_id, to_email, subject, created_by)
+        SELECT gen_random_uuid(), $1, 'account', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), (SELECT id FROM files WHERE org_id = $1 LIMIT 1), 'x@example.test', 'S', $2`, [org, manager]);
+      await queryAs(app, admin, `INSERT INTO share_links (id, org_id, file_id, record_type, record_id, token_hash, expires_at, created_by)
+        SELECT gen_random_uuid(), $1, (SELECT id FROM files WHERE org_id = $1 LIMIT 1), 'account', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), decode(md5(random()::text) || md5(random()::text), 'hex'), now() + interval '1 day', $2`, [org, manager]);
       await queryAs(app, { org_id: org }, `INSERT INTO document_sequences (org_id, doc_type, prefix) VALUES ($1, 'quote', 'QT-')`, [org]);
       await queryAs(app, { org_id: org }, `INSERT INTO idempotency_keys (org_id, user_id, key, request_hash, status) VALUES ($1, $2, 'k', decode('00', 'hex'), 'in_progress')`, [org, manager]);
     }
