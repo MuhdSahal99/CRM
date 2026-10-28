@@ -71,6 +71,7 @@ describe("Sales_Orders API (T8.03)", () => {
 describe("Sales_Orders lifecycle", () => {
   let auth: Awaited<ReturnType<typeof connectAsAuth>>;
   let rep: string;
+  let adminId: string;
   let account: string;
   let product: string;
   const mk = async () => (await call(moduleRoute, "POST", "/Sales_Orders", { cookie: rep, params: { module: "Sales_Orders" }, body: { data: [{ Subject: "L", Status: "delivered", Account_Name: { id: account }, Line_Items: [{ Product: { id: product }, Quantity: "1", List_Price: "10.000" }] }] } })).json().data[0].details.id as string;
@@ -81,7 +82,9 @@ describe("Sales_Orders lifecycle", () => {
   beforeAll(async () => {
     auth = await connectAsAuth();
     const org = (await auth.query("SELECT id FROM orgs WHERE slug = 'saqient'")).rows[0].id;
-    const admin = await signIn((await createSignInUser(auth, org, "admin")).email);
+    const a = await createSignInUser(auth, org, "admin");
+    adminId = a.id;
+    const admin = await signIn(a.email);
     rep = await signIn((await createSignInUser(auth, org, "rep")).email);
     account = (await call(moduleRoute, "POST", "/Accounts", { cookie: rep, params: { module: "Accounts" }, body: { data: [{ Account_Name: "LC Account" }] } })).json().data[0].details.id;
     product = (await call(moduleRoute, "POST", "/Products", { cookie: admin, params: { module: "Products" }, body: { data: [{ Product_Name: "LC P", Product_Code: `LC-${Date.now().toString(36)}`, VAT_Category: "standard", Unit_Price: "10.000" }] } })).json().data[0].details.id;
@@ -93,6 +96,26 @@ describe("Sales_Orders lifecycle", () => {
     expect(await status(id)).toBe("created");
     expect((await edit(id, { Status: "approved", Subject: "x" })).status).toBe(200);
     expect(await status(id)).toBe("created");
+  });
+
+  it("a role with read-only or hidden Status cannot move it", async () => {
+    const [app, org] = [await connectAsApp(), (await auth.query("SELECT id FROM orgs WHERE slug = 'saqient'")).rows[0].id];
+    const ctx = { org_id: org, user_id: adminId, role: "admin", see_all: "on" };
+    const set = (access: string) => queryAs(app, ctx, `INSERT INTO field_permissions (org_id, field_id, role, access)
+      SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = 'Sales_Orders' AND f.api_name = 'Status'
+      ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access]);
+    const id = await mk();
+    try {
+      for (const access of ["read_only", "hidden"]) {
+        await set(access);
+        expect((await move(id, "approved")).status, access).toBe(403);
+      }
+    } finally {
+      await set("read_write");
+      await app.end();
+    }
+    expect(await status(id)).toBe("created");
+    expect((await move(id, "approved")).status).toBe(200);
   });
 
   it("moves forward only: created -> approved -> delivered; backwards or out of a final state is 409", async () => {
