@@ -28,3 +28,9 @@
 - Deviation to confirm: the function returns share_link_id instead of org_id (ADR-0009 listed org_id), so the access log can name the link without the token.
 - Files: packages/db/migrations/0028_share_links.sql, packages/core/src/share-links.ts, apps/web/app/api/v1/[module]/[id]/share_links/, apps/web/test/share-links.test.ts
 - Commit: 3364180
+
+## Checkpoint: share links (slice 9, HUMAN CHECK)
+- Review: the resolver (see T9.05 above and migration 0029, which also ends links of a deleted document), the /s/{token} route headers and its single shared 404 (apps/web/app/s/[token]/route.ts, lib/share-response.ts), and the redaction (one access-log line per request holds share_link_id and the path as /s/[redacted]; no tracing is configured yet). AC-01 to 09, AC-40, AC-42, AC-44, AC-45 are integration tests; AC-30 is e2e/csrf.spec.ts.
+- Also review: lib/rate-limit.ts (30 requests/min per IP; ten bad tokens block the IP for 15 minutes; fails open if Redis is down; keys on the right-most X-Forwarded-For), mail.ts (an org's SMTP host must be public on port 25/465/587 and never receives the shared credentials), and the e2e specs email.spec.ts / whatsapp.spec.ts, which start the worker themselves.
+- Needs from you: OQ-09 (SMTP provider, domain, SPF/DKIM) and SMTP_USERNAME/SMTP_PASSWORD/SMTP_PASSWORD_HOST/SMTP_FROM_DOMAINS in the prod environment (PRODUCTION_READINESS).
+- Commits: T9.01 b7a65c9 (+ hardening 03e88c4, 6702ff9), T9.02 1250f70, T9.03 433948e, T9.04 b6f99b7, T9.05 3364180, T9.06 d981cde, T9.07 9ca74b1, T9.08 490b1a1
