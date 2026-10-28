@@ -12,7 +12,11 @@ const valid = {
 
 describe("parseConfig", () => {
   it("accepts a complete environment", () => {
-    expect(parseConfig(valid)).toEqual(valid);
+    expect(parseConfig(valid)).toEqual({ ...valid, S3_REGION: "us-east-1" }); // object storage is optional at boot; the region defaults
+  });
+
+  it("rejects a malformed S3 endpoint", () => {
+    expect(() => parseConfig({ ...valid, S3_ENDPOINT: "not a url" })).toThrow("S3_ENDPOINT");
   });
 
   it.each(Object.keys(valid))("names a missing %s", (key) => {
