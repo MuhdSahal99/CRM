@@ -158,7 +158,7 @@ export const SYSTEM_FIELDS: Record<string, Section[]> = {
   ]),
   Sales_Orders: documentSections([
     { api: "SO_Number", type: "text", col: "so_number", max: 30, ro: true },
-    pick("Status", "status", "SO_Status"),
+    { ...pick("Status", "status", "SO_Status"), ro: true }, // moves only through the transition action
     { api: "Due_Date", type: "date", col: "due_date" },
     { api: "Quote_Name", type: "lookup", col: "quote_id", lookup: "Quotes", ro: true },
     text("Customer_No", "customer_no", 40),

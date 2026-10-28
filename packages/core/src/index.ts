@@ -30,3 +30,4 @@ export { getOrgSettings, UpdateOrgSettingsInput, updateOrgSettings } from "./set
 export { CreateVatRatesInput, createVatRates, effectiveVatRate, listVatRates } from "./money/vat-rate.ts";
 export { CreateExchangeRatesInput, createExchangeRates, exchangeRateFor, ListExchangeRatesInput, listCurrencies, listExchangeRates, muscatToday, NoEffectiveRate } from "./money/fx.ts";
 export { ConvertQuoteInput, ConvertSalesOrderInput, convertQuote, convertSalesOrder } from "./conversions.ts";
+export { TransitionSalesOrderInput, transitionSalesOrder } from "./sales-orders.ts";

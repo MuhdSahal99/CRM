@@ -919,6 +919,34 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /Sales_Orders/{id}/actions/transition:
+    post:
+      tags: [Documents]
+      operationId: transitionSalesOrder
+      summary: Move a sales order forward - created to approved or cancelled, approved to delivered or cancelled
+      description: |
+        The only way to change `Status`; PUT ignores it. Any other move (backwards, or out of delivered or
+        cancelled) returns 409 `INVALID_STATE`. An order that left `created` can no longer be edited.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to]
+              properties:
+                to: { type: string, enum: [approved, delivered, cancelled] }
+      responses:
+        '200': { $ref: '#/components/responses/WriteResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
   /Sales_Orders/{id}/actions/convert:
     post:
       tags: [Documents]

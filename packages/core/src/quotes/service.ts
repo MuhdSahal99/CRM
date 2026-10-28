@@ -1,7 +1,7 @@
 import { newId } from "@crm/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
-import { ApiError, Forbidden, validationError } from "../http/errors.ts";
+import { ApiError, Conflict, Forbidden, validationError } from "../http/errors.ts";
 import { captureCurrency } from "../money/fx.ts";
 import { type PricedDocument, type PricingLineInput, priceDocument, priceFromOmr } from "../money/pricing.ts";
 import { DiscountValue, fitsScale, Money, Quantity } from "../money/schemas.ts";
@@ -38,11 +38,13 @@ type DocCfg = {
   stateCol: string; draft: string;
   /** Client-sent keys the server owns (AC-20, AC-21). */
   ignored: string[];
+  /** Header and lines change only in the draft state; later states move through dedicated actions (409 otherwise). */
+  lockAfterDraft?: true;
 };
 const TOTALS = QUOTE_IGNORED.slice(0, 6);
 export const QUOTE: DocCfg = { module: "Quotes", docType: "quote", lines: "quote_lines", fk: "quote_id", numberCol: "quote_number", stateCol: "quote_stage", draft: "draft", ignored: QUOTE_IGNORED };
-export const SALES_ORDER: DocCfg = { module: "Sales_Orders", docType: "sales_order", lines: "sales_order_lines", fk: "sales_order_id", numberCol: "so_number", stateCol: "status", draft: "created", ignored: [...TOTALS, "SO_Number", "Quote_Name"] };
-export const INVOICE: DocCfg = { module: "Invoices", docType: "invoice", lines: "invoice_lines", fk: "invoice_id", numberCol: null, stateCol: "status", draft: "draft", ignored: [...TOTALS, "Invoice_Number", "Status", "Invoice_Date", "Sales_Order_Name", "Paid_At", "Cancel_Reason"] };
+export const SALES_ORDER: DocCfg = { module: "Sales_Orders", docType: "sales_order", lines: "sales_order_lines", fk: "sales_order_id", numberCol: "so_number", stateCol: "status", draft: "created", ignored: [...TOTALS, "SO_Number", "Quote_Name", "Status"], lockAfterDraft: true };
+export const INVOICE: DocCfg = { module: "Invoices", docType: "invoice", lines: "invoice_lines", fk: "invoice_id", numberCol: null, stateCol: "status", draft: "draft", ignored: [...TOTALS, "Invoice_Number", "Status", "Invoice_Date", "Sales_Order_Name", "Paid_At", "Cancel_Reason"], lockAfterDraft: true };
 const T = (name: string) => sql.identifier(name);
 
 const bad = (message: string, api_name: string) => new ApiError(422, "INVALID_DATA", message, { api_name });
@@ -56,6 +58,7 @@ export const docChecks = (cfg: DocCfg) => async (tx: Tx, row: Record<string, unk
     if (!["Grand_Total", "Sub_Total", "VAT_Total"].every((n) => fields.has(n)) || !fields.get("Adjustment") || fields.get("Adjustment")!.readOnly) throw new Forbidden();
   }
   const stage = (before?.[cfg.stateCol] ?? cfg.draft) as string;
+  if (cfg.lockAfterDraft && stage !== cfg.draft) throw new Conflict("INVALID_STATE", "This document is no longer a draft and cannot be edited.");
   if (before && row.currency !== undefined && row.currency !== before.currency && stage !== cfg.draft) {
     throw bad("The currency can only change while the document is a draft.", "Currency");
   }

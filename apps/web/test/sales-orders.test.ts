@@ -2,6 +2,7 @@ import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as recordRoute from "../app/api/v1/[module]/[id]/route";
 import * as moduleRoute from "../app/api/v1/[module]/route";
+import * as transitionRoute from "../app/api/v1/Sales_Orders/[id]/actions/transition/route";
 import * as relatedRoute from "../app/api/v1/[module]/[id]/[related_list]/route";
 import { call, createSignInUser, signIn } from "./api.ts";
 
@@ -63,6 +64,57 @@ describe("Sales_Orders API (T8.03)", () => {
       expect((await put(repA, id, { version: 1, Line_Items: lines() })).status).toBe(403);
     } finally {
       await set("read_write");
+    }
+  });
+});
+
+describe("Sales_Orders lifecycle", () => {
+  let auth: Awaited<ReturnType<typeof connectAsAuth>>;
+  let rep: string;
+  let account: string;
+  let product: string;
+  const mk = async () => (await call(moduleRoute, "POST", "/Sales_Orders", { cookie: rep, params: { module: "Sales_Orders" }, body: { data: [{ Subject: "L", Status: "delivered", Account_Name: { id: account }, Line_Items: [{ Product: { id: product }, Quantity: "1", List_Price: "10.000" }] }] } })).json().data[0].details.id as string;
+  const move = (id: string, to: string) => call(transitionRoute, "POST", `/Sales_Orders/${id}/actions/transition`, { cookie: rep, params: { id }, body: { to } });
+  const edit = (id: string, rec: Record<string, unknown>) => call(recordRoute, "PUT", `/Sales_Orders/${id}`, { cookie: rep, params: { module: "Sales_Orders", id }, body: { data: [{ version: 1, ...rec }] } });
+  const status = async (id: string) => (await call(recordRoute, "GET", `/Sales_Orders/${id}`, { cookie: rep, params: { module: "Sales_Orders", id } })).json().data[0].Status;
+
+  beforeAll(async () => {
+    auth = await connectAsAuth();
+    const org = (await auth.query("SELECT id FROM orgs WHERE slug = 'saqient'")).rows[0].id;
+    const admin = await signIn((await createSignInUser(auth, org, "admin")).email);
+    rep = await signIn((await createSignInUser(auth, org, "rep")).email);
+    account = (await call(moduleRoute, "POST", "/Accounts", { cookie: rep, params: { module: "Accounts" }, body: { data: [{ Account_Name: "LC Account" }] } })).json().data[0].details.id;
+    product = (await call(moduleRoute, "POST", "/Products", { cookie: admin, params: { module: "Products" }, body: { data: [{ Product_Name: "LC P", Product_Code: `LC-${Date.now().toString(36)}`, VAT_Category: "standard", Unit_Price: "10.000" }] } })).json().data[0].details.id;
+  });
+  afterAll(() => auth?.end());
+
+  it("Status is server-owned: a client value is ignored, PUT cannot change it", async () => {
+    const id = await mk();
+    expect(await status(id)).toBe("created");
+    expect((await edit(id, { Status: "approved", Subject: "x" })).status).toBe(200);
+    expect(await status(id)).toBe("created");
+  });
+
+  it("moves forward only: created -> approved -> delivered; backwards or out of a final state is 409", async () => {
+    const id = await mk();
+    expect((await move(id, "delivered")).status).toBe(409);
+    expect((await move(id, "approved")).status).toBe(200);
+    expect((await move(id, "approved")).status).toBe(409);
+    expect((await move(id, "delivered")).status).toBe(200);
+    expect((await move(id, "cancelled")).status).toBe(409);
+    const other = await mk();
+    expect((await move(other, "cancelled")).status).toBe(200);
+    expect((await move(other, "approved")).status).toBe(409);
+    expect(await status(other)).toBe("cancelled");
+  });
+
+  it("an order that left created cannot be edited: header, lines or Adjustment", async () => {
+    const id = await mk();
+    expect((await move(id, "approved")).status).toBe(200);
+    const version = 2;
+    for (const rec of [{ Subject: "y" }, { Adjustment: "1.000" }, { Line_Items: [{ Product: { id: product }, Quantity: "9" }] }]) {
+      const res = await call(recordRoute, "PUT", `/Sales_Orders/${id}`, { cookie: rep, params: { module: "Sales_Orders", id }, body: { data: [{ version, ...rec }] } });
+      expect(res.status, JSON.stringify(rec)).toBe(409);
     }
   });
 });
