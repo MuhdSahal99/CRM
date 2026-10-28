@@ -7,7 +7,7 @@ import type { Tx } from "./tenant.ts";
 
 // T9.01 (US-13): the org's SMTP settings and one send. nodemailer is only used here. OQ-09 (provider, domain, SPF/DKIM) blocks the prod config.
 // The host and port are chosen by an org Admin, so they are untrusted: the destination must resolve to public addresses on a mail port, and
-// the global SMTP_PASSWORD goes only to SMTP_PASSWORD_HOST. shortcut: a per-org password from org_settings.smtp_secret_ref (Secrets Manager) comes
+// the shared SMTP account (SMTP_USERNAME/SMTP_PASSWORD) goes only to SMTP_PASSWORD_HOST and only for senders in SMTP_FROM_DOMAINS. shortcut: a per-org password from org_settings.smtp_secret_ref (Secrets Manager) comes
 // when hosting is decided; until then an org uses that host or an unauthenticated relay.
 
 export type Smtp = { host: string; port: number; username: string | null; fromEmail: string; fromName: string | null };
@@ -27,15 +27,22 @@ export async function loadSmtp(tx: Tx): Promise<Smtp> {
 /** `Message-ID` derived from email_sends.id, so a redelivered job sends the same id and a mail server can drop the duplicate. */
 export const messageIdFor = (emailSendId: string, fromEmail: string) => `<${emailSendId}@${fromEmail.split("@")[1]}>`;
 
-/** Loopback, private, link-local, CGNAT, multicast, unspecified and mapped/unparseable IPv6: anywhere a tenant must not make the server connect. */
+const subnets = (family: "ipv4" | "ipv6", list: [string, number][]) => {
+  const out = new net.BlockList();
+  for (const [address, prefix] of list) out.addSubnet(address, prefix, family);
+  return out;
+};
+// IANA special-purpose blocks: nowhere a tenant may make the server connect (loopback, private, link-local, CGNAT, benchmarking, documentation, multicast, reserved).
+const V4_DENIED = subnets("ipv4", [["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16], ["172.16.0.0", 12], ["192.0.0.0", 24], ["192.0.2.0", 24], ["192.168.0.0", 16], ["198.18.0.0", 15], ["198.51.100.0", 24], ["203.0.113.0", 24], ["224.0.0.0", 3]]);
+// IPv6 is an allow-list: global unicast 2000::/3 only, minus the ranges that embed or tunnel an IPv4 address (Teredo, 6to4) or are for documentation.
+// That leaves out ::1, ::, fc00::/7, fe80::/10, ff00::/8, IPv4-mapped (::ffff:), NAT64 (64:ff9b::) and every other embedding form.
+const V6_GLOBAL = subnets("ipv6", [["2000::", 3]]);
+const V6_DENIED = subnets("ipv6", [["2001::", 32], ["2001:db8::", 32], ["2001:10::", 28], ["2002::", 16], ["3fff::", 20]]);
+
 export function isPrivateAddress(ip: string): boolean {
-  if (net.isIPv4(ip)) {
-    const [a, b, c] = ip.split(".").map(Number) as [number, number, number];
-    return a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && (b === 168 || (b === 0 && c === 0)));
-  }
-  const v = ip.toLowerCase();
-  if (v.startsWith("::ffff:")) return !net.isIPv4(v.slice(7)) || isPrivateAddress(v.slice(7));
-  return v === "::" || v === "::1" || /^f[cd]/.test(v) || /^fe[89ab]/.test(v) || v.startsWith("ff");
+  if (net.isIPv4(ip)) return V4_DENIED.check(ip, "ipv4");
+  if (net.isIPv6(ip)) return !V6_GLOBAL.check(ip, "ipv6") || V6_DENIED.check(ip, "ipv6");
+  return true; // not an address at all
 }
 
 const MAIL_PORTS = new Set([25, 465, 587]);
@@ -60,14 +67,19 @@ export type Outgoing = { id: string; to: string; subject: string; text: string; 
 export async function sendMail(smtp: Smtp, msg: Outgoing): Promise<{ messageId: string }> {
   for (const [name, value] of [["to", msg.to], ["subject", msg.subject], ["from name", smtp.fromName ?? ""], ["from", smtp.fromEmail]] as const) noBreaks(name, value);
   const config = parseConfig(process.env);
-  if (smtp.username && (!config.SMTP_PASSWORD || config.SMTP_PASSWORD_HOST?.toLowerCase() !== smtp.host.toLowerCase())) {
-    throw new Error("No SMTP credentials are configured for this host.");
+  // Authentication means the shared account, and only for its own host and verified sender domains: an org's smtp_username is just the request for it.
+  let auth: { user: string; pass: string } | undefined;
+  if (smtp.username) {
+    if (!config.SMTP_USERNAME || !config.SMTP_PASSWORD || config.SMTP_PASSWORD_HOST?.toLowerCase() !== smtp.host.toLowerCase()) throw new Error("No SMTP credentials are configured for this host.");
+    const verified = (config.SMTP_FROM_DOMAINS ?? "").toLowerCase().split(",").map((d) => d.trim());
+    if (!verified.includes(smtp.fromEmail.split("@")[1]!.toLowerCase())) throw new Error("The sender domain is not verified for the shared SMTP account.");
+    auth = { user: config.SMTP_USERNAME, pass: config.SMTP_PASSWORD };
   }
   const address = await resolveSmtpHost(smtp.host, smtp.port, config.ALLOW_PRIVATE_SMTP);
   const transport = nodemailer.createTransport({
     host: address, port: smtp.port, secure: smtp.port === 465, requireTLS: smtp.port !== 465 && !LOOPBACK.has(smtp.host),
     tls: { servername: smtp.host }, // verify the certificate against the name, though we connect to the checked address
-    auth: smtp.username ? { user: smtp.username, pass: config.SMTP_PASSWORD! } : undefined,
+    auth,
     connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 30_000,
   });
   try {

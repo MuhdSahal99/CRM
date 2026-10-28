@@ -16,7 +16,9 @@ const envSchema = z.object({
   S3_ACCESS_KEY_ID: z.string().min(1).optional(),
   S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   SMTP_PASSWORD: z.string().min(1).optional(), // dev stand-in for the Secrets Manager secret behind org_settings.smtp_secret_ref
+  SMTP_USERNAME: z.string().min(1).optional(), // the shared account's login: never taken from an org's smtp_username
   SMTP_PASSWORD_HOST: z.string().min(1).optional(), // the only SMTP host that receives SMTP_PASSWORD: an org's own smtp_host never gets a global credential
+  SMTP_FROM_DOMAINS: z.string().min(1).optional(), // comma-separated sender domains the shared account may send as (an org cannot spoof another)
   // TEMP-DEV: smtp-private-hosts lets an org's smtp_host be loopback/private and on any port (Mailpit on 127.0.0.1:1025); refused in production.
   ALLOW_PRIVATE_SMTP: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
   CHROMIUM_PATH: z.string().min(1).optional(), // the worker's pinned Chromium for PDFs (ADR-0010)
