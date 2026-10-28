@@ -577,7 +577,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** U: **AC-44**: `\r\nBcc:` in a subject or name → 422. I: **AC-45**: a contact the caller can't see → 404, and a raw email address → 422. A `queued` row is created and enqueued after commit, idempotent with a key.
 - **Done when:** the job id is `email:<id>`.
 
-#### T9.03 Send email: worker · M
+#### T9.03 Send email: worker · M ✅
 - **Files:** `apps/worker/src/email.ts`.
 - **Tests first:** I: success → `sent` plus the activity "Email sent to X" in one transaction. An SMTP failure → `failed` and **no** sent activity (**US-13**). **AC-42**: Redis killed after commit → the sweeper re-enqueues and exactly one activity exists.
 - **Done when:** the status compare-and-set makes a redelivered job a no-op.
