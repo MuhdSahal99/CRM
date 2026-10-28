@@ -107,6 +107,21 @@ describe("quotes API (T7.05, T7.06)", () => {
     expect((await get(admin, id)).json().data[0].Line_Items).toHaveLength(3);
   });
 
+  it("the quote copies only the Account address fields the caller can see", async () => {
+    const acc = (await call(moduleRoute, "POST", "/Accounts", { cookie: repA, params: { module: "Accounts" }, body: { data: [{ Account_Name: "Addr Co", Billing_Street: "1 Secret St", Billing_City: "Muscat" }] } })).json().data[0].details.id;
+    const setStreet = (access: string) => queryAs(app, adminCtx, `INSERT INTO field_permissions (org_id, field_id, role, access)
+      SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = 'Accounts' AND f.api_name = 'Billing_Street'
+      ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access]);
+    await setStreet("hidden");
+    try {
+      const id = (await post(repA, { Subject: "Addr", Account_Name: { id: acc } })).json().data[0].details.id;
+      const [row] = await queryAs(app, adminCtx, "SELECT billing_street, billing_city FROM quotes WHERE id = $1", [id]);
+      expect(row).toEqual({ billing_street: null, billing_city: "Muscat" });
+    } finally {
+      await setStreet("read_write");
+    }
+  });
+
   it("a role that cannot see Adjustment gets no Grand_Total, OMR totals, lines or VAT summary", async () => {
     const id = (await post(repA, { ...base(), Line_Items: fixture() })).json().data[0].details.id;
     await setAdjustment("hidden");

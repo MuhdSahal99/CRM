@@ -6,6 +6,7 @@ import { captureCurrency } from "../money/fx.ts";
 import { type PricedDocument, type PricingLineInput, priceDocument, priceFromOmr } from "../money/pricing.ts";
 import { DiscountValue, fitsScale, Money, Quantity } from "../money/schemas.ts";
 import { effectiveVatRate } from "../money/vat-rate.ts";
+import { loadFields } from "../modules/registry.ts"; // call-time use only: registry imports this file
 import { takeNext } from "../numbering.ts";
 import type { Tx } from "../tenant.ts";
 
@@ -45,8 +46,11 @@ export async function quoteChecks(tx: Tx, row: Record<string, unknown>, before: 
   if (!before) {
     const account = (await tx.execute<Record<string, string | null>>(sql`SELECT * FROM accounts WHERE id = ${row.account_id as string} AND deleted_at IS NULL`)).rows[0];
     if (!account) throw bad("The account does not exist.", "Account_Name");
+    // Only the address columns the caller's role can see on the Account: a hidden field must not leak into the quote.
+    const visible = new Set((await loadFields(tx, "Accounts")).map((f) => f.columnName));
     for (const side of ["billing", "shipping"]) for (const part of ["street", "city", "state", "code", "country"]) {
-      if (!(`${side}_${part}` in row)) row[`${side}_${part}`] = account[`${side}_${part}`];
+      const column = `${side}_${part}`;
+      if (!(column in row) && visible.has(column)) row[column] = account[column];
     }
     row.quote_number = await takeNext(tx, "quote");
   }
