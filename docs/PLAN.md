@@ -509,7 +509,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: the visibility matrix covers SOs. Transfer moves open SOs.
 - **Done when:** SO CRUD works.
 
-#### T8.04 Invoice tables and lock triggers · M
+#### T8.04 Invoice tables and lock triggers · M ✅
 - **Files:** migration for `invoices` and `invoice_lines` (CHECK number when not draft, `invoices_lock`, `invoice_lines_lock`, `invoices_no_delete`).
 - **Tests first:** I: **AC-23** (SQL): as `crm_app`, updating an issued invoice's totals or lines raises. Deleting an issued invoice raises. The allowed transitions work.
 - **Done when:** the DB backstop is in place before any API can issue.

@@ -14,3 +14,4 @@ export * from "./products.ts";
 export * from "./documents.ts";
 export * from "./quotes.ts";
 export * from "./sales-orders.ts";
+export * from "./invoices.ts";
