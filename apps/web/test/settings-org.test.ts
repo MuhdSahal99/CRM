@@ -39,6 +39,13 @@ describe("org settings (T6.01)", () => {
     expect(rows[0].changes.vat_number).toEqual([null, "OM1100123456"]);
   });
 
+  it("AC-44: a line break in the sender name or the SMTP host is a 422, so it can never add a header", async () => {
+    for (const field of ["smtp_from_name", "smtp_host", "smtp_username"]) {
+      const res = await call(orgRoute, "PUT", "/settings/org", { cookie: admin, body: { data: [{ [field]: "x\r\nBcc: evil@example.test", version: 1 }] } });
+      expect(res.status, field).toBe(422);
+    }
+  });
+
   it("AC-46: the response carries no password or secret reference, only whether one is set", async () => {
     await queryAs(app, ctx, "UPDATE org_settings SET smtp_secret_ref = 'arn:aws:secretsmanager:x'");
     const res = await call(orgRoute, "GET", "/settings/org", { cookie: admin });

@@ -567,7 +567,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 9: Email and WhatsApp sending (US-13, US-14)
 
-#### T9.01 SMTP transport · S
+#### T9.01 SMTP transport · S ✅
 - **Files:** `docker-compose.yml` (adds Mailpit), `packages/core/src/mail.ts` (nodemailer, a new dependency; check with Context7; credentials from the secret ref, or `.env.local` in dev).
 - **Tests first:** I: sends to Mailpit. `Message-ID` is derived from `email_sends.id`.
 - **Done when:** dev works. ⛔ **OQ-09** (provider, domain, SPF/DKIM) blocks the prod config.

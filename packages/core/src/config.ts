@@ -15,6 +15,7 @@ const envSchema = z.object({
   S3_BUCKET: z.string().min(3).optional(),
   S3_ACCESS_KEY_ID: z.string().min(1).optional(),
   S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(), // dev stand-in for the Secrets Manager secret behind org_settings.smtp_secret_ref
   CHROMIUM_PATH: z.string().min(1).optional(), // the worker's pinned Chromium for PDFs (ADR-0010)
 });
 

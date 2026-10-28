@@ -39,3 +39,4 @@ export { closeQueues, enqueueAfterCommit, getQueue, redis } from "./jobs/enqueue
 export { type Payload, QUEUES, type QueueName } from "./jobs/queues.ts";
 export { onCommit } from "./tenant.ts";
 export { getDocumentPdf } from "./documents-pdf.ts";
+export { loadSmtp, messageIdFor, SmtpNotConfigured, sendMail, type Smtp } from "./mail.ts";

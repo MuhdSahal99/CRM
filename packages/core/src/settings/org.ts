@@ -12,14 +12,16 @@ const COLUMNS = {
 } as const;
 
 const text = (max: number) => z.string().trim().max(max).nullable();
+/** A value that ends up in a mail header (AC-44): no CR or LF, or a name could add a Bcc: line. */
+const header = (max: number) => z.string().trim().max(max).refine((v) => !/[\r\n]/.test(v), "Remove the line break.").nullable();
 const Fields = z.object({
   legal_name: z.string().trim().min(1).max(200),
   address_line1: text(250), address_line2: text(250), city: text(30), postal_code: text(30),
   country: z.string().regex(/^[A-Z]{2}$/, "Use a two-letter country code."),
   vat_number: text(20),
   share_link_ttl_days: z.int().min(1).max(30),
-  smtp_host: text(255), smtp_port: z.int().min(1).max(65535).nullable(), smtp_username: text(255),
-  smtp_from_email: z.email().max(255).nullable(), smtp_from_name: text(120),
+  smtp_host: header(255), smtp_port: z.int().min(1).max(65535).nullable(), smtp_username: header(255),
+  smtp_from_email: z.email().max(255).nullable(), smtp_from_name: header(120),
 }).partial();
 export const UpdateOrgSettingsInput = z.object({ data: z.array(Fields.extend({ version: z.int().min(1) })).length(1) });
 
