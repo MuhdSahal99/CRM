@@ -26,6 +26,7 @@ const DOCS = {
 
 const ADDRESS = ["billing", "shipping"].flatMap((side) => ["street", "city", "state", "code", "country"].map((p) => `${side}_${p}`));
 const HEADER = ["subject", "account_id", "contact_id", "deal_id", ...ADDRESS, "terms", "description", "currency", "currency_scale", "exchange_rate"];
+const LINKS = new Set(["quote_id", "sales_order_id"]);
 const REQUIRED = new Set(["subject", "account_id", "currency", "currency_scale", "exchange_rate"]);
 /** Totals drive the copy, so the caller must see all of them (and the Adjustment) on both documents, as for Line_Items writes. */
 const TOTAL_FIELDS = ["Sub_Total", "VAT_Total", "Grand_Total", "Adjustment"];
@@ -55,7 +56,8 @@ async function convert(tx: Tx, from: keyof typeof DOCS, to: keyof typeof DOCS, i
     ["sub_total", priced.sub_total], ["vat_total", priced.vat_total], ["adjustment", priced.adjustment], ["grand_total", priced.grand_total],
     ["vat_total_omr", priced.vat_total_omr], ["grand_total_omr", priced.grand_total_omr],
     ...(dst.cfg.numberCol ? [[dst.cfg.numberCol, await takeNext(tx, dst.cfg.docType)] as [string, unknown]] : []),
-    ...Object.entries(extra(row)),
+    // Data columns beyond the header (customer_no…) go through the same visibility filter; the lineage links are structural.
+    ...Object.entries(extra(row)).filter(([c]) => LINKS.has(c) || visible.has(c)),
   ];
   const cols = sql.join(["org_id", ...values.map(([c]) => c)].map(T), sql`, `);
   const vals = sql.join([sql`app.org_id()`, ...values.map(([, v]): SQL => sql`${v}`)], sql`, `);

@@ -57,6 +57,22 @@ describe("convert Sales Order -> Invoice (T8.05)", () => {
     expect((await call(recordRoute, "DELETE", `/Invoices/${id}`, { cookie: rep, params: { module: "Invoices", id } })).status).toBe(409);
   });
 
+  it("a field hidden from the role on either document is not copied (Customer_No); the others are", async () => {
+    const hide = (module: string, access: string) => queryAs(app, adminCtx, `INSERT INTO field_permissions (org_id, field_id, role, access)
+      SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = $2 AND f.api_name = 'Customer_No'
+      ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access, module]);
+    for (const module of ["Invoices", "Sales_Orders"]) {
+      const so = await order();
+      await hide(module, "hidden");
+      try {
+        const id = (await convert(rep, so)).json().data[0].details.id;
+        expect((await queryAs(app, adminCtx, "SELECT customer_no, purchase_order_ref FROM invoices WHERE id = $1", [id]))[0], module).toEqual({ customer_no: null, purchase_order_ref: "PO-9" });
+      } finally {
+        await hide(module, "read_write");
+      }
+    }
+  });
+
   it("a cancelled sales order cannot be invoiced", async () => {
     const so = await order();
     await call(transitionRoute, "POST", `/Sales_Orders/${so}/actions/transition`, { cookie: rep, params: { id: so }, body: { to: "cancelled" } });
