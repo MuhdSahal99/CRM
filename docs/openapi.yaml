@@ -1037,7 +1037,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  /{doc_module}/{id}/pdf:
+  /{module}/{id}/pdf:
     parameters:
       - $ref: '#/components/parameters/DocModule'
       - $ref: '#/components/parameters/Id'
@@ -1065,7 +1065,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ---------------------------------------------------------------- sending (US-13, US-14)
-  /{doc_module}/{id}/actions/send_email:
+  /{module}/{id}/actions/send_email:
     post:
       tags: [Sending]
       operationId: sendDocumentEmail
@@ -1109,7 +1109,7 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
-  /{doc_module}/{id}/share_links:
+  /{module}/{id}/share_links:
     parameters:
       - $ref: '#/components/parameters/DocModule'
       - $ref: '#/components/parameters/Id'
@@ -1171,7 +1171,7 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
-  /{doc_module}/{id}/share_links/{link_id}:
+  /{module}/{id}/share_links/{link_id}:
     delete:
       tags: [Sending]
       operationId: revokeShareLink
@@ -1437,7 +1437,7 @@ components:
       required: true
       schema: { $ref: '#/components/schemas/ModuleName' }
     DocModule:
-      name: doc_module
+      name: module
       in: path
       required: true
       schema: { type: string, enum: [Quotes, Sales_Orders, Invoices] }

@@ -550,7 +550,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Done when:** Chromium makes no outbound requests (ADR-0010).
 
 #### T8.12 PDF download · S ✅
-- **Files:** `apps/web/app/api/v1/[module]/[id]/pdf/route.ts` (Next forbids a second dynamic name next to `[module]`; the handler accepts only Quotes, Sales_Orders and Invoices).
+- **Files:** `apps/web/app/api/v1/[module]/[id]/pdf/route.ts` (Next forbids a second dynamic name next to `[module]`, so OpenAPI documents the path as `/{module}/{id}/pdf` with the document modules as its enum).
 - **Tests first:** I: the visibility matrix returns 404 for another rep or org. The response streams from storage without exposing the S3 host.
 - **Done when:** the PDF is served through the app.
 
