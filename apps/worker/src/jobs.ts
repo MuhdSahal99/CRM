@@ -8,6 +8,7 @@ import { renderPdfFile } from "./pdf.ts";
 type Handlers = { [Q in QueueName]: (tx: Tx, payload: Payload<Q>) => Promise<unknown> };
 export const handlers: Handlers = {
   pdf: (tx, { file_id }) => renderPdfFile(tx, file_id),
+  email: async () => ({ skipped: "T9.03" }), // replaced by the SMTP send in the next commit
 };
 
 /** Validates the payload (a bad one throws, so the job fails into the dead-letter set), then runs the handler as the member. */

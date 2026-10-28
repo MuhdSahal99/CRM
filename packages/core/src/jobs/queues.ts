@@ -4,6 +4,7 @@ import { z } from "zod";
 // re-reads everything through withTenant as the requesting user.
 export const QUEUES = {
   pdf: { attempts: 3, concurrency: 2, payload: z.object({ org_id: z.uuid(), user_id: z.uuid(), file_id: z.uuid() }) },
+  email: { attempts: 5, concurrency: 5, payload: z.object({ org_id: z.uuid(), user_id: z.uuid(), email_send_id: z.uuid() }) },
 } as const;
 export type QueueName = keyof typeof QUEUES;
 export type Payload<Q extends QueueName> = z.infer<(typeof QUEUES)[Q]["payload"]>;

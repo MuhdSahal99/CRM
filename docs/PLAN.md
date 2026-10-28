@@ -572,7 +572,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: sends to Mailpit. `Message-ID` is derived from `email_sends.id`.
 - **Done when:** dev works. ⛔ **OQ-09** (provider, domain, SPF/DKIM) blocks the prod config.
 
-#### T9.02 Send email: request · M
+#### T9.02 Send email: request · M ✅
 - **Files:** migration `email_sends`, `apps/web/app/api/v1/[doc_module]/[id]/actions/send_email/route.ts`.
 - **Tests first:** U: **AC-44**: `\r\nBcc:` in a subject or name → 422. I: **AC-45**: a contact the caller can't see → 404, and a raw email address → 422. A `queued` row is created and enqueued after commit, idempotent with a key.
 - **Done when:** the job id is `email:<id>`.
