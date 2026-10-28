@@ -38,6 +38,8 @@ async function convert(tx: Tx, from: keyof typeof DOCS, to: keyof typeof DOCS, i
 
   const [srcFields, dstFields] = await Promise.all([loadFields(tx, src.cfg.module), loadFields(tx, dst.cfg.module)]);
   for (const fields of [srcFields, dstFields]) if (!TOTAL_FIELDS.every((n) => fields.some((f) => f.apiName === n))) throw new Forbidden();
+  // The copy writes the new document's Adjustment and every total, so the destination must let this role write the Adjustment (as docChecks does).
+  if (dstFields.find((f) => f.apiName === "Adjustment")!.readOnly) throw new Forbidden();
   // A field the role cannot see on either document is not copied across (cross-module copy respects field visibility).
   const visible = new Set(srcFields.filter((f) => dstFields.some((d) => d.columnName === f.columnName)).map((f) => f.columnName));
   const header = HEADER.filter((c) => REQUIRED.has(c) || visible.has(c));

@@ -61,6 +61,19 @@ describe("convert Quote -> Sales Order (T8.02)", () => {
     expect((await call(convertRoute, "POST", `/Quotes/${q}/actions/convert`, { cookie: repA, params: { id: q }, body: { to: "Invoices" } })).status).toBe(422);
   });
 
+  it("a role that can only read the destination's Adjustment cannot convert", async () => {
+    const q = await quote();
+    const set = (access: string) => queryAs(app, adminCtx, `INSERT INTO field_permissions (org_id, field_id, role, access)
+      SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = 'Sales_Orders' AND f.api_name = 'Adjustment'
+      ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access]);
+    await set("read_only");
+    try {
+      expect((await convert(repA, q)).status).toBe(403);
+    } finally {
+      await set("read_write");
+    }
+  });
+
   it("a role that cannot see Adjustment cannot convert (the copy carries the totals)", async () => {
     const q = await quote();
     const set = (access: string) => queryAs(app, adminCtx, `INSERT INTO field_permissions (org_id, field_id, role, access)
