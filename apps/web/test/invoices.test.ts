@@ -61,12 +61,12 @@ describe("convert Sales Order -> Invoice (T8.05)", () => {
     const hide = (module: string, access: string) => queryAs(app, adminCtx, `INSERT INTO field_permissions (org_id, field_id, role, access)
       SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = $2 AND f.api_name = 'Customer_No'
       ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access, module]);
-    for (const module of ["Invoices", "Sales_Orders"]) {
+    for (const mod of ["Invoices", "Sales_Orders"]) {
       const so = await order();
-      await hide(module, "hidden");
+      await hide(mod, "hidden");
       try {
         const id = (await convert(rep, so)).json().data[0].details.id;
-        expect((await queryAs(app, adminCtx, "SELECT customer_no, purchase_order_ref FROM invoices WHERE id = $1", [id]))[0], module).toEqual({ customer_no: null, purchase_order_ref: "PO-9" });
+        expect((await queryAs(app, adminCtx, "SELECT customer_no, purchase_order_ref FROM invoices WHERE id = $1", [id]))[0], mod).toEqual({ customer_no: null, purchase_order_ref: "PO-9" });
       } finally {
         await hide(module, "read_write");
       }
