@@ -539,8 +539,8 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-41**: a job with org A and an id from org B finds no row and does nothing. A job enqueued inside a rolled-back transaction never runs.
 - **Done when:** a failed job lands in the DLQ (ADR-0011).
 
-#### T8.10 PDF template · M
-- **Files:** `apps/web/app/(pdf)/[doc]/[id]/template.tsx` (server HTML, next-intl), invoice, quote and SO variants.
+#### T8.10 PDF template · M ✅
+- **Files:** `packages/pdf/src/template.tsx` (server HTML, one component for the invoice, quote and SO variants; moved out of apps/web so the worker can import it without HTTP; English strings inline, next-intl comes with OQ-02).
 - **Tests first:** U: an issued invoice's HTML contains "Tax Invoice", the seller name, address and VATIN, the buyer VATIN, the date and number, per-line VAT, the VAT summary, and the VAT in OMR. **AC-33** (PDF part): `<img onerror>` in a description renders as text.
 - **Done when:** the template is English-only. ⛔ **OQ-01** and **OQ-02** gate the go-live template (QR code, Arabic).
 
