@@ -41,3 +41,4 @@ export { onCommit } from "./tenant.ts";
 export { getDocumentPdf } from "./documents-pdf.ts";
 export { loadSmtp, messageIdFor, SmtpNotConfigured, sendMail, type Smtp } from "./mail.ts";
 export { requestEmail, SendEmailInput } from "./emails/request.ts";
+export { isDocModule } from "./documents-pdf.ts";

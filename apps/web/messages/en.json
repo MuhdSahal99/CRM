@@ -1167,5 +1167,20 @@
     "downloadPdf": "Download PDF",
     "pdfPreparing": "The PDF is being prepared. Try again in a moment.",
     "failed": "That did not work. Try again."
+  },
+  "email": {
+    "send": "Send email",
+    "hint": "The PDF is attached and sent to the contact over your organisation's email settings.",
+    "to": "To",
+    "choose": "Choose a contact",
+    "noContacts": "No contact with an email address",
+    "subject": "Subject",
+    "message": "Message",
+    "submit": "Send",
+    "queued": "Email queued. Its status is on the Emails list.",
+    "failed": "The email could not be queued. Try again.",
+    "title": "Emails",
+    "empty": "No emails sent yet.",
+    "status": { "queued": "Queued", "sending": "Sending", "sent": "Sent", "failed": "Failed" }
   }
 }

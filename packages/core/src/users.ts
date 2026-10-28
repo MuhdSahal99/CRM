@@ -4,7 +4,9 @@ import { z } from "zod";
 import { getAuthDb } from "./auth.ts";
 import { ApiError, Conflict, NotFound } from "./http/errors.ts";
 import { hashInviteToken, newInviteToken } from "./invitations.ts";
-import type { TenantContext, Tx } from "./tenant.ts";
+import { loadSmtp, sendMail, SmtpNotConfigured } from "./mail.ts";
+import { log } from "./log.ts";
+import { onCommit, type TenantContext, type Tx } from "./tenant.ts";
 import { recordEvent } from "./timeline.ts";
 
 export const RoleName = z.enum(["admin", "manager", "rep"]).meta({ id: "Role" });
@@ -56,6 +58,9 @@ export const redactInviteLinks = (body: { data: { details?: Record<string, unkno
 /** POST /users (Admin): one pending invitation per person, returned with the link that accepts it. */
 export async function inviteUsers(tx: Tx, ctx: TenantContext, input: z.infer<typeof InviteUsersInput>, baseUrl: string) {
   const outcomes = [];
+  // T9.04: the invitee is emailed the accept link once the invitation commits. Best effort: with no SMTP settings, or if the send fails, the Admin still
+  // gets the link in this response (US-03) and can pass it on.
+  const smtp = await loadSmtp(tx).catch((error) => { if (error instanceof SmtpNotConfigured) return null; throw error; });
   for (const person of input.data) {
     const taken = await tx.execute(sql`
       SELECT 1 FROM org_users WHERE email = ${person.email}
@@ -83,7 +88,19 @@ export async function inviteUsers(tx: Tx, ctx: TenantContext, input: z.infer<typ
       inviterId: ctx.userId,
       tokenHash: hashInviteToken(token),
     });
-    outcomes.push({ code: "SUCCESS", status: "success", details: { id, accept_url: `${baseUrl}/accept-invite/${token}` } });
+    const acceptUrl = `${baseUrl}/accept-invite/${token}`;
+    if (smtp) {
+      onCommit(tx, async () => {
+        void sendMail(smtp, { id, to: person.email, subject: "You are invited to Saqient CRM", text: `Hello ${person.name},
+
+Open this link to choose your password and sign in:
+${acceptUrl}
+
+The link works once and expires in ${INVITE_TTL_DAYS} days.` })
+          .catch((error) => log.error({ err: error, invitation_id: id }, "invitation email failed")); // the link is in the token, which the log must not see
+      });
+    }
+    outcomes.push({ code: "SUCCESS", status: "success", details: { id, accept_url: acceptUrl } });
   }
   return outcomes;
 }

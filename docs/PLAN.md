@@ -582,7 +582,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: success → `sent` plus the activity "Email sent to X" in one transaction. An SMTP failure → `failed` and **no** sent activity (**US-13**). **AC-42**: Redis killed after commit → the sweeper re-enqueues and exactly one activity exists.
 - **Done when:** the status compare-and-set makes a redelivered job a no-op.
 
-#### T9.04 UI: Send Email, and invitation emails · M
+#### T9.04 UI: Send Email, and invitation emails · M ✅
 - **Files:** `components/records/send-email-dialog.tsx`, `packages/core/src/users.ts` (invitation emails via `mail.ts`).
 - **Tests first:** E (w360, w1440): send a quote, and the Mailpit API shows the PDF attachment and a toast confirms. A forced SMTP failure shows an inline error.
 - **Done when:** **US-13** passes end to end, and invitations are emailed.

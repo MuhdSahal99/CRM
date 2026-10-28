@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { NotFound } from "../http/errors.ts";
+import { listEmails } from "../emails/list.ts";
 import { listNotes } from "../notes.ts";
 import type { Tx } from "../tenant.ts";
 import { limitOffset, pageOf, Paging } from "./list.ts";
@@ -25,6 +26,7 @@ export const RelatedInput = z.object(Paging);
 /** GET /{module}/{id}/{related_list}: the parent must be visible (else 404); each child goes through its own RLS. */
 export async function listRelated(tx: Tx, module: string, id: string, relatedList: string, input: z.infer<typeof RelatedInput>) {
   if (relatedList === "Notes") return listNotes(tx, module, id, input); // not a module: its own table and shape
+  if (relatedList === "Emails") return listEmails(tx, module, id, input); // likewise: the outbox rows of a quote, sales order or invoice
   const related = RELATED[module]?.find((r) => r.api_name === relatedList);
   if (!related) throw new NotFound();
   const parent = await tx.execute(sql`SELECT 1 FROM ${moduleDef(module).table} WHERE id = ${id} AND ${moduleDef(module).scope} AND deleted_at IS NULL`);
