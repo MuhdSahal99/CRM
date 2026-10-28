@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+import FirstDealsFx from "./test/sequencer.ts";
 
 // Local runs read ../../.env.local; CI sets the TEST_* variables directly.
 try {
@@ -13,6 +14,7 @@ export default defineConfig({
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", "e2e/**", ".next/**"],
     globalSetup: ["test/global-setup.ts"],
+    sequence: { sequencer: FirstDealsFx },
     fileParallelism: false, // tests flip field_permissions for the shared rep role, so files must not overlap
     testTimeout: 20_000, // lint.test.ts starts ESLint, which is slow on a cold or busy machine
   },
