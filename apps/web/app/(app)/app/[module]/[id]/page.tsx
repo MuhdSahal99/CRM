@@ -66,7 +66,7 @@ export default async function RecordPage({ params }: Props) {
           {(module === "Accounts" || module === "Contacts") && <ActivityDialog module={module} id={id} />}
           {converted && <Badge variant="secondary">{t("records.converted")}</Badge>}
           {module === "Leads" && !converted && <ConvertDialog id={id} company={String(record.Company ?? "")} name={recordTitle(meta, record)} />}
-          {!converted && (
+          {!converted && (module !== "Products" || ctx.role === "admin") && (
             <Button asChild variant="outline">
               <Link href={`/app/${module}/${id}/edit`}>
                 <PencilIcon aria-hidden />

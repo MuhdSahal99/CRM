@@ -43,12 +43,14 @@ export default async function RecordListPage({ params, searchParams }: Props) {
             <Link href="/app/Deals/board">{t("deals.boardLink")}</Link>
           </Button>
         )}
-        <Button asChild>
-          <Link href={`/app/${module}/new`}>
-            <PlusIcon aria-hidden />
-            {t("records.new")}
-          </Link>
-        </Button>
+        {(module !== "Products" || ctx.role === "admin") && ( // US-08: Products are read-only for everyone but an Admin
+          <Button asChild>
+            <Link href={`/app/${module}/new`}>
+              <PlusIcon aria-hidden />
+              {t("records.new")}
+            </Link>
+          </Button>
+        )}
       </div>
       <RecordList module={module} meta={meta} rows={page.data as RecordData[]} caption={label} emptyText={t("records.empty", { module: label.toLowerCase() })} />
       {(input.page > 1 || page.info.more_records) && (

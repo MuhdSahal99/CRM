@@ -20,6 +20,7 @@ export default async function EditRecordPage({ params }: Props) {
   const { module, id } = await params;
   if (!isRecordModule(module) || !z.uuid().safeParse(id).success) notFound();
   const ctx = await requireContext();
+  if (module === "Products" && ctx.role !== "admin") notFound(); // read-only for everyone but an Admin (US-08)
   const found = await withTenant(ctx, async (tx) => {
     try {
       const [record] = (await getRecord(tx, module, id)) as RecordData[];

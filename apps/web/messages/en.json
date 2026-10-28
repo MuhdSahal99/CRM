@@ -454,6 +454,9 @@
     "account": "Account",
     "signOut": "Sign out",
     "users": "Users",
+    "orgSettings": "Organisation",
+    "vatRates": "VAT rates",
+    "exchangeRates": "Exchange rates",
     "activities": "My Activities"
   },
   "modules": {
@@ -647,6 +650,8 @@
       "Type": "Type",
       "Lead_Source": "Lead Source",
       "Amount": "Amount",
+      "Currency": "Currency",
+      "Exchange_Rate": "Exchange Rate (OMR per 1)",
       "Closing_Date": "Closing Date",
       "Pipeline": "Pipeline",
       "Stage": "Stage",
@@ -655,6 +660,17 @@
       "Forecast_Category": "Forecast Category",
       "Next_Step": "Next Step",
       "Reason_For_Loss": "Reason for Loss",
+      "Description": "Description"
+    },
+    "Products": {
+      "Owner": "Product Owner",
+      "Product_Name": "Product Name",
+      "Product_Code": "Product Code",
+      "Product_Active": "Active",
+      "Product_Category": "Product Category",
+      "VAT_Category": "VAT Category",
+      "Unit_Price": "Unit Price (OMR)",
+      "Usage_Unit": "Usage Unit",
       "Description": "Description"
     }
   },
@@ -667,7 +683,8 @@
     "call_information": "Call Information",
     "meeting_information": "Meeting Information",
     "lead_information": "Lead Information",
-    "deal_information": "Deal Information"
+    "deal_information": "Deal Information",
+    "product_information": "Product Information"
   },
   "picklists": {
     "Account_Type": {
@@ -783,6 +800,16 @@
       "new_business": "New Business",
       "existing_business": "Existing Business"
     },
+    "VAT_Category": {
+      "standard": "Standard (5%)",
+      "zero_rated": "Zero-rated (0%)",
+      "exempt": "Exempt (no VAT)"
+    },
+    "Currency": {
+      "omr": "OMR",
+      "aed": "AED",
+      "inr": "INR"
+    },
     "Reason_For_Loss": {
       "price": "Price",
       "competitor": "Competitor",
@@ -822,7 +849,8 @@
       "Tasks": "Task",
       "Calls": "Call",
       "Meetings": "Meeting",
-      "Deals": "Deal"
+      "Deals": "Deal",
+      "Products": "Product"
     },
     "saving": "Saving…",
     "required": "Required",

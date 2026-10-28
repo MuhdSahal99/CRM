@@ -424,7 +424,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a product without a VAT category → 422 (**US-08**). A duplicate `product_code` (case-insensitive) → 422. A rep POST → 403.
 - **Done when:** Products are public in the org.
 
-#### T6.06 UI: Products · S
+#### T6.06 UI: Products · S · ✅
 - **Files:** reuses the record list and form. The VAT category is rendered as a `RadioGroup`.
 - **Tests first:** E (w360, w1440): the admin creates a product with Zero-rated VAT, and a rep sees it read-only.
 - **Done when:** **US-08** passes end to end.

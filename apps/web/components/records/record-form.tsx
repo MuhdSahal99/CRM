@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { callApi, fieldErrors } from "@/lib/api-client";
@@ -161,6 +162,18 @@ function Field({ field: f, value, onChange, options, error }: FieldProps) {
     );
   } else if (f.data_type === "textarea") {
     control = <Textarea {...a11y} required={f.required} maxLength={f.max_length ?? undefined} value={value as string} onChange={(e) => onChange(e.target.value)} />;
+  } else if (f.api_name === "VAT_Category") {
+    // US-08: three choices that change the invoice, shown all at once rather than behind a dropdown.
+    control = (
+      <RadioGroup {...a11y} value={value as string} onValueChange={onChange} required={f.required} aria-required={f.required || undefined}>
+        {f.picklist_values.map((p) => (
+          <div key={p.value} className="flex items-center gap-2">
+            <RadioGroupItem id={`${id}-${p.value}`} value={p.value} />
+            <Label htmlFor={`${id}-${p.value}`}>{t(p.label_key)}</Label>
+          </div>
+        ))}
+      </RadioGroup>
+    );
   } else if (f.data_type === "picklist") {
     control = select(f.picklist_values.map((p) => ({ value: p.value, label: t(p.label_key) })));
   } else if (isLookup(f)) {

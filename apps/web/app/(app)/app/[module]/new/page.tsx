@@ -20,6 +20,7 @@ export default async function NewRecordPage({ params, searchParams }: Props) {
   const { module } = await params;
   if (!isRecordModule(module)) notFound();
   const ctx = await requireContext();
+  if (module === "Products" && ctx.role !== "admin") notFound(); // read-only for everyone but an Admin (US-08)
   const { meta, options } = await withTenant(ctx, async (tx) => {
     const meta = await moduleMeta(tx, module);
     return { meta, options: await lookupOptions(tx, ctx, meta) };
