@@ -76,3 +76,12 @@ export async function createExchangeRates(tx: Tx, input: z.infer<typeof CreateEx
   }
   return out;
 }
+
+/** US-09: sets currency, currency_scale and exchange_rate on a row being created, and again when its currency changes; otherwise leaves the stored snapshot alone. */
+export async function captureCurrency(tx: Tx, row: Record<string, unknown>, before?: Record<string, unknown>, fallback = "OMR") {
+  const currency = (row.currency ?? before?.currency ?? fallback) as string;
+  if (before && (row.currency === undefined || row.currency === before.currency)) return;
+  const scale = (await tx.execute<{ scale: number }>(sql`SELECT scale FROM currencies WHERE code = ${currency} AND is_active`)).rows[0]?.scale;
+  if (!scale) throw new ApiError(422, "INVALID_DATA", "This currency is not available.", { api_name: "Currency" });
+  Object.assign(row, { currency, currency_scale: scale, exchange_rate: await exchangeRateFor(tx, currency) });
+}

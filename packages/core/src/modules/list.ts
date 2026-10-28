@@ -12,7 +12,10 @@ export async function getRecord(tx: Tx, module: string, id: string) {
   const def = moduleDef(module);
   const { rows } = await tx.execute(sql`SELECT * FROM ${def.table} WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL`);
   if (rows.length === 0) throw new NotFound();
-  return toApi(tx, await loadFields(tx, module), rows as Parameters<typeof toApi>[2]);
+  const fields = await loadFields(tx, module);
+  const records = await toApi(tx, fields, rows as Parameters<typeof toApi>[2]);
+  await def.decorate?.(tx, fields, records);
+  return records;
 }
 
 export const Paging = {

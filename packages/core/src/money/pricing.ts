@@ -63,3 +63,6 @@ export function priceDocument(input: PricingInput, ctx: PricingCtx): PricedDocum
     vat_total_omr: omr(vatTotal), grand_total_omr: omr(grand),
   };
 }
+
+/** An OMR catalogue price on a document in another currency: price / rate, rounded to the document's scale (ADR-0007). */
+export const priceFromOmr = (omrPrice: string, rate: string, scale: number) => r(new D(omrPrice).div(rate), scale).toFixed(scale);

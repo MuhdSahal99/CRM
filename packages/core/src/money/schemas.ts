@@ -8,4 +8,7 @@ export const SignedMoney = z.string().regex(/^-?\d{1,15}(\.\d{1,3})?$/, "Enter a
 export const Percent = z.string().regex(/^\d{1,3}(\.\d{1,4})?$/, "Enter a percentage with up to 4 decimals.");
 
 /** AED/INR documents hold 2 dp: a value with more decimals than the currency scale is rejected, never silently rounded. */
-export const fitsScale = (v: string, scale: number) => (v.split(".")[1]?.length ?? 0) <= scale;
+export const fitsScale = (v: string, scale: number) => (v.split(".")[1]?.replace(/0+$/, "").length ?? 0) <= scale; // stored "100.000" fits 2 dp
+
+
+export const DiscountValue = z.string().regex(/^\d{1,15}(\.\d{1,4})?$/, "Enter a discount with up to 4 decimals.");

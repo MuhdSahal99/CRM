@@ -456,17 +456,17 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: lowering `next_value` raises. Format is `prefix || lpad(n, padding)`. A rolled-back transaction doesn't consume a number.
 - **Done when:** quotes use it on create. ⚠ **OQ-06**: the prefix and start value are config.
 
-#### T7.04 Quote tables · M
+#### T7.04 Quote tables · M ✅
 - **Files:** schema and migration for `quotes` and `quote_lines` (`scale_ok`, line CHECKs, `parent_visibility`), `app.can_see()` extended to quote, metadata seed.
 - **Tests first:** I: a header with 3 dp in AED violates `scale_ok`. `net_amount ≠ amount − discount` violates the CHECK. Rep B sees 0 of rep A's quote lines (**AC-18** lines).
 - **Done when:** the tables match SCHEMA §Sales documents.
 
-#### T7.05 Create a quote · M
+#### T7.05 Create a quote · M ✅
 - **Files:** `packages/core/src/quotes/service.ts`, registry entry `Quotes`.
 - **Tests first:** I: the US-10 fixture via the API stores 358.000. **AC-20**: client-sent `Grand_Total` and `VAT_Amount` are ignored. **AC-21**: `Exchange_Rate` and `Invoice_Number` are ignored. An OMR product on an AED quote defaults to `price ÷ rate` at 2 dp. Missing product or qty ≤ 0 → 422.
 - **Done when:** only `priceDocument` writes amount columns.
 
-#### T7.06 Update a quote · M
+#### T7.06 Update a quote · M ✅
 - **Files:** `packages/core/src/quotes/service.ts` (replace lines, re-price, re-capture the rate on a currency change while in draft), GET with lines and a VAT summary (`GROUP BY vat_category`).
 - **Tests first:** I: editing qty re-prices everything. A currency change re-captures the rate. A stale version → 409.
 - **Done when:** **US-10** API criteria are all met.

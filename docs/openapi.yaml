@@ -1912,6 +1912,7 @@ components:
       required: [Product, Quantity]
       properties:
         id: { type: string, format: uuid, readOnly: true }
+        Line_No: { type: integer, readOnly: true }
         Product: { $ref: '#/components/schemas/Lookup' }
         Description: { type: [string, 'null'], maxLength: 2000 }
         Quantity: { $ref: '#/components/schemas/Quantity' }
@@ -1948,7 +1949,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/RecordBase'
         - type: object
-          required: [Subject, Account_Name, Line_Items]
+          required: [Subject, Account_Name]
           properties:
             Subject: { type: string, minLength: 1, maxLength: 255 }
             Account_Name: { $ref: '#/components/schemas/Lookup' }
@@ -1956,7 +1957,7 @@ components:
             Deal_Name: { oneOf: [ { $ref: '#/components/schemas/Lookup' }, { type: 'null' } ] }
             Currency: { $ref: '#/components/schemas/CurrencyCode' }
             Exchange_Rate: { allOf: [ { $ref: '#/components/schemas/Rate' } ], readOnly: true }
-            Line_Items: { type: array, minItems: 1, maxItems: 200, items: { $ref: '#/components/schemas/LineItem' } }
+            Line_Items: { type: array, maxItems: 200, items: { $ref: '#/components/schemas/LineItem' }, description: 'Replaces all lines when sent; omit on a PUT to keep them. A quote may be created empty and filled in the editor.' }
             Adjustment: { allOf: [ { $ref: '#/components/schemas/Money' } ], description: Signed; carries no VAT (OQ-04) }
             Sub_Total: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
             VAT_Total: { allOf: [ { $ref: '#/components/schemas/Money' } ], readOnly: true }
@@ -1983,7 +1984,7 @@ components:
         - type: object
           properties:
             Quote_Number: { type: string, readOnly: true }
-            Quote_Stage: { type: string, enum: [Draft, Negotiation, Delivered, On Hold, Confirmed, Closed Won, Closed Lost] }
+            Quote_Stage: { type: string, enum: [draft, negotiation, delivered, on_hold, confirmed, closed_won, closed_lost] }
             Valid_Till: { type: [string, 'null'], format: date }
 
     SalesOrder:

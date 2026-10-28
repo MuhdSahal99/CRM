@@ -4,8 +4,9 @@ import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import { ApiError, NotFound } from "../http/errors.ts";
 import type { FieldDef } from "../metadata/record-schema.ts";
 import { MODULE_OF_TYPE } from "../metadata/record-schema.ts";
-import { exchangeRateFor } from "../money/fx.ts";
+import { captureCurrency } from "../money/fx.ts";
 import { toE164 } from "../phone.ts";
+import { type QuoteExtra, QUOTE_IGNORED, quoteChecks, quoteDetails, saveQuoteLines } from "../quotes/service.ts";
 import type { Tx } from "../tenant.ts";
 import type { TimelineEvent } from "../timeline.ts";
 
@@ -29,7 +30,14 @@ export type ModuleDef = {
   writable: PgColumn[];
   /** Server-side normalisation of a parsed record (api_name keys) before it is stored; `before` is the row on update. */
   /** Service-side rules that need the database, run on the parsed row before it is written; `before` is the row on update. */
-  check?: (tx: Tx, row: Record<string, unknown>, before?: Record<string, unknown>) => Promise<void>;
+  check?: (tx: Tx, row: Record<string, unknown>, before: Record<string, unknown> | undefined, extra: QuoteExtra) => Promise<void>;
+  /** Documents with line items (Quotes): the api_names the server owns, dropped from the input (AC-20, AC-21). */
+  ignored?: string[];
+  /** Documents with line items: split `Line_Items` off the input, hand it to `check` as extra.lines, and save the lines after the header. Returns timeline meta. */
+  lineItems?: boolean;
+  afterWrite?: (tx: Tx, id: string, extra: QuoteExtra) => Promise<Record<string, unknown> | undefined>;
+  /** Adds computed or related data to records read one at a time (Quotes: lines and the VAT summary). */
+  decorate?: (tx: Tx, fields: Field[], records: Record<string, unknown>[]) => Promise<void>;
   normalise?: (record: Record<string, unknown>, before?: Record<string, unknown>) => Record<string, unknown>;
 };
 
@@ -59,12 +67,7 @@ const mobileIn = (field: string, column: string) => (record: Record<string, unkn
 /** T5.03: field-level 422s before the database trigger would raise them (US-07). Stage is only checked when it is being set. */
 async function dealChecks(tx: Tx, row: Record<string, unknown>, before?: Record<string, unknown>) {
   // T6.04 (US-09): the rate is captured on create and again when the currency changes; a later rate change never touches the deal.
-  const currency = (row.currency ?? before?.currency ?? "OMR") as string;
-  if (!before || (row.currency !== undefined && row.currency !== before.currency)) {
-    const scale = (await tx.execute<{ scale: number }>(sql`SELECT scale FROM currencies WHERE code = ${currency} AND is_active`)).rows[0]?.scale;
-    if (!scale) throw new ApiError(422, "INVALID_DATA", "This currency is not available.", { api_name: "Currency" });
-    Object.assign(row, { currency, currency_scale: scale, exchange_rate: await exchangeRateFor(tx, currency) });
-  }
+  await captureCurrency(tx, row, before);
   if (!row.stage_id) return;
   const stage = (await tx.execute<{ record_category: string }>(sql`SELECT record_category FROM stages WHERE id = ${row.stage_id as string} AND is_active`)).rows[0];
   if (!stage) throw new ApiError(422, "INVALID_DATA", "The stage does not exist.", { api_name: "Stage" });
@@ -91,6 +94,10 @@ const MODULES = new Map<string, ModuleDef>([
     check: dealChecks,
     writable: Object.values(getTableColumns(schema.deals)).filter((c) => c.name === "type" || !SERVER_COLUMNS.has(c.name)), // deals.type is a real field; SERVER_COLUMNS' `type` is the activity kind
   })],
+  ["Quotes", entry(schema.quotes, "quote", sql`subject`, ["Subject"], {
+    check: quoteChecks, ignored: QUOTE_IGNORED, lineItems: true, afterWrite: saveQuoteLines,
+    decorate: (tx, fields, records) => quoteDetails(tx, fields.some((f) => f.apiName === "Grand_Total"), records),
+  })],
   ["Products", entry(schema.products, "product", sql`product_name`, ["Product_Name"], { adminWrite: true })],
   ["Tasks", activity("task")],
   ["Calls", activity("call")],
@@ -111,7 +118,11 @@ export function moduleDef(name: string): ModuleDef {
 }
 
 /** Computed fields and the fields they are computed from, per module: hidden when any source is hidden. */
-const DERIVED_FROM: Record<string, Record<string, string[]>> = { Deals: { Expected_Revenue: ["Amount", "Probability"] } };
+const DERIVED_FROM: Record<string, Record<string, string[]>> = {
+  Deals: { Expected_Revenue: ["Amount", "Probability"] },
+  // Every source of each total, so one hidden source hides it (the line items and VAT summary follow Grand_Total in quoteDetails).
+  Quotes: { Grand_Total: ["Sub_Total", "VAT_Total", "Adjustment"], VAT_Total_OMR: ["VAT_Total", "Exchange_Rate"], Grand_Total_OMR: ["Sub_Total", "VAT_Total", "Adjustment", "Exchange_Rate"] },
+};
 
 export type Field = FieldDef & { lookupModule: string | null };
 
