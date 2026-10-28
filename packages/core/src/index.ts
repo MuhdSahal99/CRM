@@ -42,3 +42,4 @@ export { getDocumentPdf } from "./documents-pdf.ts";
 export { loadSmtp, messageIdFor, SmtpNotConfigured, sendMail, type Smtp } from "./mail.ts";
 export { requestEmail, SendEmailInput } from "./emails/request.ts";
 export { isDocModule } from "./documents-pdf.ts";
+export { CreateShareLinkInput, createShareLink, hashShareToken, listShareLinks, newShareToken, redactShareLinks, revokeShareLink, TOKEN_FORMAT } from "./share-links.ts";
