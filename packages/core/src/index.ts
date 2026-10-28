@@ -31,3 +31,4 @@ export { CreateVatRatesInput, createVatRates, effectiveVatRate, listVatRates } f
 export { CreateExchangeRatesInput, createExchangeRates, exchangeRateFor, ListExchangeRatesInput, listCurrencies, listExchangeRates, muscatToday, NoEffectiveRate } from "./money/fx.ts";
 export { ConvertQuoteInput, ConvertSalesOrderInput, convertQuote, convertSalesOrder } from "./conversions.ts";
 export { TransitionSalesOrderInput, transitionSalesOrder } from "./sales-orders.ts";
+export { IssueInvoiceInput, issueInvoice } from "./invoices/issue.ts";
