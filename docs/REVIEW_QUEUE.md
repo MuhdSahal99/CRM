@@ -22,3 +22,9 @@
 - Also review: invoices_lock and the issue transaction (T8.06 above), the cancel PDF (CANCELLED watermark, second file), packages/core/src/storage.ts (nothing issues a presigned URL), apps/worker/Dockerfile (never built here).
 - Open: OQ-05 (credit notes) and OQ-06 (number format and start) need Finance answers before go-live; OQ-01 and OQ-02 gate the final template.
 - Commits: T8.06 d35f35c, T8.07 133925d, T8.08 2f5245c, T8.09 4c9cae4, T8.10 d9c59ef, T8.11 d6ab4c1, T8.12 7659310, T8.13 (next commit)
+
+## T9.05 Share links: table, resolver, create and revoke API (HUMAN CHECK)
+- Review: `public.resolve_share_link` in packages/db/migrations/0028_share_links.sql (SECURITY DEFINER, pinned search_path, the crm_owner policies it needs because the tables are FORCEd, what it returns, EXECUTE only for crm_app); that only sha256(token) is stored; the create response is the only place the plaintext appears, and the idempotency layer stores it redacted.
+- Deviation to confirm: the function returns share_link_id instead of org_id (ADR-0009 listed org_id), so the access log can name the link without the token.
+- Files: packages/db/migrations/0028_share_links.sql, packages/core/src/share-links.ts, apps/web/app/api/v1/[module]/[id]/share_links/, apps/web/test/share-links.test.ts
+- Commit: 3364180
