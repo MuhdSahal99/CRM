@@ -9,6 +9,7 @@
     "test": "pnpm -r --workspace-concurrency=1 test && node --test \"scripts/*.test.ts\"",
     "e2e": "pnpm --filter web e2e",
     "infra:up": "docker compose --env-file .env.local up -d --wait",
+    "infra:storage": "docker compose --env-file .env.local --profile storage up -d --wait minio",
     "infra:down": "docker compose --env-file .env.local down",
     "db:migrate": "pnpm --filter @crm/db migrate",
     "db:seed": "pnpm --filter @crm/core seed"

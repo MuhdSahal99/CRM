@@ -529,7 +529,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-25**: cancel writes its timeline row in the same transaction, and the number is kept. Mark paid writes `invoice_paid`. paid → cancelled is allowed only for an admin.
 - **Done when:** **US-12** status flow is met. ⚠ **OQ-05**: credit notes may replace or extend cancel.
 
-#### T8.08 Files and object storage · M
+#### T8.08 Files and object storage · M ✅
 - **Files:** `docker-compose.yml` (adds MinIO), migration `files` (immutable once ready), `packages/core/src/storage.ts` (S3 v3 client, key `org/<org>/<kind>/<uuid>`, streaming read).
 - **Tests first:** I: **AC-43**: a filename of `../../etc/passwd.csv` is stored under a UUID key, and the filename is sanitised. A ready file can't be updated.
 - **Done when:** nothing ever issues a presigned URL (ADR-0012).

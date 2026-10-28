@@ -15,3 +15,4 @@ export * from "./documents.ts";
 export * from "./quotes.ts";
 export * from "./sales-orders.ts";
 export * from "./invoices.ts";
+export * from "./files.ts";

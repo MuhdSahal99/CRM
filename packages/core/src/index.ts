@@ -33,3 +33,4 @@ export { ConvertQuoteInput, ConvertSalesOrderInput, convertQuote, convertSalesOr
 export { TransitionSalesOrderInput, transitionSalesOrder } from "./sales-orders.ts";
 export { IssueInvoiceInput, issueInvoice } from "./invoices/issue.ts";
 export { CancelInvoiceInput, MarkPaidInput, cancelInvoice, markInvoicePaid } from "./invoices/status.ts";
+export { createFile, objectKey, openFile, putFile, sanitizeFilename } from "./storage.ts";

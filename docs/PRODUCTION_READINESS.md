@@ -31,3 +31,4 @@ Use these for manual testing, E2E and the visibility matrix: rep A vs rep B (pri
   - Without `trustedProxies`, the proxy must **overwrite** the header (nginx: `proxy_set_header X-Forwarded-For $remote_addr;`). If it appends (`$proxy_add_x_forwarded_for`), every request lands in one shared bucket and the whole org is locked out after 10 attempts in 15 minutes.
 - [ ] `BETTER_AUTH_URL` is the public `https://` origin (Better Auth trusts only this origin for cookie-bearing requests).
 - [ ] No seed has run against the prod database (`member` has no `*.test` emails).
+- [ ] **Object storage is a real, private, encrypted bucket (ADR-0012).** Set S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY (and S3_REGION, no S3_ENDPOINT) in the prod environment. Dev uses an archived Bitnami MinIO image (the upstream `minio/minio` image is no longer published); do not ship it. Block Public Access, SSE-KMS and versioning on.

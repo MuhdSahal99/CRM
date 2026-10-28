@@ -26,5 +26,23 @@ services:
       interval: 2s
       retries: 30
 
+  # Object storage for PDFs and imports (ADR-0012). Opt-in: `pnpm infra:storage`. Needs S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY and S3_BUCKET in .env.local.
+  # The upstream minio/minio image is no longer published, so this is Bitnami's archived MinIO, pinned by digest: dev only, never prod (PRODUCTION_READINESS).
+  minio:
+    profiles: ["storage"]
+    image: bitnamilegacy/minio@sha256:451fe6858cb770cc9d0e77ba811ce287420f781c7c1b806a386f6896471a349c
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-}
+      MINIO_DEFAULT_BUCKETS: ${S3_BUCKET:-}
+    ports: ["127.0.0.1:9000:9000"]
+    volumes:
+      - miniodata:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 2s
+      retries: 30
+
 volumes:
   pgdata:
+  miniodata:

@@ -9,6 +9,12 @@ const envSchema = z.object({
   DATABASE_AUTH_URL: z.url({ protocol: /^postgres(ql)?$/ }), // crm_auth: Better Auth's tables only (ADR-0004)
   BETTER_AUTH_SECRET: z.string().min(32), // signs session cookies
   BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }), // the app's public origin; also the trusted origin for CSRF checks
+  // Object storage (ADR-0012): MinIO in dev, an S3 bucket in prod. Optional at boot; storage.ts refuses to run without them.
+  S3_ENDPOINT: z.url().optional(), // set for MinIO; omit for AWS
+  S3_REGION: z.string().min(1).default("us-east-1"),
+  S3_BUCKET: z.string().min(3).optional(),
+  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
 });
 
 export type Config = z.infer<typeof envSchema>;
