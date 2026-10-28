@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { requireFieldWrite } from "../field-access.ts";
 import { Conflict, Forbidden, NotFound } from "../http/errors.ts";
 import type { Tx } from "../tenant.ts";
 import { recordEvent } from "../timeline.ts";
@@ -12,6 +13,7 @@ export const MarkPaidInput = z.object({ paid_on: z.iso.date().optional() }).defa
 
 type Row = { status: string; invoice_number: string };
 const lock = async (tx: Tx, id: string) => {
+  await requireFieldWrite(tx, "Invoices", "Status");
   const row = (await tx.execute<Row>(sql`SELECT status, invoice_number FROM invoices WHERE id = ${id} AND deleted_at IS NULL FOR UPDATE`)).rows[0];
   if (!row) throw new NotFound();
   return row;

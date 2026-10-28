@@ -58,6 +58,21 @@ describe("issue an invoice (T8.06)", () => {
     expect(inv.Invoice_Number).toBe(row.invoice_number);
   });
 
+  it("a role without read_write on Invoices.Status cannot issue (403) and nothing is numbered", async () => {
+    const id = await draft();
+    const grant = (access: string) => queryAs(app, adminCtx, `INSERT INTO field_permissions (org_id, field_id, role, access)
+      SELECT app.org_id(), f.id, 'rep', $1 FROM fields f JOIN modules m ON m.id = f.module_id WHERE m.api_name = 'Invoices' AND f.api_name = 'Status'
+      ON CONFLICT (org_id, field_id, role) DO UPDATE SET access = EXCLUDED.access`, [access]);
+    await grant("read_only");
+    try {
+      expect((await issue(rep, id)).status).toBe(403);
+      expect((await queryAs(app, adminCtx, "SELECT status FROM invoices WHERE id = $1", [id]))[0].status).toBe("draft");
+    } finally {
+      await grant("read_write");
+    }
+    expect((await issue(rep, id)).status).toBe(200);
+  });
+
   it("stored totals that no longer match the lines abort the issue and consume no number", async () => {
     const id = await draft();
     await queryAs(app, adminCtx, "UPDATE invoices SET vat_total_omr = vat_total_omr + 1 WHERE id = $1", [id]);

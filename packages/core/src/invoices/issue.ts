@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { requireFieldWrite } from "../field-access.ts";
 import { ApiError, Conflict, NotFound } from "../http/errors.ts";
 import { muscatToday } from "../money/fx.ts";
 import { type PricingLineInput, priceDocument } from "../money/pricing.ts";
@@ -15,6 +16,7 @@ export const IssueInvoiceInput = z.object({});
 
 /** POST /Invoices/{id}/actions/issue. 404 for an invoice the caller cannot see; 409 INVALID_STATE unless it is a draft. */
 export async function issueInvoice(tx: Tx, id: string) {
+  await requireFieldWrite(tx, "Invoices", "Status");
   const inv = (await tx.execute<Record<string, any>>(sql`SELECT * FROM invoices WHERE id = ${id} AND deleted_at IS NULL FOR UPDATE`)).rows[0];
   if (!inv) throw new NotFound();
   if (inv.status !== "draft") throw new Conflict("INVALID_STATE", `A ${inv.status} invoice cannot be issued.`);
