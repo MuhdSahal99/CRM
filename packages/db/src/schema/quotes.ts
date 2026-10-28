@@ -4,7 +4,7 @@ import { REC, recFks, ZOHO, zohoIdx } from "./_columns.ts";
 import { orgs } from "./auth.ts";
 import { vatCategory } from "./settings.ts";
 
-// SCHEMA ง quotes, quote_lines (ADR-0007). Composite FKs that SET NULL one column, grants, RLS and triggers are hand-written (migration 0023).
+// SCHEMA ยง quotes, quote_lines (ADR-0007). Composite FKs that SET NULL one column, grants, RLS and triggers are hand-written (migration 0023).
 
 export const quoteStage = pgEnum("quote_stage", ["draft", "negotiation", "delivered", "on_hold", "confirmed", "closed_won", "closed_lost"]);
 export const discountType = pgEnum("discount_type", ["percent", "amount"]);

@@ -1,3 +1,5 @@
+"use client";
+
 import { useId } from "react";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -22,6 +24,19 @@ export type Line = {
   vatAmount: string;
   lineTotal: string;
   quantityError?: string;
+  priceError?: string;
+  discountError?: string;
+};
+
+/** Edit mode (the quote editor): the grid is controlled and still computes nothing; amounts come from the server. */
+export type LineEditor = {
+  onChange: (index: number, field: "quantity" | "listPrice" | "discountPercent", value: string) => void;
+  onRemove: (index: number) => void;
+  adjustment: string;
+  onAdjustment: (value: string) => void;
+  adjustmentError?: string;
+  /** Replaces the plain "Add line" button (the product picker). */
+  add?: React.ReactNode;
 };
 
 export type Totals = {
@@ -33,12 +48,16 @@ export type Totals = {
   vatTotalOmr?: string;
 };
 
+const F = { qty: "quantity", price: "listPrice", disc: "discountPercent" } as const;
+
 // One grid for both layouts: 2 columns on phones, a single row per line from lg up.
 const ROW = "grid grid-cols-2 gap-x-3 gap-y-2 lg:grid-cols-[minmax(0,1fr)_5.5rem_7rem_5.5rem_8rem_8rem_2.25rem] lg:items-center";
 
-export function LineItemGrid({ lines, totals, currency }: { lines: Line[]; totals: Totals; currency: Currency }) {
+export function LineItemGrid({ lines, totals, currency, editor }: { lines: Line[]; totals: Totals; currency: Currency; editor?: LineEditor }) {
   const t = useTranslations("lineItems");
   const uid = useId();
+  const bind = (i: number, field: "quantity" | "listPrice" | "discountPercent", value: string) =>
+    editor ? { value, onChange: (e: React.ChangeEvent<HTMLInputElement>) => editor.onChange(i, field, e.target.value) } : { defaultValue: value };
   const vatLabel = (c: VatCategory, rate: string | null) => t(`vatCategory.${c}`, { rate: rate ?? "" });
 
   return (
@@ -56,6 +75,9 @@ export function LineItemGrid({ lines, totals, currency }: { lines: Line[]; total
       <ol className="flex flex-col gap-2">
         {lines.map((line, i) => {
           const id = (f: string) => `${uid}-${line.id}-${f}`;
+          const qtyProps = bind(i, F.qty, line.quantity);
+          const priceProps = bind(i, F.price, line.listPrice);
+          const discProps = bind(i, F.disc, line.discountPercent);
           return (
             <li key={line.id} className={`${ROW} rounded-lg border bg-card p-3 lg:rounded-none lg:border-x-0 lg:border-t-0 lg:bg-transparent lg:py-2`}>
               <div className="col-span-2 flex items-center justify-between gap-2 lg:col-span-1">
@@ -73,7 +95,7 @@ export function LineItemGrid({ lines, totals, currency }: { lines: Line[]; total
                 <Input
                   id={id("qty")}
                   inputMode="decimal"
-                  defaultValue={line.quantity}
+                  {...qtyProps}
                   className="text-end tabular-nums"
                   aria-invalid={line.quantityError ? true : undefined}
                   aria-describedby={line.quantityError ? id("qty-err") : undefined}
@@ -81,11 +103,13 @@ export function LineItemGrid({ lines, totals, currency }: { lines: Line[]; total
               </div>
               <div className="flex flex-col gap-1">
                 <Label htmlFor={id("price")} className="lg:sr-only">{t("listPrice")}</Label>
-                <Input id={id("price")} inputMode="decimal" defaultValue={line.listPrice} className="text-end tabular-nums" />
+                <Input id={id("price")} inputMode="decimal" {...priceProps} placeholder={editor ? t("auto") : undefined} aria-invalid={line.priceError ? true : undefined} className="text-end tabular-nums" />
+                {line.priceError && <p className="text-xs text-destructive">{line.priceError}</p>}
               </div>
               <div className="flex flex-col gap-1">
                 <Label htmlFor={id("disc")} className="lg:sr-only">{t("discount")}</Label>
-                <Input id={id("disc")} inputMode="decimal" defaultValue={line.discountPercent} className="text-end tabular-nums" />
+                <Input id={id("disc")} inputMode="decimal" {...discProps} aria-invalid={line.discountError ? true : undefined} className="text-end tabular-nums" />
+                {line.discountError && <p className="text-xs text-destructive">{line.discountError}</p>}
               </div>
 
               <div className="flex flex-col gap-1 text-end">
@@ -99,7 +123,7 @@ export function LineItemGrid({ lines, totals, currency }: { lines: Line[]; total
                 <span className="text-xs text-muted-foreground lg:sr-only">{t("lineTotal")}</span>
                 <Money value={line.lineTotal} currency={currency} className="font-medium" />
               </div>
-              <Button variant="ghost" size="icon-sm" aria-label={t("removeLine", { n: i + 1 })} className="col-span-2 justify-self-end lg:col-span-1">
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => editor?.onRemove(i)} aria-label={t("removeLine", { n: i + 1 })} className="col-span-2 justify-self-end lg:col-span-1">
                 <Trash2Icon aria-hidden />
               </Button>
 
@@ -113,10 +137,12 @@ export function LineItemGrid({ lines, totals, currency }: { lines: Line[]; total
         })}
       </ol>
 
-      <Button variant="outline" className="self-start">
-        <PlusIcon aria-hidden />
-        {t("addLine")}
-      </Button>
+      {editor?.add ?? (
+        <Button type="button" variant="outline" className="self-start">
+          <PlusIcon aria-hidden />
+          {t("addLine")}
+        </Button>
+      )}
 
       <dl className="ms-auto grid w-full grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 sm:max-w-sm">
         <dt>{t("subTotal")}</dt>
@@ -140,7 +166,14 @@ export function LineItemGrid({ lines, totals, currency }: { lines: Line[]; total
           <Label htmlFor={`${uid}-adjustment`}>{t("adjustment")}</Label>
         </dt>
         <dd>
-          <Input id={`${uid}-adjustment`} inputMode="decimal" defaultValue={totals.adjustment} className="w-28 text-end tabular-nums" />
+          <Input
+            id={`${uid}-adjustment`}
+            inputMode="decimal"
+            {...(editor ? { value: editor.adjustment, onChange: (e: React.ChangeEvent<HTMLInputElement>) => editor.onAdjustment(e.target.value) } : { defaultValue: totals.adjustment })}
+            aria-invalid={editor?.adjustmentError ? true : undefined}
+            className="w-28 text-end tabular-nums"
+          />
+          {editor?.adjustmentError && <p className="text-xs text-destructive">{editor.adjustmentError}</p>}
         </dd>
         <dt className="border-t pt-2 font-semibold">{t("grandTotal")}</dt>
         <dd className="border-t pt-2 text-end text-base font-semibold">

@@ -476,12 +476,12 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-17** pattern for quotes. Transfer moves open quotes.
 - **Done when:** visibility and transfer cover quotes.
 
-#### T7.08 UI: quote editor · M
+#### T7.08 UI: quote editor · M ✅
 - **Files:** `app/(app)/Quotes/[id]/edit/page.tsx` (uses `patterns/line-item-grid`), `product-picker.tsx`.
 - **Tests first:** E (w360, w1440): build the 3 fixture lines, save, and see the server totals of 358.190 and 358.000 after the adjustment. Qty 0 shows a field error on that line.
 - **Done when:** the UI never computes totals. They refresh from the save response.
 
-#### T7.09 UI: create a quote from a deal · S
+#### T7.09 UI: create a quote from a deal · S ✅
 - **Files:** a Deal detail action, `app/(app)/Quotes/[id]/page.tsx`.
 - **Tests first:** E (w360): open a deal, create a quote, add a line and save. This is the first half of PRD M7.
 - **Done when:** **US-10** passes end to end.

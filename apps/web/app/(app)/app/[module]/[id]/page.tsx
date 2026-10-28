@@ -8,6 +8,8 @@ import { z } from "zod";
 import { ConvertDialog } from "@/components/records/convert-dialog";
 import { StageControl } from "@/components/deals/stage-control";
 import { ActivityDialog } from "@/components/records/activity-dialog";
+import { NewQuoteButton } from "@/components/quotes/new-quote-button";
+import { QuoteLines } from "@/components/quotes/quote-lines";
 import { RecordDetail } from "@/components/records/record-detail";
 import { RelatedTabs } from "@/components/records/related-tabs";
 import { Timeline, type TimelineItem } from "@/components/records/timeline";
@@ -64,6 +66,7 @@ export default async function RecordPage({ params }: Props) {
         <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{recordTitle(meta, record)}</h1>
         <div className="flex flex-wrap gap-2">
           {(module === "Accounts" || module === "Contacts") && <ActivityDialog module={module} id={id} />}
+          {module === "Deals" && Boolean(record.Account_Name) && <NewQuoteButton dealId={id} dealName={recordTitle(meta, record)} accountId={(record.Account_Name as { id: string }).id} />}
           {converted && <Badge variant="secondary">{t("records.converted")}</Badge>}
           {module === "Leads" && !converted && <ConvertDialog id={id} company={String(record.Company ?? "")} name={recordTitle(meta, record)} />}
           {!converted && (module !== "Products" || ctx.role === "admin") && (
@@ -86,6 +89,7 @@ export default async function RecordPage({ params }: Props) {
         />
       )}
       <RecordDetail sections={meta.sections} record={record} />
+      {module === "Quotes" && <QuoteLines record={record} />}
       <RelatedTabs module={module} id={id} tabs={tabs} />
       <Timeline items={timeline} fields={meta.fields} />
     </div>

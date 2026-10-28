@@ -46,7 +46,21 @@
       "standard": "Standard {rate}%",
       "zero_rated": "Zero-rated",
       "exempt": "Exempt"
-    }
+    },
+    "subTotalBefore": "Sub Total",
+    "beforeAdjustment": "Total before adjustment",
+    "save": "Save quote",
+    "saving": "Saving…",
+    "choose": "Add a product",
+    "noProducts": "No products",
+    "auto": "Auto",
+    "saved": "Quote saved.",
+    "failed": "The quote could not be saved.",
+    "conflict": "Someone else changed this quote. Reload the page, then try again.",
+    "empty": "No lines yet. Add a product to start.",
+    "unitPrice": "Unit price",
+    "subject": "Subject",
+    "title": "Line items"
   },
   "charts": {
     "showData": "Show data"
@@ -509,7 +523,10 @@
       "empty": "No VAT rates yet.",
       "category": "Category",
       "rate": "Rate (%)",
-      "categories": { "standard": "Standard", "zero_rated": "Zero-rated" }
+      "categories": {
+        "standard": "Standard",
+        "zero_rated": "Zero-rated"
+      }
     },
     "fx": {
       "metaTitle": "Exchange rates · Saqient CRM",
@@ -722,6 +739,36 @@
       "Unit_Price": "Unit Price (OMR)",
       "Usage_Unit": "Usage Unit",
       "Description": "Description"
+    },
+    "Quotes": {
+      "Owner": "Quote Owner",
+      "Subject": "Subject",
+      "Quote_Number": "Quote Number",
+      "Quote_Stage": "Quote Stage",
+      "Valid_Till": "Valid Till",
+      "Account_Name": "Account Name",
+      "Contact_Name": "Contact Name",
+      "Deal_Name": "Deal Name",
+      "Currency": "Currency",
+      "Exchange_Rate": "Exchange Rate (OMR per 1)",
+      "Sub_Total": "Sub Total",
+      "VAT_Total": "Total VAT",
+      "Adjustment": "Adjustment",
+      "Grand_Total": "Grand Total",
+      "VAT_Total_OMR": "Total VAT (OMR)",
+      "Grand_Total_OMR": "Grand Total (OMR)",
+      "Billing_Street": "Billing Street",
+      "Billing_City": "Billing City",
+      "Billing_State": "Billing State",
+      "Billing_Code": "Billing Code",
+      "Billing_Country": "Billing Country",
+      "Shipping_Street": "Shipping Street",
+      "Shipping_City": "Shipping City",
+      "Shipping_State": "Shipping State",
+      "Shipping_Code": "Shipping Code",
+      "Shipping_Country": "Shipping Country",
+      "Terms_and_Conditions": "Terms and Conditions",
+      "Description": "Description"
     }
   },
   "sections": {
@@ -734,7 +781,9 @@
     "meeting_information": "Meeting Information",
     "lead_information": "Lead Information",
     "deal_information": "Deal Information",
-    "product_information": "Product Information"
+    "product_information": "Product Information",
+    "quote_information": "Quote Information",
+    "terms_and_conditions": "Terms and Conditions"
   },
   "picklists": {
     "Account_Type": {
@@ -873,11 +922,21 @@
       "committed": "Committed",
       "closed": "Closed",
       "omitted": "Omitted"
+    },
+    "Quote_Stage": {
+      "draft": "Draft",
+      "negotiation": "Negotiation",
+      "delivered": "Delivered",
+      "on_hold": "On Hold",
+      "confirmed": "Confirmed",
+      "closed_won": "Closed Won",
+      "closed_lost": "Closed Lost"
     }
   },
   "related": {
     "Contacts": "Contacts",
-    "Deals": "Deals"
+    "Deals": "Deals",
+    "Quotes": "Quotes"
   },
   "records": {
     "name": "Name",
@@ -900,7 +959,8 @@
       "Calls": "Call",
       "Meetings": "Meeting",
       "Deals": "Deal",
-      "Products": "Product"
+      "Products": "Product",
+      "Quotes": "Quote"
     },
     "saving": "Saving…",
     "required": "Required",
@@ -1003,6 +1063,8 @@
     "noPipeline": "No pipeline is set up yet.",
     "stage": "Stage",
     "changeStage": "Change stage",
-    "history": "Stage history"
+    "history": "Stage history",
+    "newQuote": "New quote",
+    "newQuoteFailed": "The quote could not be created. Try again."
   }
 }
