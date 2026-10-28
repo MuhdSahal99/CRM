@@ -1,8 +1,10 @@
 import { getAuthDb, getInvitation } from "@crm/core";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { badToken, clientIp, gate } from "@/lib/rate-limit";
 import { AcceptForm } from "./accept-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,8 +15,13 @@ export async function generateMetadata(): Promise<Metadata> {
 // US-03: public page behind the emailed link. An unknown, used or expired link is a plain 404.
 export default async function AcceptInvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  const ip = clientIp(await headers());
+  if (!(await gate("invite", ip)).allowed) notFound(); // T9.07: over the limit looks like an unknown link
   const invitation = await getInvitation(getAuthDb(), token);
-  if (!invitation) notFound();
+  if (!invitation) {
+    await badToken("invite", ip);
+    notFound();
+  }
   const t = await getTranslations("accept");
   const tBrand = await getTranslations("brand");
 

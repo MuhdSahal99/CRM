@@ -1,6 +1,6 @@
-import { closeQueues, contextForMember, createFile, getAuthDb, hashShareToken, putFile, withTenant } from "@crm/core";
+import { closeQueues, contextForMember, createFile, createLogger, getAuthDb, hashShareToken, log, putFile, withTenant } from "@crm/core";
 import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import * as moduleRoute from "../app/api/v1/[module]/route";
 import * as linksRoute from "../app/api/v1/[module]/[id]/share_links/route";
 import * as linkRoute from "../app/api/v1/[module]/[id]/share_links/[link_id]/route";
@@ -9,7 +9,9 @@ import * as ratesRoute from "../app/api/v1/settings/exchange_rates/route";
 import { call, createSignInUser, signIn } from "./api.ts";
 
 // T9.06 (US-14, ADR-0009): the public /s/{token} route. The 200 cases need object storage (S3_*) for the PDF bytes: skipped without it.
-const fetchShare = (token: string, suffix = "") => shareRoute.GET(new Request(`http://localhost:3000/s/${token}${suffix}`), { params: Promise.resolve({ token }) });
+// A fresh client address per call, so these requests never share a rate-limit bucket (rate-limit.test.ts covers the limits).
+const fetchShare = (token: string, suffix = "") =>
+  shareRoute.GET(new Request(`http://localhost:3000/s/${token}${suffix}`, { headers: { "x-forwarded-for": `10.${Array.from({ length: 3 }, () => Math.floor(Math.random() * 256)).join(".")}` } }), { params: Promise.resolve({ token }) });
 const snapshot = async (res: Response) => ({ status: res.status, body: await res.text(), headers: [...res.headers.entries()].sort() });
 
 describe.skipIf(!process.env.S3_BUCKET)("public share link route (T9.06)", () => {
@@ -114,5 +116,25 @@ describe.skipIf(!process.env.S3_BUCKET)("public share link route (T9.06)", () =>
     expect((await fetchShare(token)).status).toBe(200);
     await new Promise((resolve) => setTimeout(resolve, 2600)); // expires_at + 1 s
     expect((await fetchShare(token)).status).toBe(404);
+  });
+
+  it("AC-06: the log lines from opening, missing and expired links hold the link id and never the token", async () => {
+    const { id, token } = await mint();
+    const lines: string[] = [];
+    const capture = createLogger({ write: (line: string) => lines.push(line) }); // what the real logger would print, after redaction
+    const spies = (["info", "warn", "error"] as const).map((level) => vi.spyOn(log, level).mockImplementation(((...args: unknown[]) => (capture[level] as (...a: unknown[]) => void)(...args)) as never));
+    try {
+      expect((await fetchShare(token, "?utm=whatsapp")).status).toBe(200);
+      const missing = "M".repeat(43);
+      expect((await fetchShare(missing)).status).toBe(404);
+    } finally {
+      for (const spy of spies) spy.mockRestore();
+    }
+    const out = lines.join("\n");
+    expect(out).toContain(id);
+    expect(out).toContain("/s/[redacted]");
+    expect(out).not.toContain(token);
+    expect(out).not.toContain("M".repeat(43));
+    expect(out).not.toContain("utm=whatsapp");
   });
 });

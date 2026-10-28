@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { signInEmail } from "@/lib/auth-client";
 import { acceptInvite } from "./actions";
 
-type Failure = "invalid" | "gone" | "taken" | "unavailable";
+type Failure = "invalid" | "gone" | "taken" | "unavailable" | "limited";
 
 /** Sets the invited person's name and password, then signs them in and opens the app. */
 export function AcceptForm({ token, email, name }: { token: string; email: string; name: string }) {

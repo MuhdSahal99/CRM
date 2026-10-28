@@ -13,3 +13,7 @@ const EXPIRED = `<!doctype html><html lang="en"><head><meta charset="utf-8"><met
 /** The one response every bad, expired or revoked token gets. */
 export const expired = () => new Response(EXPIRED, { status: 404, headers: { ...SECURITY_HEADERS, "Content-Type": "text/html; charset=utf-8" } });
 
+
+/** Over the per-IP limit (T9.07): says nothing about any token. */
+export const tooMany = (retryAfter: number) =>
+  new Response("Too many requests", { status: 429, headers: { ...SECURITY_HEADERS, "Content-Type": "text/plain; charset=utf-8", "Retry-After": String(retryAfter) } });

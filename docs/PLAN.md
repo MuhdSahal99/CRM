@@ -597,7 +597,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-01**: a random token → 404 with the same body and headers as an expired one. **AC-03**: revoked → 404 on the next request. **AC-04**: extra query or path tricks still serve only the linked file. **AC-05**: re-rendering doesn't change the shared bytes. **AC-07**: the required headers. **AC-08**: at `expires_at + 1s` → 404 (U with a clock, plus I). **AC-09**: no S3 host and no ids in the response.
 - **Done when:** **US-14** link behaviour is met.
 
-#### T9.07 Rate limit and token redaction · S
+#### T9.07 Rate limit and token redaction · S ✅
 - **Files:** `apps/web/lib/rate-limit.ts` (Redis), applied to `/s/*`.
 - **Tests first:** I: **AC-02**: 100 bad tokens from one IP → 429 past the limit, while another IP is unaffected. **AC-06**: logs and traces from opening a link contain `share_link_id` and never the token.
 - **Done when:** ADR-0009's rate limit and logging rules are met.

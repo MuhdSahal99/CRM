@@ -1110,6 +1110,7 @@
       "invalid": "Enter your name and a password of at least 8 characters.",
       "gone": "This invitation has already been used or has expired. Ask your admin for a new one.",
       "taken": "An account with this email already exists. Sign in instead.",
+      "limited": "Too many attempts. Wait a few minutes and try again.",
       "unavailable": "Something went wrong. Try again in a few minutes."
     }
   },
