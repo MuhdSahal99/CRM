@@ -11,11 +11,15 @@ RUN apt-get update \
 
 WORKDIR /app
 RUN corepack enable
+# The root .dockerignore keeps .env*, .git and node_modules out of the context: secrets arrive at run time only.
 COPY . .
 RUN pnpm install --frozen-lockfile --filter worker... \
  && pnpm dlx @puppeteer/browsers install chrome@${CHROME_VERSION} --path /opt/chrome \
  && ln -s "$(find /opt/chrome -name chrome -type f | head -1)" /usr/local/bin/chromium
 
 ENV CHROMIUM_PATH=/usr/local/bin/chromium NODE_ENV=production
-USER root
+# Chromium keeps its sandbox on, so the worker runs unprivileged. Docker's default seccomp profile blocks the user namespaces the sandbox
+# needs: run with a Chromium seccomp profile (--security-opt seccomp=chromium.json), not with --no-sandbox or --privileged.
+RUN chown -R node:node /app
+USER node
 CMD ["pnpm", "--filter", "worker", "start"]

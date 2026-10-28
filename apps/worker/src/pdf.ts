@@ -49,8 +49,8 @@ let browser: Promise<Browser> | undefined;
 const launch = () => {
   const executablePath = process.env.CHROMIUM_PATH;
   if (!executablePath) throw new Error("CHROMIUM_PATH is not set: PDFs are rendered with a pinned Chromium (ADR-0010).");
-  // Chromium refuses its sandbox as root, which is how the container runs it; the container is the boundary there.
-  return puppeteer.launch({ executablePath, headless: true, args: process.getuid?.() === 0 ? ["--no-sandbox"] : [] });
+  // The sandbox stays on (no --no-sandbox): the worker image runs unprivileged, see apps/worker/Dockerfile.
+  return puppeteer.launch({ executablePath, headless: true });
 };
 export async function closeBrowser() {
   const b = browser;

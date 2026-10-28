@@ -1,0 +1,10 @@
+# Keep secrets and local state out of every image build context (apps/worker/Dockerfile copies the repo).
+.env
+.env.*
+!.env.example
+.git
+**/node_modules
+**/.next
+**/.vitest
+**/test-results
+**/playwright-report
