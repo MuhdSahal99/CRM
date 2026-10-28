@@ -134,6 +134,8 @@ export async function deleteRecord(tx: Tx, module: string, id: string) {
     UPDATE ${def.table} SET deleted_at = now(), deleted_by = NULLIF(current_setting('app.user_id', true), '')::uuid, version = version + 1
     WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL RETURNING id`).catch((e) => dbError(e, def.table, []));
   if (rows.length === 0) throw new NotFound();
+  // A deleted document's share links end with it (ADR-0009): the PDF it names must not stay reachable, nor come back if the record is restored.
+  await tx.execute(sql`UPDATE share_links SET revoked_at = now(), revoked_by = NULLIF(current_setting('app.user_id', true), '')::uuid WHERE record_type = ${def.recordType} AND record_id = ${id} AND revoked_at IS NULL`);
   await recordEvent(tx, { recordType: def.recordType, recordId: id, eventType: "deleted" });
   return [{ code: "SUCCESS", status: "success", details: { id } }];
 }

@@ -592,7 +592,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-40**: a crafted session `search_path` is ignored, and the function returns ≤ 1 row with 4 columns. Only the sha256 hash is stored. Expiry is the org TTL (7 days, at most 30). Revoke sets `revoked_at`. Rep B can't create a link on rep A's quote (404).
 - **Done when:** the plaintext token appears only in the create response.
 
-#### T9.06 Public `/s/{token}` route · M
+#### T9.06 Public `/s/{token}` route · M ✅
 - **Files:** `apps/web/app/s/[token]/route.ts`, `link-expired` page.
 - **Tests first:** I: **AC-01**: a random token → 404 with the same body and headers as an expired one. **AC-03**: revoked → 404 on the next request. **AC-04**: extra query or path tricks still serve only the linked file. **AC-05**: re-rendering doesn't change the shared bytes. **AC-07**: the required headers. **AC-08**: at `expires_at + 1s` → 404 (U with a clock, plus I). **AC-09**: no S3 host and no ids in the response.
 - **Done when:** **US-14** link behaviour is met.

@@ -52,13 +52,18 @@ export async function putFile(tx: Tx, id: string, body: Buffer) {
   await tx.execute(sql`UPDATE files SET status = 'ready', size_bytes = ${body.byteLength}, sha256 = ${sha} WHERE id = ${id}`);
 }
 
+/** The object's bytes as a web stream. For callers that already hold a storage key from a row they were allowed to read. */
+export async function readObject(storageKey: string) {
+  const { s3, bucket } = client();
+  const out = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: storageKey }));
+  if (!out.Body) throw new NotFound();
+  return out.Body.transformToWebStream();
+}
+
 /** The stored bytes as a stream, plus what a download response needs. 404 for a file the caller cannot see (RLS) or one not ready. */
 export async function openFile(tx: Tx, id: string) {
   const row = (await tx.execute<{ storage_key: string; filename: string; content_type: string; size_bytes: string }>(sql`
     SELECT storage_key, filename, content_type, size_bytes FROM files WHERE id = ${id} AND status = 'ready'`)).rows[0];
   if (!row) throw new NotFound();
-  const { s3, bucket } = client();
-  const out = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: row.storage_key }));
-  if (!out.Body) throw new NotFound();
-  return { stream: out.Body.transformToWebStream(), filename: row.filename, contentType: row.content_type, size: Number(row.size_bytes) };
+  return { stream: await readObject(row.storage_key), filename: row.filename, contentType: row.content_type, size: Number(row.size_bytes) };
 }

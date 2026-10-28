@@ -4,6 +4,7 @@ import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as moduleRoute from "../app/api/v1/[module]/route";
 import * as linksRoute from "../app/api/v1/[module]/[id]/share_links/route";
+import * as recordRoute from "../app/api/v1/[module]/[id]/route";
 import * as linkRoute from "../app/api/v1/[module]/[id]/share_links/[link_id]/route";
 import * as ratesRoute from "../app/api/v1/settings/exchange_rates/route";
 import { call, createSignInUser, signIn } from "./api.ts";
@@ -16,6 +17,8 @@ describe("share links (T9.05)", () => {
   let rep: string;
   let other: string;
   let quote: string;
+  let account: string;
+  let product: string;
   let mobile: string;
   let noMobile: string;
 
@@ -32,11 +35,11 @@ describe("share links (T9.05)", () => {
     const admin = await signIn(a.email);
     rep = await signIn((await createSignInUser(auth, org, "rep")).email);
     other = await signIn((await createSignInUser(auth, org, "rep")).email);
-    const account = (await call(moduleRoute, "POST", "/Accounts", { cookie: rep, params: { module: "Accounts" }, body: { data: [{ Account_Name: "Share Co" }] } })).json().data[0].details.id;
+    account = (await call(moduleRoute, "POST", "/Accounts", { cookie: rep, params: { module: "Accounts" }, body: { data: [{ Account_Name: "Share Co" }] } })).json().data[0].details.id;
     const contact = async (fields: Record<string, unknown>) => (await call(moduleRoute, "POST", "/Contacts", { cookie: rep, params: { module: "Contacts" }, body: { data: [{ Last_Name: "Buyer", Account_Name: { id: account }, ...fields }] } })).json().data[0].details.id as string;
     mobile = await contact({ First_Name: "Salim", Mobile: "+96891234567" });
     noMobile = await contact({});
-    const product = (await call(moduleRoute, "POST", "/Products", { cookie: admin, params: { module: "Products" }, body: { data: [{ Product_Name: "Share P", Product_Code: `SH-${Date.now().toString(36)}`, VAT_Category: "standard", Unit_Price: "10.000" }] } })).json().data[0].details.id;
+    product = (await call(moduleRoute, "POST", "/Products", { cookie: admin, params: { module: "Products" }, body: { data: [{ Product_Name: "Share P", Product_Code: `SH-${Date.now().toString(36)}`, VAT_Category: "standard", Unit_Price: "10.000" }] } })).json().data[0].details.id;
     await call(ratesRoute, "POST", "/settings/exchange_rates", { cookie: admin, body: { data: [{ currency: "AED", rate: "0.105", effective_from: "2026-01-01" }] } });
     quote = (await call(moduleRoute, "POST", "/Quotes", { cookie: rep, params: { module: "Quotes" }, body: { data: [{ Subject: "Share quote", Currency: "AED", Account_Name: { id: account }, Line_Items: [{ Product: { id: product }, Quantity: "1", List_Price: "10.00" }] }] } })).json().data[0].details.id;
   });
@@ -126,5 +129,26 @@ describe("share links (T9.05)", () => {
     expect(await resolve(expired)).toHaveLength(0);
     expect(await resolve(fresh)).toHaveLength(1);
     await expect(insert("G".repeat(43), "0 seconds", "31 days")).rejects.toThrow(/share_links_ttl/);
+  });
+
+  it("a deleted document's links end with it: deleting revokes them, and the resolver ignores a deleted parent even if nothing revoked the link", async () => {
+    const make = async () => {
+      const id = (await call(moduleRoute, "POST", "/Quotes", { cookie: rep, params: { module: "Quotes" }, body: { data: [{ Subject: "Doomed", Currency: "AED", Account_Name: { id: account }, Line_Items: [{ Product: { id: product }, Quantity: "1", List_Price: "10.00" }] }] } })).json().data[0].details.id as string;
+      await create(rep, id, { to_contact_id: mobile }); // 202: queues the render
+      await markReady(id);
+      const link = (await create(rep, id, { to_contact_id: mobile })).json().data[0];
+      return { id, linkId: link.id as string, token: link.url.split("/s/")[1] as string };
+    };
+    // 1. The delete path revokes.
+    const a = await make();
+    expect(await resolve(a.token)).toHaveLength(1);
+    expect((await call(recordRoute, "DELETE", `/Quotes/${a.id}`, { cookie: rep, params: { module: "Quotes", id: a.id } })).status).toBe(200);
+    expect((await queryAs(app, adminCtx, "SELECT revoked_at FROM share_links WHERE id = $1", [a.linkId]))[0].revoked_at).not.toBeNull();
+    expect(await resolve(a.token)).toHaveLength(0);
+    // 2. A soft delete that skipped the API (so nothing revoked) still ends the link, and the link stays revocable afterwards.
+    const b = await make();
+    await queryAs(app, adminCtx, "UPDATE quotes SET deleted_at = now(), deleted_by = $2 WHERE id = $1", [b.id, adminCtx.user_id]);
+    expect(await resolve(b.token)).toHaveLength(0);
+    expect((await call(linkRoute, "DELETE", `/Quotes/${b.id}/share_links/${b.linkId}`, { cookie: rep, params: { module: "Quotes", id: b.id, link_id: b.linkId } })).status).toBe(200);
   });
 });

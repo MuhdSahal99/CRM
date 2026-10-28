@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { currentPdf, DOCS, isDocModule } from "./documents-pdf.ts";
 import { ApiError, NotFound } from "./http/errors.ts";
-import type { Tx } from "./tenant.ts";
+import { getAppDb, type Tx } from "./tenant.ts";
 import { recordEvent } from "./timeline.ts";
 
 // T9.05 (US-14, ADR-0009): a link is 32 random bytes (base64url, 43 chars) to ONE immutable PDF file. Only sha256(token) is stored; the plaintext
@@ -70,10 +70,10 @@ export async function listShareLinks(tx: Tx, module: string, id: string) {
   return { data: rows.map(shape) };
 }
 
-/** DELETE /{module}/{id}/share_links/{link_id}: sets revoked_at (a second call is a no-op). 404 if the link is not this document's or not visible. */
+/** DELETE /{module}/{id}/share_links/{link_id}: sets revoked_at (a second call is a no-op). 404 if the link is not this document's or not visible; works on a deleted document's link too. */
 export async function revokeShareLink(tx: Tx, module: string, id: string, linkId: string) {
-  if (!z.uuid().safeParse(linkId).success) throw new NotFound();
-  const d = await requireDoc(tx, module, id);
+  if (!z.uuid().safeParse(linkId).success || !isDocModule(module)) throw new NotFound();
+  const d = DOCS[module]; // no requireDoc: the link's own row-level security decides, and a deleted document's link must stay revocable
   const link = (await tx.execute<{ revoked_at: Date | null }>(sql`SELECT revoked_at FROM share_links WHERE id = ${linkId} AND record_type = ${d.recordType} AND record_id = ${id} FOR UPDATE`)).rows[0];
   if (!link) throw new NotFound();
   if (!link.revoked_at) {
@@ -81,4 +81,14 @@ export async function revokeShareLink(tx: Tx, module: string, id: string, linkId
     await recordEvent(tx, { recordType: d.recordType, recordId: id, eventType: "share_link_revoked", meta: { share_link_id: linkId } });
   }
   return { data: [{ code: "SUCCESS", status: "success", details: { id: linkId } }] };
+}
+
+/**
+ * The public side (GET /s/{token}): the live link's file, or null for a token that is malformed, unknown, expired or revoked: the caller cannot
+ * tell which. One call to the SECURITY DEFINER function, with no tenant context, because the token is the only credential (ADR-0009).
+ */
+export async function resolveShareLink(token: string): Promise<{ share_link_id: string; storage_key: string; filename: string; content_type: string } | null> {
+  if (!TOKEN_FORMAT.test(token)) return null;
+  const { rows } = await getAppDb().execute<{ share_link_id: string; storage_key: string; filename: string; content_type: string }>(sql`SELECT * FROM public.resolve_share_link(${hashShareToken(token)})`);
+  return rows[0] ?? null;
 }

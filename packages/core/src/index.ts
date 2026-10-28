@@ -33,7 +33,7 @@ export { ConvertQuoteInput, ConvertSalesOrderInput, convertQuote, convertSalesOr
 export { TransitionSalesOrderInput, transitionSalesOrder } from "./sales-orders.ts";
 export { IssueInvoiceInput, issueInvoice } from "./invoices/issue.ts";
 export { CancelInvoiceInput, MarkPaidInput, cancelInvoice, markInvoicePaid } from "./invoices/status.ts";
-export { createFile, objectKey, openFile, putFile, sanitizeFilename } from "./storage.ts";
+export { createFile, objectKey, openFile, putFile, readObject, sanitizeFilename } from "./storage.ts";
 export { contextForMember } from "./context.ts";
 export { closeQueues, enqueueAfterCommit, getQueue, redis } from "./jobs/enqueue.ts";
 export { type Payload, QUEUES, type QueueName } from "./jobs/queues.ts";
@@ -42,4 +42,4 @@ export { getDocumentPdf } from "./documents-pdf.ts";
 export { loadSmtp, messageIdFor, SmtpNotConfigured, sendMail, type Smtp } from "./mail.ts";
 export { requestEmail, SendEmailInput } from "./emails/request.ts";
 export { isDocModule } from "./documents-pdf.ts";
-export { CreateShareLinkInput, createShareLink, hashShareToken, listShareLinks, newShareToken, redactShareLinks, revokeShareLink, TOKEN_FORMAT } from "./share-links.ts";
+export { CreateShareLinkInput, createShareLink, hashShareToken, listShareLinks, resolveShareLink, newShareToken, redactShareLinks, revokeShareLink, TOKEN_FORMAT } from "./share-links.ts";
