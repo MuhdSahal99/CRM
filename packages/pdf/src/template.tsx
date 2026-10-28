@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 import { renderToStaticMarkup } from "react-dom/server";
 
 // T8.10 (ADR-0010): quote, sales order and invoice documents as server-rendered HTML, printed to PDF by the worker (T8.11). Every

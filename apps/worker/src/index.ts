@@ -7,7 +7,7 @@ import { allOrgIds, runJob, sweepOrg } from "./jobs.ts";
 // queue the alert watches). SIGTERM finishes the running jobs first.
 const workers = (Object.keys(QUEUES) as QueueName[]).map((name) => {
   const worker = new Worker(name, (job) => runJob(name, job.data, { lastAttempt: job.attemptsMade + 1 >= (job.opts.attempts ?? 1) }), { connection: redis(), concurrency: QUEUES[name].concurrency });
-  worker.on("failed", (job, error) => log.error({ queue: name, job_id: job?.id, attempts: job?.attemptsMade, err: error.message }, "job failed"));
+  worker.on("failed", (job, error) => log.error({ queue: name, job_id: job?.id, attempts: job?.attemptsMade, err: error }, "job failed"));
   return worker;
 });
 

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node --experimental-transform-types --env-file-if-exists=../../.env.local src/index.ts",
+    "start": "node --import tsx --env-file-if-exists=../../.env.local src/index.ts",
     "check": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -14,6 +14,7 @@
     "bullmq": "^6.5.0",
     "drizzle-orm": "0.45.4",
     "puppeteer-core": "^25.16.0",
+    "tsx": "^4.23.15",
     "zod": "4.6.7"
   },
   "devDependencies": {
