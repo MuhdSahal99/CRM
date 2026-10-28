@@ -21,6 +21,7 @@
   "dependencies": {
     "@crm/db": "workspace:*",
     "better-auth": "1.7.7",
+    "decimal.js": "10.6.0",
     "drizzle-orm": "0.45.4",
     "ioredis": "6.0.0",
     "libphonenumber-js": "1.13.15",
