@@ -4,6 +4,7 @@ import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import { ApiError, NotFound } from "../http/errors.ts";
 import type { FieldDef } from "../metadata/record-schema.ts";
 import { MODULE_OF_TYPE } from "../metadata/record-schema.ts";
+import { exchangeRateFor } from "../money/fx.ts";
 import { toE164 } from "../phone.ts";
 import type { Tx } from "../tenant.ts";
 import type { TimelineEvent } from "../timeline.ts";
@@ -55,6 +56,13 @@ const mobileIn = (field: string, column: string) => (record: Record<string, unkn
 
 /** T5.03: field-level 422s before the database trigger would raise them (US-07). Stage is only checked when it is being set. */
 async function dealChecks(tx: Tx, row: Record<string, unknown>, before?: Record<string, unknown>) {
+  // T6.04 (US-09): the rate is captured on create and again when the currency changes; a later rate change never touches the deal.
+  const currency = (row.currency ?? before?.currency ?? "OMR") as string;
+  if (!before || (row.currency !== undefined && row.currency !== before.currency)) {
+    const scale = (await tx.execute<{ scale: number }>(sql`SELECT scale FROM currencies WHERE code = ${currency} AND is_active`)).rows[0]?.scale;
+    if (!scale) throw new ApiError(422, "INVALID_DATA", "This currency is not available.", { api_name: "Currency" });
+    Object.assign(row, { currency, currency_scale: scale, exchange_rate: await exchangeRateFor(tx, currency) });
+  }
   if (!row.stage_id) return;
   const stage = (await tx.execute<{ record_category: string }>(sql`SELECT record_category FROM stages WHERE id = ${row.stage_id as string} AND is_active`)).rows[0];
   if (!stage) throw new ApiError(422, "INVALID_DATA", "The stage does not exist.", { api_name: "Stage" });
@@ -77,9 +85,7 @@ const MODULES = new Map<string, ModuleDef>([
   ["Accounts", entry(schema.accounts, "account", sql`account_name`, ["Account_Name"])],
     // Same expression as contacts_name_trgm_idx, so word search can use the index.
   ["Contacts", entry(schema.contacts, "contact", sql`(coalesce(first_name, '') || ' ' || last_name)`, ["First_Name", "Last_Name"], { normalise: mobileIn("Mailing_Country", "mailing_country") })],
-  // OMR only until T6.04: the currency columns are fixed at create, so a client cannot choose them.
   ["Deals", entry(schema.deals, "deal", sql`deal_name`, ["Deal_Name"], {
-    fixed: { currency: "OMR", currency_scale: 3, exchange_rate: "1" },
     check: dealChecks,
     writable: Object.values(getTableColumns(schema.deals)).filter((c) => c.name === "type" || !SERVER_COLUMNS.has(c.name)), // deals.type is a real field; SERVER_COLUMNS' `type` is the activity kind
   })],

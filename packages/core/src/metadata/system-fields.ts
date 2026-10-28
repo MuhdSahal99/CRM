@@ -33,6 +33,7 @@ export const SYSTEM_PICKLISTS: Record<string, string[]> = {
   Meeting_Status: ["Planned", "Held", "Cancelled"],
   Call_Type: ["Inbound", "Outbound", "Missed"],
   Deal_Type: ["New Business", "Existing Business"],
+  Currency: ["OMR", "AED", "INR"], // active currencies; each needs an exchange rate to be used (T6.04)
   Reason_For_Loss: ["Price", "Competitor", "No Budget", "No Decision", "Other"],
   Forecast_Category: ["pipeline", "best_case", "committed", "closed", "omitted"], // the forecast_category enum, in order
   Lead_Status: ["Not Contacted", "Attempted to Contact", "Contact in Future", "Contacted", "Pre-Qualified", "Not Qualified", "Junk Lead", "Lost Lead"],
@@ -86,6 +87,8 @@ export const SYSTEM_FIELDS: Record<string, Section[]> = {
         pick("Type", "type", "Deal_Type"),
         pick("Lead_Source", "lead_source"),
         { api: "Amount", type: "currency", col: "amount" },
+        pick("Currency", "currency"),
+        { api: "Exchange_Rate", type: "decimal", col: "exchange_rate", ro: true },
         { api: "Closing_Date", type: "date", col: "closing_date", req: true },
         // Pipeline and Stage are lookups into the pipeline set-up (registry SETUP_LOOKUPS); the pipeline follows the stage.
         { api: "Pipeline", type: "lookup", col: "pipeline_id", ro: true },

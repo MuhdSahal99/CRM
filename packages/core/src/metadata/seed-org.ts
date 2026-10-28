@@ -32,7 +32,7 @@ const STAGES = [
   ["Closed Lost to Competition", 0, "closed_lost", "omitted"],
 ] as const;
 
-/** OMR is the base currency; only OMR deals can be created until T6.04. */
+/** OMR is the base currency; AED and INR deals need an entered exchange rate (US-09). */
 const CURRENCIES = [["OMR", 3, true], ["AED", 2, false], ["INR", 2, false]] as const;
 
 /**

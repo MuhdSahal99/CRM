@@ -414,7 +414,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** U: the rate lookup uses today in Asia/Muscat. I: with 1 AED = 0.105, the lookup returns `0.10500000`. With no rate → `NoEffectiveRate`. **AC-35**: a rep `POST /settings/exchange_rates` → 403.
 - **Done when:** **US-09** rate entry works.
 
-#### T6.04 Deals in AED and INR · S
+#### T6.04 Deals in AED and INR · S · ✅
 - **Files:** `packages/core/src/modules/deals.ts`.
 - **Tests first:** I: an AED deal stores the rate 0.105. A later rate change leaves its `amount_omr` unchanged. A currency change re-captures the rate. INR with no rate is blocked with a clear message (**US-09**).
 - **Done when:** the OMR-only limit from T5.02 is removed.
