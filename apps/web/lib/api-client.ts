@@ -1,5 +1,5 @@
 /** Browser → /api/v1 with the session cookie. Returns the status and parsed JSON (the API always answers JSON). */
-export async function callApi(method: "GET" | "POST" | "PUT", path: string, body?: unknown, headers?: Record<string, string>) {
+export async function callApi(method: "GET" | "POST" | "PUT" | "DELETE", path: string, body?: unknown, headers?: Record<string, string>) {
   const res = await fetch(`/api/v1${path}`, {
     method,
     headers: { "content-type": "application/json", ...headers },

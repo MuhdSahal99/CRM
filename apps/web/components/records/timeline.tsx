@@ -52,6 +52,7 @@ export function Timeline({ items, fields }: { items: TimelineItem[]; fields: Fie
                     {String(meta.subject ?? "")}
                   </Link>
                 )}
+                {typeof meta.to === "string" && <p className="text-sm break-words">{t("timeline.to", { name: meta.to })}</p>}
                 {e.event_type === "note_added" && typeof meta.body === "string" && <p className="break-words whitespace-pre-wrap">{meta.body}</p>}
                 {e.changes && Object.keys(e.changes).length > 0 && (
                   <ul className="flex flex-col gap-0.5 text-sm">

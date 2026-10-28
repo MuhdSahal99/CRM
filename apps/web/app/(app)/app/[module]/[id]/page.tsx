@@ -1,4 +1,4 @@
-import { getRecord, isDocModule, listPipelines, listRelated, listRelatedLists, listTimeline, NotFound, withTenant } from "@crm/core";
+import { getRecord, isDocModule, listPipelines, listShareLinks, listRelated, listRelatedLists, listTimeline, NotFound, withTenant } from "@crm/core";
 import { ChevronLeftIcon, PencilIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -14,6 +14,8 @@ import { QuoteLines } from "@/components/quotes/quote-lines";
 import { RecordDetail } from "@/components/records/record-detail";
 import { EmailsList, type EmailRow } from "@/components/records/emails-list";
 import { SendEmailDialog, type MailContact } from "@/components/records/send-email-dialog";
+import { ShareLinksList, type ShareLinkRow } from "@/components/records/share-links-list";
+import { WhatsAppButton, type WhatsAppContact } from "@/components/records/whatsapp-button";
 import { RelatedTabs } from "@/components/records/related-tabs";
 import { Timeline, type TimelineItem } from "@/components/records/timeline";
 import { Badge } from "@/components/ui/badge";
@@ -49,13 +51,15 @@ export default async function RecordPage({ params }: Props) {
       const timeline = (await listTimeline(tx, module, id, { page: 1, per_page: 50 })).data as TimelineItem[];
       const pipeline = module === "Deals" ? ((await listPipelines(tx)) as { is_default: boolean; stages: { id: string; name_key: string; record_category: string }[] }[]).find((p) => p.is_default) : undefined;
       // US-13: a quote, sales order or invoice lists its emails and offers the account's contacts as recipients.
-      let mail: { emails: EmailRow[]; contacts: MailContact[] } | undefined;
+      let mail: { emails: EmailRow[]; contacts: MailContact[]; people: WhatsAppContact[]; links: ShareLinkRow[] } | undefined;
       if (isDocModule(module)) {
         const accountId = (record!.Account_Name as { id: string } | null)?.id;
         const people = accountId ? ((await listRelated(tx, "Accounts", accountId, "Contacts", { page: 1, per_page: 200 })).data as RecordData[]) : [];
         mail = {
           emails: (await listRelated(tx, module, id, "Emails", { page: 1, per_page: 50 })).data as EmailRow[],
           contacts: people.map((c) => ({ id: c.id, name: [c.First_Name, c.Last_Name].filter(Boolean).join(" "), email: (c.Email as string | null) ?? null })),
+          people: people.map((c) => ({ id: c.id, name: [c.First_Name, c.Last_Name].filter(Boolean).join(" "), mobile: (c.Mobile as string | null) ?? null })),
+          links: (await listShareLinks(tx, module, id)).data as ShareLinkRow[],
         };
       }
       return { record: record!, meta: await moduleMeta(tx, module), tabs, timeline, stages: pipeline?.stages ?? [], mail };
@@ -108,6 +112,8 @@ export default async function RecordPage({ params }: Props) {
       )}
       <RecordDetail sections={meta.sections} record={record} />
       {(module === "Quotes" || module === "Sales_Orders" || module === "Invoices") && <QuoteLines record={record} />}
+      {mail && !(module === "Invoices" && status === "draft") && <div className="flex justify-end"><WhatsAppButton module={module} id={id} contacts={mail.people} title={recordTitle(meta, record)} /></div>}
+      {mail && <ShareLinksList module={module} id={id} links={mail.links} />}
       {mail && <EmailsList rows={mail.emails} />}
       <RelatedTabs module={module} id={id} tabs={tabs} />
       <Timeline items={timeline} fields={meta.fields} />

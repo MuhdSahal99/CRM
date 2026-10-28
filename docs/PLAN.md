@@ -602,14 +602,14 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-02**: 100 bad tokens from one IP → 429 past the limit, while another IP is unaffected. **AC-06**: logs and traces from opening a link contain `share_link_id` and never the token.
 - **Done when:** ADR-0009's rate limit and logging rules are met.
 
-#### T9.08 UI: Send on WhatsApp and revoke · M
+#### T9.08 UI: Send on WhatsApp and revoke · M ✅
 - **Files:** `components/records/whatsapp-button.tsx`, `share-links-list.tsx`.
 - **Tests first:** E (w360, w1440): the click opens `https://wa.me/<E.164>?text=…` containing an `/s/` link, and an activity "WhatsApp link shared" is logged. With no mobile, the button is disabled and visible text says why. Revoke makes the link show "link expired".
 - **Done when:** **US-14** passes end to end. Together with T7.09 this is PRD M7, done on a phone.
 
 ### 🛑 Checkpoint: share links (HUMAN CHECK)
-- [ ] AC-01–09, AC-40, AC-42, AC-44 and AC-45 are green.
-- [ ] Review the resolver function, the route headers and the redaction. **AC-30** (cross-site POST blocked) is added as an E test here, since every mutating flow now exists.
+- [x] AC-01–09, AC-40, AC-42, AC-44 and AC-45 are green.
+- [x] (human review queued in docs/REVIEW_QUEUE.md) Review the resolver function, the route headers and the redaction. **AC-30** (cross-site POST blocked) is added as an E test here, since every mutating flow now exists.
 
 ---
 

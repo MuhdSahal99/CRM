@@ -1,7 +1,7 @@
-import { type ChildProcess, spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import type { ChildProcess } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
 import { noPageScroll, phoneAndDesktop, signInToApp } from "./helpers";
+import { startWorker } from "./worker";
 
 phoneAndDesktop();
 test.describe.configure({ mode: "serial" });
@@ -22,14 +22,7 @@ const setSmtp = async (page: Page, fields: Record<string, unknown>) => {
 };
 const mailpit = async (path: string) => (await fetch(`${process.env.MAILPIT_URL}/api/v1/${path}`)).json() as Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-test.beforeAll(() => {
-  // The worker renders the PDF and sends the mail; it runs against the same dev database, Redis and storage as the app under test.
-  worker = spawn(process.execPath, ["--import", "tsx", "src/index.ts"], {
-    cwd: fileURLToPath(new URL("../../worker", import.meta.url)),
-    env: { ...process.env, ALLOW_PRIVATE_SMTP: "true" }, // TEMP-DEV: smtp-private-hosts
-    stdio: "ignore",
-  });
-});
+test.beforeAll(() => void (worker = startWorker()));
 test.afterAll(() => void worker?.kill());
 
 async function quoteWithContact(page: Page, tag: string) {

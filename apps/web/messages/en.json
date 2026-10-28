@@ -1073,6 +1073,14 @@
     "converted": "Converted",
     "stage_changed": "Stage changed",
     "imported": "Imported",
+    "email_sent": "Email sent",
+    "email_failed": "Email failed",
+    "whatsapp_shared": "WhatsApp link shared",
+    "share_link_revoked": "Share link revoked",
+    "invoice_issued": "Invoice issued",
+    "invoice_paid": "Invoice marked paid",
+    "invoice_cancelled": "Invoice cancelled",
+    "to": "To {name}",
     "types": {
       "task": "Task",
       "call": "Call",
@@ -1183,5 +1191,19 @@
     "title": "Emails",
     "empty": "No emails sent yet.",
     "status": { "queued": "Queued", "sending": "Sending", "sent": "Sent", "failed": "Failed" }
+  },
+  "whatsapp": {
+    "title": "Shared links",
+    "contact": "Contact to send to",
+    "choose": "Choose a contact",
+    "send": "Send on WhatsApp",
+    "noMobile": "This contact has no mobile number, so there is nobody to send to on WhatsApp.",
+    "text": "Hello {name}, here is your {title}:",
+    "preparing": "The PDF is being prepared. Try again in a moment.",
+    "failed": "The link could not be created. Try again.",
+    "state": { "active": "Active", "expired": "Expired", "revoked": "Revoked" },
+    "until": "until {date}",
+    "opened": "{count, plural, one {Opened once} other {Opened # times}}",
+    "revoke": "Revoke"
   }
 }
