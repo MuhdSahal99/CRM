@@ -1151,5 +1151,21 @@
     "history": "Stage history",
     "newQuote": "New quote",
     "newQuoteFailed": "The quote could not be created. Try again."
+  },
+  "documents": {
+    "convertQuote": "Convert to sales order",
+    "approve": "Approve",
+    "deliver": "Mark delivered",
+    "cancelOrder": "Cancel order",
+    "createInvoice": "Create invoice",
+    "issue": "Issue invoice",
+    "markPaid": "Mark paid",
+    "cancelInvoice": "Cancel invoice",
+    "cancelHint": "The invoice keeps its number and is marked cancelled. This cannot be undone.",
+    "reason": "Reason",
+    "confirmCancel": "Cancel this invoice",
+    "downloadPdf": "Download PDF",
+    "pdfPreparing": "The PDF is being prepared. Try again in a moment.",
+    "failed": "That did not work. Try again."
   }
 }

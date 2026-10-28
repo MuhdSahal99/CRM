@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { DocumentActions } from "@/components/documents/document-actions";
 import { ConvertDialog } from "@/components/records/convert-dialog";
 import { StageControl } from "@/components/deals/stage-control";
 import { ActivityDialog } from "@/components/records/activity-dialog";
@@ -54,6 +55,9 @@ export default async function RecordPage({ params }: Props) {
   if (!found) notFound();
   const { record, meta, tabs, timeline, stages } = found;
   const t = await getTranslations();
+  // Sales orders leave `created` and invoices leave `draft` through actions only; the server refuses edits then (409), so the button goes.
+  const status = String((module === "Sales_Orders" || module === "Invoices" ? record.Status : undefined) ?? "");
+  const locked = (module === "Sales_Orders" && status !== "created") || (module === "Invoices" && status !== "draft");
   const converted = module === "Leads" && record.Converted === true; // US-05 / AC-24: a converted lead is read-only
 
   return (
@@ -67,9 +71,10 @@ export default async function RecordPage({ params }: Props) {
         <div className="flex flex-wrap gap-2">
           {(module === "Accounts" || module === "Contacts") && <ActivityDialog module={module} id={id} />}
           {module === "Deals" && Boolean(record.Account_Name) && <NewQuoteButton dealId={id} dealName={recordTitle(meta, record)} accountId={(record.Account_Name as { id: string }).id} />}
+          {(module === "Quotes" || module === "Sales_Orders" || module === "Invoices") && <DocumentActions module={module} id={id} status={status} isAdmin={ctx.role === "admin"} />}
           {converted && <Badge variant="secondary">{t("records.converted")}</Badge>}
           {module === "Leads" && !converted && <ConvertDialog id={id} company={String(record.Company ?? "")} name={recordTitle(meta, record)} />}
-          {!converted && (module !== "Products" || ctx.role === "admin") && (
+          {!converted && !locked && (module !== "Products" || ctx.role === "admin") && (
             <Button asChild variant="outline">
               <Link href={`/app/${module}/${id}/edit`}>
                 <PencilIcon aria-hidden />
@@ -89,7 +94,7 @@ export default async function RecordPage({ params }: Props) {
         />
       )}
       <RecordDetail sections={meta.sections} record={record} />
-      {module === "Quotes" && <QuoteLines record={record} />}
+      {(module === "Quotes" || module === "Sales_Orders" || module === "Invoices") && <QuoteLines record={record} />}
       <RelatedTabs module={module} id={id} tabs={tabs} />
       <Timeline items={timeline} fields={meta.fields} />
     </div>

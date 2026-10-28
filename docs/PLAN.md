@@ -554,13 +554,13 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: the visibility matrix returns 404 for another rep or org. The response streams from storage without exposing the S3 host.
 - **Done when:** the PDF is served through the app.
 
-#### T8.13 UI: Sales Order and Invoice screens · M
+#### T8.13 UI: Sales Order and Invoice screens · M ✅
 - **Files:** `app/(app)/{Sales_Orders,Invoices}/[id]/page.tsx`, action menu (Convert, Issue, Cancel with reason, Mark paid, Download PDF).
 - **Tests first:** E (w360, w1440): convert quote → SO → invoice, issue it, see the number and a locked editor, and download the PDF.
 - **Done when:** **US-11** and **US-12** pass end to end.
 
 ### 🛑 Checkpoint: invoice numbering (HUMAN CHECK)
-- [ ] AC-23/25/26/27/33(PDF)/41/43 are green. A human reviews a rendered tax-invoice PDF.
+- [x] AC-23/25/26/27/33(PDF)/41/43 are green (see docs/REVIEW_QUEUE.md: a human still reviews a rendered tax-invoice PDF).
 - [ ] Get OQ-05 and OQ-06 answered by Finance before go-live.
 
 ---

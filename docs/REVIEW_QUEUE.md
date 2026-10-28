@@ -16,3 +16,9 @@
 - Open: OQ-06 (number format and start) must be set before go-live; OQ-01 may add e-invoicing fields. The PDF render is queued once the worker exists (T8.09, T8.11).
 - Files: packages/core/src/invoices/issue.ts, apps/web/app/api/v1/Invoices/[id]/actions/issue/route.ts, apps/web/test/invoice-issue.test.ts
 - Commit: d35f35c
+
+## Checkpoint: invoice numbering (slice 8, HUMAN CHECK)
+- Review: open a PDF rendered by the worker for an issued invoice (run the worker with CHROMIUM_PATH and the S3_* variables, issue an invoice, download it) and check it against Oman tax-invoice content: "Tax Invoice", seller name/address/VATIN, buyer name/VATIN, date and number, per-line VAT, VAT summary, VAT in OMR. The template is packages/pdf/src/template.tsx; fonts come from the worker image, not embedded.
+- Also review: invoices_lock and the issue transaction (T8.06 above), the cancel PDF (CANCELLED watermark, second file), packages/core/src/storage.ts (nothing issues a presigned URL), apps/worker/Dockerfile (never built here).
+- Open: OQ-05 (credit notes) and OQ-06 (number format and start) need Finance answers before go-live; OQ-01 and OQ-02 gate the final template.
+- Commits: T8.06 d35f35c, T8.07 133925d, T8.08 2f5245c, T8.09 4c9cae4, T8.10 d9c59ef, T8.11 d6ab4c1, T8.12 7659310, T8.13 (next commit)
