@@ -11,3 +11,4 @@ export * from "./leads.ts";
 export * from "./deals.ts";
 export * from "./settings.ts";
 export * from "./products.ts";
+export * from "./documents.ts";

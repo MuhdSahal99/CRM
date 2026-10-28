@@ -451,7 +451,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** U: **AC-29**: quantity `0`, `-1`, `"1.0001"`, 4-dp money and `NaN` → rejected, while `1e3` is rejected as a format. Properties: Σ lines = header totals, and pricing twice gives the same result.
 - **Done when:** these schemas are the only way money enters the system (ADR-0007).
 
-#### T7.03 Document numbering table · S
+#### T7.03 Document numbering table · S ✅
 - **Files:** migration `document_sequences` (`sequence_monotonic` trigger), `packages/core/src/numbering.ts` (`takeNext(tx, docType)` via `UPDATE … RETURNING`).
 - **Tests first:** I: lowering `next_value` raises. Format is `prefix || lpad(n, padding)`. A rolled-back transaction doesn't consume a number.
 - **Done when:** quotes use it on create. ⚠ **OQ-06**: the prefix and start value are config.

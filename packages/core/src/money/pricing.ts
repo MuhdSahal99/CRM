@@ -57,7 +57,7 @@ export function priceDocument(input: PricingInput, ctx: PricingCtx): PricedDocum
   return {
     lines: raw.map((x) => ({
       amount: s(x.amount), discount_amount: s(x.discount), net_amount: s(x.net), vat_category: x.l.vat_category,
-      vat_rate: x.l.vat_category === "standard" ? x.l.vat_rate! : null, vat_amount: s(x.vat), line_total: s(x.total),
+      vat_rate: x.l.vat_category === "exempt" ? null : (x.l.vat_rate ?? "0.0000"), vat_amount: s(x.vat), line_total: s(x.total),
     })),
     vat_summary: summary, sub_total: s(subTotal), vat_total: s(vatTotal), adjustment: s(adjustment), grand_total: s(grand),
     vat_total_omr: omr(vatTotal), grand_total_omr: omr(grand),

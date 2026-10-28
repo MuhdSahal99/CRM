@@ -11,7 +11,7 @@ describe("priceDocument (US-10 worked example)", () => {
   it("matches the PRD table exactly", () => {
     const p = priceDocument({ lines: [A, B, C], adjustment: "-0.190" }, omr);
     expect(p.lines.map((l) => [l.net_amount, l.vat_amount, l.line_total, l.vat_rate])).toEqual([
-      ["270.000", "13.500", "283.500", "5.0000"], ["50.000", "0.000", "50.000", null], ["24.690", "0.000", "24.690", null]]);
+      ["270.000", "13.500", "283.500", "5.0000"], ["50.000", "0.000", "50.000", "0.0000"], ["24.690", "0.000", "24.690", null]]);
     // The PRD's "Sub Total 358.190" is sub_total + vat_total (270 + 50 + 24.690 = 344.690, plus 13.500 VAT). Flagged in REVIEW_QUEUE.
     expect(p.sub_total).toBe("344.690");
     expect(p.vat_total).toBe("13.500");
