@@ -12,7 +12,13 @@ const valid = {
 
 describe("parseConfig", () => {
   it("accepts a complete environment", () => {
-    expect(parseConfig(valid)).toEqual({ ...valid, S3_REGION: "us-east-1" }); // object storage is optional at boot; the region defaults
+    // Object storage and SMTP credentials are optional at boot; the region and the private-SMTP flag have defaults.
+    expect(parseConfig(valid)).toEqual({ ...valid, S3_REGION: "us-east-1", ALLOW_PRIVATE_SMTP: false });
+  });
+
+  it("refuses ALLOW_PRIVATE_SMTP in production", () => {
+    expect(parseConfig({ ...valid, ALLOW_PRIVATE_SMTP: "true" }).ALLOW_PRIVATE_SMTP).toBe(true);
+    expect(() => parseConfig({ ...valid, NODE_ENV: "production", ALLOW_PRIVATE_SMTP: "true" })).toThrow("ALLOW_PRIVATE_SMTP");
   });
 
   it("rejects a malformed S3 endpoint", () => {

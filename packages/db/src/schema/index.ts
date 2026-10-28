@@ -16,3 +16,4 @@ export * from "./quotes.ts";
 export * from "./sales-orders.ts";
 export * from "./invoices.ts";
 export * from "./files.ts";
+export * from "./email-sends.ts";

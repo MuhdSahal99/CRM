@@ -22,6 +22,7 @@ Use these for manual testing, E2E and the visibility matrix: rep A vs rep B (pri
 
 | ID | Flag | Why | Remove by |
 |----|------|-----|-----------|
+| smtp-private-hosts | `ALLOW_PRIVATE_SMTP=true` (packages/core/src/config.ts, mail.ts) | Dev and tests send to Mailpit on 127.0.0.1:1025, which the production guard (public addresses only, ports 25/465/587) refuses | Never set in production: `parseConfig` rejects it when `NODE_ENV=production`. Remove when Mailpit is reached some other way |
 
 ## Launch checklist
 
@@ -34,3 +35,4 @@ Use these for manual testing, E2E and the visibility matrix: rep A vs rep B (pri
 - [ ] **Object storage is a real, private, encrypted bucket (ADR-0012).** Set S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY (and S3_REGION, no S3_ENDPOINT) in the prod environment. Dev uses an archived Bitnami MinIO image (the upstream `minio/minio` image is no longer published); do not ship it. Block Public Access, SSE-KMS and versioning on.
 - [ ] **The worker image is built and its Chromium is pinned and patched (ADR-0010).** `apps/worker/Dockerfile` has not been built or run yet (written in T8.11 without a Docker build); build it, check a PDF renders in the container, and set a patch schedule for `CHROME_VERSION`. Set `CHROMIUM_PATH` and the S3_* variables for the worker.
 - [ ] **Redis is private, authenticated and TLS-protected (ADR-0011).** Job payloads carry `{org_id, user_id}` and the worker acts as that member, so anyone who can write to the queue can run jobs as any user. Keep Redis off every public network, require a password (and TLS on ElastiCache), and give the web app and worker the only credentials.
+- [ ] **Each org's SMTP credentials come from its own secret (`smtp_secret_ref`), not from `SMTP_PASSWORD`.** The global `SMTP_PASSWORD` is sent only to `SMTP_PASSWORD_HOST`; until per-org secrets exist, an org must use that host or an unauthenticated relay.

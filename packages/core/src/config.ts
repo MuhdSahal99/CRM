@@ -16,13 +16,18 @@ const envSchema = z.object({
   S3_ACCESS_KEY_ID: z.string().min(1).optional(),
   S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   SMTP_PASSWORD: z.string().min(1).optional(), // dev stand-in for the Secrets Manager secret behind org_settings.smtp_secret_ref
+  SMTP_PASSWORD_HOST: z.string().min(1).optional(), // the only SMTP host that receives SMTP_PASSWORD: an org's own smtp_host never gets a global credential
+  // TEMP-DEV: smtp-private-hosts lets an org's smtp_host be loopback/private and on any port (Mailpit on 127.0.0.1:1025); refused in production.
+  ALLOW_PRIVATE_SMTP: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
   CHROMIUM_PATH: z.string().min(1).optional(), // the worker's pinned Chromium for PDFs (ADR-0010)
 });
+
+const productionSafe = envSchema.refine((c) => !(c.NODE_ENV === "production" && c.ALLOW_PRIVATE_SMTP), { path: ["ALLOW_PRIVATE_SMTP"], message: "must not be true in production" });
 
 export type Config = z.infer<typeof envSchema>;
 
 export function parseConfig(env: Record<string, string | undefined>): Config {
-  const result = envSchema.safeParse(env);
+  const result = productionSafe.safeParse(env);
   if (result.success) return result.data;
   // Names and messages only: values may hold credentials.
   const problems = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
