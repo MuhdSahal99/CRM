@@ -409,7 +409,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** U/I: `effectiveVatRate('standard', date)` picks the latest row with `effective_from ≤ date`. A new rate dated tomorrow doesn't affect today. `crm_app` can't UPDATE a rate.
 - **Done when:** **US-08** (rate stored as config) is met.
 
-#### T6.03 Currencies and exchange rates · M
+#### T6.03 Currencies and exchange rates · M · ✅
 - **Files:** migration `exchange_rates`, `settings/{currencies,exchange_rates}/route.ts`, `packages/core/src/money/fx.ts`.
 - **Tests first:** U: the rate lookup uses today in Asia/Muscat. I: with 1 AED = 0.105, the lookup returns `0.10500000`. With no rate → `NoEffectiveRate`. **AC-35**: a rep `POST /settings/exchange_rates` → 403.
 - **Done when:** **US-09** rate entry works.

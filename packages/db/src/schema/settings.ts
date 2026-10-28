@@ -59,3 +59,23 @@ export const vatRates = pgTable(
     foreignKey({ name: "vat_rates_created_by_fk", columns: [t.orgId, t.createdBy], foreignColumns: [member.orgId, member.userId] }).onDelete("restrict"),
   ],
 );
+
+/** Append-only like vat_rates. currency must be a currencies row of the org (composite FK, hand-written); OMR is the base and has no rate. */
+export const exchangeRates = pgTable(
+  "exchange_rates",
+  {
+    id: uuid("id").primaryKey(),
+    orgId: uuid("org_id").notNull().references(() => orgs.id, { onDelete: "restrict" }),
+    currency: char("currency", { length: 3 }).notNull(),
+    rate: numeric("rate", { precision: 18, scale: 8 }).notNull(),
+    effectiveFrom: date("effective_from").notNull(),
+    createdAt: tstz("created_at").notNull().defaultNow(),
+    createdBy: uuid("created_by").notNull(),
+  },
+  (t) => [
+    unique("exchange_rates_org_currency_from_key").on(t.orgId, t.currency, t.effectiveFrom),
+    check("exchange_rates_not_base", sql`${t.currency} <> 'OMR'`),
+    check("exchange_rates_rate_positive", sql`${t.rate} > 0`),
+    foreignKey({ name: "exchange_rates_created_by_fk", columns: [t.orgId, t.createdBy], foreignColumns: [member.orgId, member.userId] }).onDelete("restrict"),
+  ],
+);
