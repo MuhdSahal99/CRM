@@ -38,3 +38,4 @@ export { contextForMember } from "./context.ts";
 export { closeQueues, enqueueAfterCommit, getQueue, redis } from "./jobs/enqueue.ts";
 export { type Payload, QUEUES, type QueueName } from "./jobs/queues.ts";
 export { onCommit } from "./tenant.ts";
+export { getDocumentPdf } from "./documents-pdf.ts";

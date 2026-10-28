@@ -24,7 +24,7 @@ type Handler<S extends z.ZodType> = (args: {
   input: z.output<S>;
   params: Record<string, string>;
   tx: Tx;
-}) => Promise<Envelope>;
+}) => Promise<Envelope | Response>; // a Response (a file download) is returned as it is
 
 /**
  * Every /api/v1 route handler goes through this (ADR-0015, TRD § Request lifecycle):
@@ -57,9 +57,9 @@ export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: 
         throw new ApiError(422, "INVALID_DATA", "Idempotency-Key must be 8 to 255 characters.", { api_name: "Idempotency-Key" });
       }
       const result = key
-        ? await idempotent(ctx, key, requestHash(request.method, new URL(request.url).pathname, raw), status, run, undefined, options.redact as (body: unknown) => unknown)
+        ? await idempotent(ctx, key, requestHash(request.method, new URL(request.url).pathname, raw), status, run as (tx: Tx) => Promise<Envelope>, undefined, options.redact as (body: unknown) => unknown)
         : { status, body: await withTenant(ctx, run) };
-      response = Response.json(result.body, { status: result.status });
+      response = result.body instanceof Response ? result.body : Response.json(result.body, { status: result.status });
     } catch (error) {
       response = errorResponse(error);
     }
