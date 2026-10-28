@@ -441,12 +441,12 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 7: Quotes and the pricing engine (US-10)
 
-#### T7.01 Pricing engine · 🛑 HUMAN CHECK · M
+#### T7.01 Pricing engine · 🛑 HUMAN CHECK · M ✅
 - **Files:** `packages/core/src/money/pricing.ts` (pure `priceDocument(input, ctx)` on decimal.js `ROUND_HALF_UP`), `pricing.test.ts`.
 - **Tests first:** U: **the US-10 worked example exactly**: lines 270.000/13.500, 50.000/0.000, 24.690/exempt; Sub Total 358.190; adjustment −0.190 → 358.000. The VAT summary per category. An AED document rounds to 2 dp, and its OMR equivalents round to 3 dp at the stored rate. Flat discount vs percent. Half-up at .5 boundaries. Exempt lines get `vat_rate` null.
 - **Done when:** every function takes and returns strings, never `number`. ⚠ **OQ-04**: the Adjustment carries no VAT. *Human check: confirm the fixture and rounding before anything stores money.*
 
-#### T7.02 Money input validation and property tests · S
+#### T7.02 Money input validation and property tests · S ✅
 - **Files:** `packages/core/src/money/schemas.ts`, `pricing.property.test.ts`.
 - **Tests first:** U: **AC-29**: quantity `0`, `-1`, `"1.0001"`, 4-dp money and `NaN` → rejected, while `1e3` is rejected as a format. Properties: Σ lines = header totals, and pricing twice gives the same result.
 - **Done when:** these schemas are the only way money enters the system (ADR-0007).
