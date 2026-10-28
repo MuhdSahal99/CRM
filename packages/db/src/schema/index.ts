@@ -10,3 +10,4 @@ export * from "./notes.ts";
 export * from "./leads.ts";
 export * from "./deals.ts";
 export * from "./settings.ts";
+export * from "./products.ts";

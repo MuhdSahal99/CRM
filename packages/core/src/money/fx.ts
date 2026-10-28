@@ -2,7 +2,7 @@ import { newId } from "@crm/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { ApiError } from "../http/errors.ts";
-import { limitOffset, Paging, pageOf } from "../modules/list.ts";
+import { limitOffset, pageOf } from "../modules/list.ts";
 import type { Tx } from "../tenant.ts";
 
 // T6.03 (US-09): rates are OMR per 1 unit of the currency, entered by an Admin with an effective date.
@@ -32,7 +32,12 @@ export const ExchangeRateInput = z.object({
   effective_from: z.iso.date(),
 });
 export const CreateExchangeRatesInput = z.object({ data: z.array(ExchangeRateInput).min(1).max(10) });
-export const ListExchangeRatesInput = z.object({ currency: z.enum(["OMR", "AED", "INR"]).optional(), ...Paging });
+// Not list.ts's Paging: list.ts -> registry.ts -> this file is a cycle, and Paging would still be undefined here.
+export const ListExchangeRatesInput = z.object({
+  currency: z.enum(["OMR", "AED", "INR"]).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(200).default(20),
+});
 
 /** GET /settings/currencies: each currency with the rate in force today. */
 export async function listCurrencies(tx: Tx) {

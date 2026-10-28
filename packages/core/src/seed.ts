@@ -34,7 +34,13 @@ export async function seedAll(authDb: Db, appDb: Db, password: string): Promise<
     WHERE o.slug IN ${SEED_ORGS.map((o) => o.slug)} AND m.role = 'admin' AND m.status = 'active'
     ORDER BY m.org_id, m.created_at`);
   for (const { org_id, user_id } of rows) {
-    await withTenant({ orgId: org_id, userId: user_id, role: "admin", visibleOwnerIds: [user_id], seeAll: true }, provisionOrg, appDb);
+    const admin = { orgId: org_id, userId: user_id, role: "admin" as const, visibleOwnerIds: [user_id], seeAll: true };
+    await withTenant(admin, provisionOrg, appDb);
+    await withTenant(admin, async (tx) => {
+      if ((await tx.execute(sql`SELECT 1 FROM products LIMIT 1`)).rows.length === 0) {
+        await createRecords(tx, admin, "Products", { data: [{ Product_Name: "Consulting day", Product_Code: "CONS-DAY", VAT_Category: "standard", Unit_Price: "250.000", Usage_Unit: "day" }] });
+      }
+    }, appDb);
   }
   const reps = await authDb.execute<{ org_id: string; user_id: string; email: string }>(sql`
     SELECT m.org_id, m.user_id, u.email FROM member m JOIN "user" u ON u.id = m.user_id WHERE u.email IN ${Object.keys(SAMPLE_ACCOUNTS)}`);

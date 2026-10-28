@@ -2,7 +2,7 @@ import { newId } from "@crm/db";
 import { getTableName, sql } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { z } from "zod";
-import { ApiError, Conflict, NotFound, validationError } from "../http/errors.ts";
+import { ApiError, Conflict, Forbidden, NotFound, validationError } from "../http/errors.ts";
 import { buildRecordSchema } from "../metadata/record-schema.ts";
 import type { TenantContext, Tx } from "../tenant.ts";
 import { recordEvent } from "../timeline.ts";
@@ -35,6 +35,9 @@ export function dbError(error: unknown, table: PgTable, fields: Field[]): never 
     const field = fields.find((f) => f.columnName === key || f.columnName?.startsWith(`${key}_`));
     throw new ApiError(422, "INVALID_DATA", "The linked record does not exist.", { api_name: field?.apiName });
   }
+  if (cause?.code === "23505") {
+    throw new ApiError(422, "DUPLICATE_DATA", "A record with this value already exists.", { api_name: fields.find((f) => f.columnName && cause.constraint?.includes(f.columnName))?.apiName });
+  }
   if (cause?.code === "23514") throw new ApiError(422, "INVALID_DATA", "Some fields are not valid.");
   throw error;
 }
@@ -50,9 +53,15 @@ function atRecord(error: unknown, index: number) {
 const columns = (row: Record<string, unknown>) => sql.join(Object.keys(row).map((c) => sql.identifier(c)), sql`, `);
 const value = (column: string, v: unknown) => (column === "custom" ? sql`${JSON.stringify(v)}::jsonb` : sql`${v}`);
 
+/** Modules only an Admin writes (Products): a rep gets 403 before anything is parsed. The restrictive RLS policy backs this up. */
+async function requireWriter(tx: Tx, def: ReturnType<typeof moduleDef>) {
+  if (def.adminWrite && (await tx.execute<{ r: string }>(sql`SELECT current_setting('app.role', true) AS r`)).rows[0]?.r !== "admin") throw new Forbidden();
+}
+
 /** POST /{module}: all records or none, each owned by the caller unless Owner says otherwise; logs `created`. */
 export async function createRecords(tx: Tx, ctx: TenantContext, module: string, input: z.infer<typeof CreateRecordsInput>) {
   const def = moduleDef(module);
+  await requireWriter(tx, def);
   const fields = await loadFields(tx, module);
   const outcomes = [];
   for (const [i, record] of input.data.entries()) {
@@ -79,6 +88,7 @@ const VersionInput = z.object({ version: z.int().min(1) });
 /** PUT /{module}/{id}: partial update at the client's version (409 if stale); logs `updated` with {api_name: [old, new]}. */
 export async function updateRecord(tx: Tx, module: string, id: string, input: z.infer<typeof UpdateRecordInput>) {
   const def = moduleDef(module);
+  await requireWriter(tx, def);
   const fields = await loadFields(tx, module);
   const { version, ...changes } = input.data[0]!;
   const v = VersionInput.safeParse({ version });
@@ -106,6 +116,7 @@ export async function updateRecord(tx: Tx, module: string, id: string, input: z.
 /** DELETE /{module}/{id}: soft delete (SCHEMA § SOFT); the record leaves every list and read. Logs `deleted`. */
 export async function deleteRecord(tx: Tx, module: string, id: string) {
   const def = moduleDef(module);
+  await requireWriter(tx, def);
   const { rows } = await tx.execute(sql`
     UPDATE ${def.table} SET deleted_at = now(), deleted_by = NULLIF(current_setting('app.user_id', true), '')::uuid, version = version + 1
     WHERE id = ${id} AND ${def.scope} AND deleted_at IS NULL RETURNING id`).catch((e) => dbError(e, def.table, []));

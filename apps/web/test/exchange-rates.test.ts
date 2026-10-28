@@ -45,7 +45,9 @@ describe("exchange rates (T6.03)", () => {
   });
 
   it("lists the history and the currencies with their current rate; OMR cannot be given a rate", async () => {
-    const list = (await call(ratesRoute, "GET", "/settings/exchange_rates?currency=AED", { cookie: rep })).json();
+    const listRes = await call(ratesRoute, "GET", "/settings/exchange_rates?currency=AED", { cookie: rep });
+    const list = listRes.json();
+    expect(listRes.status, listRes.body).toBe(200);
     expect(list.data[0]).toMatchObject({ currency: "AED", rate: "0.10500000", effective_from: "2026-01-01" });
     expect(list.info.count).toBe(1);
     const cur = (await call(currenciesRoute, "GET", "/settings/currencies", { cookie: rep })).json().data;

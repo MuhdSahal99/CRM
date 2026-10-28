@@ -34,6 +34,7 @@ export const SYSTEM_PICKLISTS: Record<string, string[]> = {
   Call_Type: ["Inbound", "Outbound", "Missed"],
   Deal_Type: ["New Business", "Existing Business"],
   Currency: ["OMR", "AED", "INR"], // active currencies; each needs an exchange rate to be used (T6.04)
+  VAT_Category: ["standard", "zero_rated", "exempt"], // the vat_category enum (US-08)
   Reason_For_Loss: ["Price", "Competitor", "No Budget", "No Decision", "Other"],
   Forecast_Category: ["pipeline", "best_case", "committed", "closed", "omitted"], // the forecast_category enum, in order
   Lead_Status: ["Not Contacted", "Attempted to Contact", "Contact in Future", "Contacted", "Pre-Qualified", "Not Qualified", "Junk Lead", "Lost Lead"],
@@ -98,6 +99,22 @@ export const SYSTEM_FIELDS: Record<string, Section[]> = {
         pick("Forecast_Category", "forecast_category"),
         text("Next_Step", "next_step", 100),
         pick("Reason_For_Loss", "reason_for_loss"),
+      ],
+    },
+    description,
+  ],
+  Products: [
+    {
+      label: "product_information",
+      fields: [
+        owner,
+        text("Product_Name", "product_name", 120, true),
+        text("Product_Code", "product_code", 40),
+        { api: "Product_Active", type: "boolean", col: "is_active" },
+        text("Product_Category", "category", 60),
+        { ...pick("VAT_Category", "vat_category"), req: true },
+        { api: "Unit_Price", type: "currency", col: "unit_price", req: true },
+        text("Usage_Unit", "usage_unit", 30),
       ],
     },
     description,

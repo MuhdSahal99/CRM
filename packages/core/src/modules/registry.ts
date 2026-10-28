@@ -21,6 +21,8 @@ export type ModuleDef = {
   scope: SQL;
   /** Extra filter for the default list only (not for reading one record). */
   listScope: SQL;
+  /** Everyone in the org reads, only an Admin creates, changes or deletes (Products: US-08). */
+  adminWrite?: boolean;
   /** Column values every row of this module has, whatever the client sends (the activity `type`). */
   fixed: Record<string, unknown>;
   /** Columns metadata may write (buildRecordSchema's allowlist): never tenancy, audit, soft-delete or import columns. */
@@ -89,6 +91,7 @@ const MODULES = new Map<string, ModuleDef>([
     check: dealChecks,
     writable: Object.values(getTableColumns(schema.deals)).filter((c) => c.name === "type" || !SERVER_COLUMNS.has(c.name)), // deals.type is a real field; SERVER_COLUMNS' `type` is the activity kind
   })],
+  ["Products", entry(schema.products, "product", sql`product_name`, ["Product_Name"], { adminWrite: true })],
   ["Tasks", activity("task")],
   ["Calls", activity("call")],
   ["Meetings", activity("meeting")],

@@ -419,7 +419,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: an AED deal stores the rate 0.105. A later rate change leaves its `amount_omr` unchanged. A currency change re-captures the rate. INR with no rate is blocked with a clear message (**US-09**).
 - **Done when:** the OMR-only limit from T5.02 is removed.
 
-#### T6.05 Products · M
+#### T6.05 Products · M · ✅
 - **Files:** schema and migration for `products`, metadata seed, `packages/core/src/modules/products.ts` (admin writes, everyone reads).
 - **Tests first:** I: a product without a VAT category → 422 (**US-08**). A duplicate `product_code` (case-insensitive) → 422. A rep POST → 403.
 - **Done when:** Products are public in the org.
