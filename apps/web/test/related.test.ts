@@ -20,7 +20,16 @@ describe("related lists and layouts (T2.10)", () => {
     const res = await call(relatedRoute, "GET", `/Accounts/${mine}/Contacts`, { cookie: rep, params });
     expect(res.status).toBe(200);
     expect(res.json()).toMatchObject({ data: [{ id: ahmed, Last_Name: "Related One" }], info: { count: 1, more_records: false } });
-    expect((await call(relatedRoute, "GET", `/Accounts/${mine}/Quotes`, { cookie: rep, params: { ...params, related_list: "Quotes" } })).status).toBe(404);
+    expect((await call(relatedRoute, "GET", `/Accounts/${mine}/Invoices`, { cookie: rep, params: { ...params, related_list: "Invoices" } })).status).toBe(404);
+  });
+
+  it("AC-17: Account -> Quotes shows a rep only their own quotes", async () => {
+    const [a, b] = [await signIn("rep.a@saqient.test"), await signIn("rep.b@saqient.test")];
+    const account = await create(a, "Accounts", { Account_Name: "Quote Parent" });
+    const quote = await create(a, "Quotes", { Subject: "Related quote", Account_Name: { id: account } });
+    const list = (cookie: string) => call(relatedRoute, "GET", `/Accounts/${account}/Quotes`, { cookie, params: { module: "Accounts", id: account, related_list: "Quotes" } });
+    expect((await list(a)).json().data.map((q: { id: string }) => q.id)).toEqual([quote]);
+    expect((await list(b)).json()).toMatchObject({ data: [], info: { count: 0 } });
   });
 
   it("settings list the related lists and the default layout of a module", async () => {
@@ -29,6 +38,7 @@ describe("related lists and layouts (T2.10)", () => {
     expect(lists.json().data).toEqual([
       { api_name: "Contacts", module: "Contacts", label_key: "related.Contacts" },
       { api_name: "Deals", module: "Deals", label_key: "related.Deals" },
+      { api_name: "Quotes", module: "Quotes", label_key: "related.Quotes" },
     ]);
 
     const layouts = (await call(layoutsRoute, "GET", "/settings/layouts?module=Accounts", { cookie: rep })).json().data;

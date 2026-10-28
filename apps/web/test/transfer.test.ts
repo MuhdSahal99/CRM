@@ -30,6 +30,10 @@ describe("transfer ownership (T5.10)", () => {
       VALUES (gen_random_uuid(), app.org_id(), $1, 'D', $2, 'OMR', 3, 1, '2026-12-31', ${stage(stageName)} ${extra}) RETURNING id`;
     ids.openDeal = await own(deal("Qualification"), [from, account]);
     ids.wonDeal = await own(deal("Closed Won"), [from, account]);
+    const quote = (stageName: string) => `INSERT INTO quotes (id, org_id, owner_id, subject, account_id, currency, currency_scale, exchange_rate, sub_total, vat_total, grand_total, vat_total_omr, grand_total_omr, quote_number, quote_stage)
+      VALUES (gen_random_uuid(), app.org_id(), $1, 'Q', $2, 'OMR', 3, 1, 0, 0, 0, 0, 0, 'T-' || left(gen_random_uuid()::text, 8), '${stageName}') RETURNING id`;
+    ids.openQuote = await own(quote("negotiation"), [from, account]);
+    ids.wonQuote = await own(quote("closed_won"), [from, account]);
     ids.openTask = await own(`INSERT INTO activities (id, org_id, owner_id, type, subject, status) VALUES (gen_random_uuid(), app.org_id(), $1, 'task', 'Open', 'Not Started') RETURNING id`, [from]);
     ids.doneTask = await own(`INSERT INTO activities (id, org_id, owner_id, type, subject, status) VALUES (gen_random_uuid(), app.org_id(), $1, 'task', 'Done', 'Completed') RETURNING id`, [from]);
   });
@@ -38,7 +42,7 @@ describe("transfer ownership (T5.10)", () => {
   const transfer = (cookie: string, user: string, target: string) =>
     call(transferRoute, "POST", `/users/${user}/actions/transfer`, { cookie, params: { id: user }, body: { to_user_id: target } });
   const owners = async () => Object.fromEntries((await queryAs(app, { org_id: org, role: "admin", see_all: "on" }, `
-    SELECT id, owner_id FROM leads WHERE id = ANY($1) UNION ALL SELECT id, owner_id FROM deals WHERE id = ANY($1) UNION ALL SELECT id, owner_id FROM activities WHERE id = ANY($1)`, [Object.values(ids)]))
+    SELECT id, owner_id FROM leads WHERE id = ANY($1) UNION ALL SELECT id, owner_id FROM deals WHERE id = ANY($1) UNION ALL SELECT id, owner_id FROM quotes WHERE id = ANY($1) UNION ALL SELECT id, owner_id FROM activities WHERE id = ANY($1)`, [Object.values(ids)]))
     .map((r) => [r.id, r.owner_id]));
 
   it("a rep calling it gets 403 and nothing moves", async () => {
@@ -54,15 +58,15 @@ describe("transfer ownership (T5.10)", () => {
     expect(Object.values(await owners()).every((o) => o === from)).toBe(true);
   });
 
-  it("moves every open lead, deal and activity with one owner_transferred event each; closed records stay", async () => {
+  it("moves every open lead, deal, quote and activity with one owner_transferred event each; closed records stay", async () => {
     const res = await transfer(admin, from, to);
     expect(res.status, res.body).toBe(200);
-    expect(res.json().data).toEqual([{ module: "Leads", count: 1 }, { module: "Deals", count: 1 }, { module: "Activities", count: 1 }]);
+    expect(res.json().data).toEqual([{ module: "Leads", count: 1 }, { module: "Deals", count: 1 }, { module: "Activities", count: 1 }, { module: "Quotes", count: 1 }]);
     const o = await owners();
-    expect([o[ids.openLead!], o[ids.openDeal!], o[ids.openTask!]]).toEqual([to, to, to]);
-    expect([o[ids.convertedLead!], o[ids.wonDeal!], o[ids.doneTask!]]).toEqual([from, from, from]);
+    expect([o[ids.openLead!], o[ids.openDeal!], o[ids.openTask!], o[ids.openQuote!]]).toEqual([to, to, to, to]);
+    expect([o[ids.convertedLead!], o[ids.wonDeal!], o[ids.doneTask!], o[ids.wonQuote!]]).toEqual([from, from, from, from]);
     const events = await queryAs(app, { org_id: org, role: "admin", see_all: "on" }, `SELECT record_id, count(*)::int AS n FROM timeline_events WHERE event_type = 'owner_transferred' AND record_id = ANY($1) GROUP BY record_id`, [Object.values(ids)]);
-    expect(events.map((e) => e.record_id).sort()).toEqual([ids.openLead, ids.openDeal, ids.openTask].sort());
+    expect(events.map((e) => e.record_id).sort()).toEqual([ids.openLead, ids.openDeal, ids.openTask, ids.openQuote].sort());
     expect(events.every((e) => e.n === 1)).toBe(true);
   });
 });

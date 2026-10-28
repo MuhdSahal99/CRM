@@ -444,7 +444,7 @@ paths:
       operationId: transferRecords
       summary: |
         Transfer the user's open Leads, Deals, Quotes, Sales Orders and Activities to another active user
-        in one transaction (closed records stay; Quotes and Sales Orders join in T7.07 and T8.03). A timeline event is written for each record (US-03). Admin only.
+        in one transaction (closed records stay; Quotes are included; Sales Orders join in T8.03). A timeline event is written for each record (US-03). Admin only.
       parameters:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/IdempotencyKey'

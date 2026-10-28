@@ -471,7 +471,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: editing qty re-prices everything. A currency change re-captures the rate. A stale version → 409.
 - **Done when:** **US-10** API criteria are all met.
 
-#### T7.07 Quote related lists and transfer · S
+#### T7.07 Quote related lists and transfer · S ✅
 - **Files:** registry entries Deal → Quotes and Account → Quotes, `transfer.ts` (adds quotes).
 - **Tests first:** I: **AC-17** pattern for quotes. Transfer moves open quotes.
 - **Done when:** visibility and transfer cover quotes.
