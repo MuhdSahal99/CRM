@@ -534,7 +534,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-43**: a filename of `../../etc/passwd.csv` is stored under a UUID key, and the filename is sanitised. A ready file can't be updated.
 - **Done when:** nothing ever issues a presigned URL (ADR-0012).
 
-#### T8.09 Worker skeleton · M
+#### T8.09 Worker skeleton · M ✅
 - **Files:** `apps/worker/{package.json,src/index.ts,src/jobs.ts}` (BullMQ, Zod payloads, `withTenant`), `packages/core/src/jobs/enqueue.ts` (enqueue after commit, intent-based job ids), sweeper.
 - **Tests first:** I: **AC-41**: a job with org A and an id from org B finds no row and does nothing. A job enqueued inside a rolled-back transaction never runs.
 - **Done when:** a failed job lands in the DLQ (ADR-0011).

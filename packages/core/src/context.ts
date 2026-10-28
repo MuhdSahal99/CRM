@@ -14,13 +14,21 @@ export async function resolveContext(headers: Headers, deps: Deps = { auth: getA
   const session = await deps.auth.api.getSession({ headers });
   if (!session || session.user.banned) return null;
 
+  return contextForMember(deps.db, session.user.id, session.session.activeOrganizationId ?? null);
+}
+
+/**
+ * The context of an active member, from the database alone: the same walk resolveContext does after the session check. A job
+ * worker has no session, so it calls this with the ids in its payload; a deactivated or foreign user gets null (nothing runs).
+ */
+export async function contextForMember(db: Db, userId: string, orgId: string | null): Promise<TenantContext | null> {
   // Self plus every report, at any depth. UNION (not UNION ALL) stops even if a cycle slipped in (T1.12 forbids them).
   // shortcut: one org per user in the MVP; without an active org a user with several memberships gets no context.
-  const { rows } = await deps.db.execute<{ org_id: string; role: Role; visible: string[] }>(sql`
+  const { rows } = await db.execute<{ org_id: string; role: Role; visible: string[] }>(sql`
     WITH RECURSIVE me AS (
       SELECT org_id, user_id, role FROM member
-      WHERE user_id = ${session.user.id} AND status = 'active'
-        AND (${session.session.activeOrganizationId ?? null}::uuid IS NULL OR org_id = ${session.session.activeOrganizationId ?? null}::uuid)
+      WHERE user_id = ${userId} AND status = 'active'
+        AND (${orgId}::uuid IS NULL OR org_id = ${orgId}::uuid)
     ), tree AS (
       SELECT org_id, user_id FROM me
       UNION
@@ -30,5 +38,5 @@ export async function resolveContext(headers: Headers, deps: Deps = { auth: getA
   if (rows.length !== 1) return null;
 
   const { org_id, role, visible } = rows[0]!;
-  return { orgId: org_id, userId: session.user.id, role, visibleOwnerIds: visible, seeAll: role === "admin" };
+  return { orgId: org_id, userId, role, visibleOwnerIds: visible, seeAll: role === "admin" };
 }

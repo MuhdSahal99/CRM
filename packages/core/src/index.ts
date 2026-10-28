@@ -34,3 +34,7 @@ export { TransitionSalesOrderInput, transitionSalesOrder } from "./sales-orders.
 export { IssueInvoiceInput, issueInvoice } from "./invoices/issue.ts";
 export { CancelInvoiceInput, MarkPaidInput, cancelInvoice, markInvoicePaid } from "./invoices/status.ts";
 export { createFile, objectKey, openFile, putFile, sanitizeFilename } from "./storage.ts";
+export { contextForMember } from "./context.ts";
+export { closeQueues, enqueueAfterCommit, getQueue, redis } from "./jobs/enqueue.ts";
+export { type Payload, QUEUES, type QueueName } from "./jobs/queues.ts";
+export { onCommit } from "./tenant.ts";

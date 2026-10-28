@@ -1,6 +1,7 @@
 import { createDb, type Db } from "@crm/db";
 import { sql } from "drizzle-orm";
 import { parseConfig } from "./config.ts";
+import { log } from "./log.ts";
 
 export type Role = "admin" | "manager" | "rep";
 
@@ -25,8 +26,10 @@ export const getAppDb = (): Db => (appDb ??= createDb(parseConfig(process.env).D
  * transaction-local, so RLS sees this tenant and a pooled connection carries nothing into the next request.
  * `db` is for tests; the app uses its crm_app pool.
  */
-export function withTenant<T>(ctx: TenantContext, fn: (tx: Tx) => Promise<T>, db: Db = getAppDb()): Promise<T> {
-  return db.transaction(async (tx) => {
+export async function withTenant<T>(ctx: TenantContext, fn: (tx: Tx) => Promise<T>, db: Db = getAppDb()): Promise<T> {
+  let committed: Tx | undefined;
+  const result = await db.transaction(async (tx) => {
+    committed = tx;
     await tx.execute(sql`SELECT
       set_config('app.org_id', ${ctx.orgId}, true),
       set_config('app.user_id', ${ctx.userId}, true),
@@ -35,4 +38,14 @@ export function withTenant<T>(ctx: TenantContext, fn: (tx: Tx) => Promise<T>, db
       set_config('app.see_all', ${ctx.seeAll ? "on" : "off"}, true)`);
     return fn(tx);
   });
+  await runAfterCommit(committed!); // reached only when the transaction committed: a rollback throws above
+  return result;
+}
+
+const afterCommit = new WeakMap<Tx, (() => Promise<void>)[]>();
+/** Runs `hook` once the transaction `tx` belongs to has committed; never if it rolls back (T8.09, ADR-0011). */
+export const onCommit = (tx: Tx, hook: () => Promise<void>) => void afterCommit.set(tx, [...(afterCommit.get(tx) ?? []), hook]);
+async function runAfterCommit(tx: Tx) {
+  for (const hook of afterCommit.get(tx) ?? []) await hook().catch((error) => log.error({ err: error }, "after-commit hook failed"));
+  afterCommit.delete(tx);
 }

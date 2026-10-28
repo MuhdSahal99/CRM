@@ -26,7 +26,7 @@ PDF rendering (ADR-0010), SMTP sends (US-13) and Zoho CSV imports (US-17) are sl
   - If enqueueing fails after commit, the row stays `pending`.
   - A periodic sweeper re-enqueues rows that have been `pending` for more than 5 min. This is a transactional outbox, kept light: the source row is the outbox.
 - **Idempotency.**
-  - The BullMQ `jobId` is derived from the intent, e.g. `email:<email_sends.id>` and `pdf:<file_id>`.
+  - The BullMQ `jobId` is derived from the intent, e.g. `email-<email_sends.id>` and `pdf-<file_id>` (BullMQ rejects a colon in a custom job id).
   - The worker updates `email_sends.status` with a compare-and-set from `queued` to `sending`. A redelivered job finds the row in `sending` or `sent` and exits.
   - The "Email sent to X" activity is written in the same transaction that marks the send as `sent`.
 - Redis holds **no durable business data**. Losing it delays work, and the sweeper recovers it from Postgres.
