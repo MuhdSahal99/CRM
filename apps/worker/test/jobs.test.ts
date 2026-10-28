@@ -30,7 +30,7 @@ describe("worker jobs (T8.09)", () => {
 
   it("AC-41: a job with org A's context and an id from org B finds no row and changes nothing", async () => {
     const [mine, theirs] = [await file(a), await file(b)];
-    expect(await runJob("pdf", payload(a, mine))).toEqual({ status: "pending" });
+    expect(await runJob("pdf", payload(a, mine))).toEqual({ skipped: "document not found" }); // seen, but it names no document
     expect(await runJob("pdf", payload(a, theirs))).toEqual({ skipped: "file not found" });
     expect((await queryAs(app, b, "SELECT status FROM files WHERE id = $1", [theirs]))[0].status).toBe("pending");
   });

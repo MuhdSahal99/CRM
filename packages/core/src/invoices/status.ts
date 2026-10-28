@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireFieldWrite } from "../field-access.ts";
 import { Conflict, Forbidden, NotFound } from "../http/errors.ts";
 import type { Tx } from "../tenant.ts";
+import { queueInvoicePdf } from "./pdf.ts";
 import { recordEvent } from "../timeline.ts";
 
 // T8.07 (US-12, AC-25): issued -> paid | cancelled, paid -> cancelled for an Admin only. invoices_lock enforces the same in the
@@ -29,6 +30,7 @@ export async function cancelInvoice(tx: Tx, id: string, input: z.infer<typeof Ca
     UPDATE invoices SET status = 'cancelled', cancelled_at = now(), cancelled_by = NULLIF(current_setting('app.user_id', true), '')::uuid,
       cancel_reason = ${input.reason}, version = version + 1 WHERE id = ${id} RETURNING version`);
   await recordEvent(tx, { recordType: "invoice", recordId: id, eventType: "invoice_cancelled", changes: { Status: [row.status, "cancelled"] }, meta: { reason: input.reason, invoice_number: row.invoice_number } });
+  await queueInvoicePdf(tx, id, `${row.invoice_number}-cancelled.pdf`); // a new file version with the CANCELLED watermark; the issued PDF stays as it was
   return done(id, rows[0]!.version);
 }
 

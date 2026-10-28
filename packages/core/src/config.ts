@@ -15,6 +15,7 @@ const envSchema = z.object({
   S3_BUCKET: z.string().min(3).optional(),
   S3_ACCESS_KEY_ID: z.string().min(1).optional(),
   S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  CHROMIUM_PATH: z.string().min(1).optional(), // the worker's pinned Chromium for PDFs (ADR-0010)
 });
 
 export type Config = z.infer<typeof envSchema>;

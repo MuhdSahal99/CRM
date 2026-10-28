@@ -32,3 +32,4 @@ Use these for manual testing, E2E and the visibility matrix: rep A vs rep B (pri
 - [ ] `BETTER_AUTH_URL` is the public `https://` origin (Better Auth trusts only this origin for cookie-bearing requests).
 - [ ] No seed has run against the prod database (`member` has no `*.test` emails).
 - [ ] **Object storage is a real, private, encrypted bucket (ADR-0012).** Set S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY (and S3_REGION, no S3_ENDPOINT) in the prod environment. Dev uses an archived Bitnami MinIO image (the upstream `minio/minio` image is no longer published); do not ship it. Block Public Access, SSE-KMS and versioning on.
+- [ ] **The worker image is built and its Chromium is pinned and patched (ADR-0010).** `apps/worker/Dockerfile` has not been built or run yet (written in T8.11 without a Docker build); build it, check a PDF renders in the container, and set a patch schedule for `CHROME_VERSION`. Set `CHROMIUM_PATH` and the S3_* variables for the worker.

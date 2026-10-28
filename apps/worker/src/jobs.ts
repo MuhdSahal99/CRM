@@ -1,16 +1,13 @@
 import { contextForMember, enqueueAfterCommit, getAuthDb, type Payload, QUEUES, type QueueName, type Tx, withTenant } from "@crm/core";
 import { sql } from "drizzle-orm";
+import { renderPdfFile } from "./pdf.ts";
 
 // T8.09 (ADR-0011): every job opens withTenant as the requesting user, so RLS decides what it can see. An id from another org
 // finds no row and the job does nothing (AC-41).
 
 type Handlers = { [Q in QueueName]: (tx: Tx, payload: Payload<Q>) => Promise<unknown> };
 export const handlers: Handlers = {
-  // shortcut: T8.11 renders the PDF here; until then it only reads the row, so a foreign id is proven harmless.
-  pdf: async (tx, { file_id }) => {
-    const row = (await tx.execute<{ status: string }>(sql`SELECT status FROM files WHERE id = ${file_id}`)).rows[0];
-    return row ? { status: row.status } : { skipped: "file not found" };
-  },
+  pdf: (tx, { file_id }) => renderPdfFile(tx, file_id),
 };
 
 /** Validates the payload (a bad one throws, so the job fails into the dead-letter set), then runs the handler as the member. */

@@ -544,7 +544,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** U: an issued invoice's HTML contains "Tax Invoice", the seller name, address and VATIN, the buyer VATIN, the date and number, per-line VAT, the VAT summary, and the VAT in OMR. **AC-33** (PDF part): `<img onerror>` in a description renders as text.
 - **Done when:** the template is English-only. ⛔ **OQ-01** and **OQ-02** gate the go-live template (QR code, Arabic).
 
-#### T8.11 PDF rendering job · M
+#### T8.11 PDF rendering job · M ✅
 - **Files:** `apps/worker/src/pdf.ts` (puppeteer-core, network blocked), worker Dockerfile with a pinned Chromium.
 - **Tests first:** I: rendering writes a `ready` file with its sha256. An issued invoice renders exactly once. Cancel renders a new "CANCELLED" file version.
 - **Done when:** Chromium makes no outbound requests (ADR-0010).

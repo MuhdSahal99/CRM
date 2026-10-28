@@ -5,6 +5,7 @@ import { ApiError, Conflict, NotFound } from "../http/errors.ts";
 import { muscatToday } from "../money/fx.ts";
 import { type PricingLineInput, priceDocument } from "../money/pricing.ts";
 import { takeNext } from "../numbering.ts";
+import { queueInvoicePdf } from "./pdf.ts";
 import type { Tx } from "../tenant.ts";
 import { recordEvent } from "../timeline.ts";
 
@@ -43,7 +44,8 @@ export async function issueInvoice(tx: Tx, id: string) {
       issued_by = NULLIF(current_setting('app.user_id', true), '')::uuid,
       seller_snapshot = ${JSON.stringify(seller)}::jsonb, buyer_snapshot = ${JSON.stringify(buyer)}::jsonb, version = version + 1
     WHERE id = ${id} RETURNING version`);
-  // shortcut: the PDF render is queued once the worker exists (T8.09, T8.11); issuing does not wait for it.
+  // The PDF is rendered once, by the worker after this commits; the invoice keeps the pending file as its issued PDF (immutable once ready).
+  await tx.execute(sql`UPDATE invoices SET pdf_file_id = ${await queueInvoicePdf(tx, id, `${number}.pdf`)} WHERE id = ${id}`);
   await recordEvent(tx, { recordType: "invoice", recordId: id, eventType: "invoice_issued", changes: { Status: ["draft", "issued"], Invoice_Number: [null, number] } });
   return { data: [{ code: "SUCCESS", status: "success", details: { id, version: rows[0]!.version, Invoice_Number: number } }] };
 }
