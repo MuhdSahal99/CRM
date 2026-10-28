@@ -68,7 +68,7 @@ describe("convert Sales Order -> Invoice (T8.05)", () => {
         const id = (await convert(rep, so)).json().data[0].details.id;
         expect((await queryAs(app, adminCtx, "SELECT customer_no, purchase_order_ref FROM invoices WHERE id = $1", [id]))[0], mod).toEqual({ customer_no: null, purchase_order_ref: "PO-9" });
       } finally {
-        await hide(module, "read_write");
+        await hide(mod, "read_write");
       }
     }
   });
