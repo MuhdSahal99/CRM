@@ -6,7 +6,7 @@ import type { FieldDef } from "../metadata/record-schema.ts";
 import { MODULE_OF_TYPE } from "../metadata/record-schema.ts";
 import { captureCurrency } from "../money/fx.ts";
 import { toE164 } from "../phone.ts";
-import { docChecks, docDetails, QUOTE, type QuoteExtra, SALES_ORDER, saveLines } from "../quotes/service.ts";
+import { docChecks, docDetails, QUOTE, type QuoteExtra, INVOICE, SALES_ORDER, saveLines } from "../quotes/service.ts";
 import type { Tx } from "../tenant.ts";
 import type { TimelineEvent } from "../timeline.ts";
 
@@ -102,6 +102,7 @@ const MODULES = new Map<string, ModuleDef>([
   })],
   ["Quotes", entry(schema.quotes, "quote", sql`subject`, ["Subject"], withLines(QUOTE))],
   ["Sales_Orders", entry(schema.salesOrders, "sales_order", sql`subject`, ["Subject"], withLines(SALES_ORDER))],
+  ["Invoices", entry(schema.invoices, "invoice", sql`subject`, ["Subject"], withLines(INVOICE))],
   ["Products", entry(schema.products, "product", sql`product_name`, ["Product_Name"], { adminWrite: true })],
   ["Tasks", activity("task")],
   ["Calls", activity("call")],

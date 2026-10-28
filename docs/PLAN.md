@@ -514,7 +514,7 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: **AC-23** (SQL): as `crm_app`, updating an issued invoice's totals or lines raises. Deleting an issued invoice raises. The allowed transitions work.
 - **Done when:** the DB backstop is in place before any API can issue.
 
-#### T8.05 Convert Sales Order → Invoice · S
+#### T8.05 Convert Sales Order → Invoice · S ✅
 - **Files:** `apps/web/app/api/v1/Sales_Orders/[id]/actions/convert/route.ts`.
 - **Tests first:** I: a draft invoice with no number. `sales_order_id` is set. The rate is copied (**US-11**).
 - **Done when:** registry entry `Invoices` exists, and PUT is allowed only on drafts (**AC-23** API → 409).

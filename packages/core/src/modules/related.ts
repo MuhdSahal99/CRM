@@ -12,6 +12,7 @@ const RELATED: Record<string, RelatedList[]> = {
   Accounts: [{ api_name: "Contacts", module: "Contacts", column: "account_id" }, { api_name: "Deals", module: "Deals", column: "account_id" }, { api_name: "Quotes", module: "Quotes", column: "account_id" }, { api_name: "Sales_Orders", module: "Sales_Orders", column: "account_id" }],
   Deals: [{ api_name: "Quotes", module: "Quotes", column: "deal_id" }, { api_name: "Sales_Orders", module: "Sales_Orders", column: "deal_id" }],
   Quotes: [{ api_name: "Sales_Orders", module: "Sales_Orders", column: "quote_id" }],
+  Sales_Orders: [{ api_name: "Invoices", module: "Invoices", column: "sales_order_id" }],
   Contacts: [{ api_name: "Deals", module: "Deals", column: "contact_id" }],
 };
 

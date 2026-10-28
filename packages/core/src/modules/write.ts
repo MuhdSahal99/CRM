@@ -26,7 +26,7 @@ function parse(fields: Field[], module: string, input: Record<string, unknown>, 
 /** A constraint the database enforces, reported on the field it concerns (AC-13, AC-22: a lookup into another org). */
 export function dbError(error: unknown, table: PgTable, fields: Field[]): never {
   const cause = (error as { cause?: { code?: string; constraint?: string; column?: string } }).cause;
-  if (cause?.code === "23001") throw new Conflict("INVALID_STATE", "This record is read-only: it was converted."); // leads_converted_readonly (AC-24)
+  if (cause?.code === "23001") throw new Conflict("INVALID_STATE", "This record is locked and read-only."); // leads_converted_readonly (AC-24), the invoice lock triggers (AC-23)
   if (cause?.code === "23502") {
     throw new ApiError(422, "MANDATORY_NOT_FOUND", "This field cannot be empty.", { api_name: fields.find((f) => f.columnName === cause.column)?.apiName });
   }

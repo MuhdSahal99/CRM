@@ -1018,7 +1018,8 @@
     "Contacts": "Contacts",
     "Deals": "Deals",
     "Quotes": "Quotes",
-    "Sales_Orders": "Sales Orders"
+    "Sales_Orders": "Sales Orders",
+    "Invoices": "Invoices"
   },
   "records": {
     "name": "Name",

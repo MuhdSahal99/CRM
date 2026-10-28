@@ -2,6 +2,7 @@ import { createDb, type Db } from "@crm/db";
 import { SEED_ORGS, seed } from "@crm/db/seed";
 import { sql } from "drizzle-orm";
 import { provisionOrg } from "./metadata/seed-org.ts";
+import { convertSalesOrder } from "./conversions.ts";
 import { createRecords } from "./modules/write.ts";
 import { withTenant } from "./tenant.ts";
 
@@ -75,6 +76,10 @@ export async function seedAll(authDb: Db, appDb: Db, password: string): Promise<
         if (account && product) {
           await createRecords(tx, ctx, "Sales_Orders", { data: [{ Subject: "Al Noor fit-out order", Account_Name: { id: account.id }, Line_Items: [{ Product: { id: product.id }, Quantity: "2" }] }] });
         }
+      }
+      if ((await tx.execute(sql`SELECT 1 FROM invoices LIMIT 1`)).rows.length === 0) {
+        const so = (await tx.execute<{ id: string }>(sql`SELECT id FROM sales_orders WHERE subject = 'Al Noor fit-out order'`)).rows[0];
+        if (so) await convertSalesOrder(tx, so.id);
       }
       if (SAMPLE_ACTIVITIES[rep.email] && (await tx.execute(sql`SELECT 1 FROM activities LIMIT 1`)).rows.length === 0) {
         for (const [module, record] of SAMPLE_ACTIVITIES[rep.email]!) await createRecords(tx, ctx, module, { data: [record] });
