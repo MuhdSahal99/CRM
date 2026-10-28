@@ -6,7 +6,7 @@ import type { FieldDef } from "../metadata/record-schema.ts";
 import { MODULE_OF_TYPE } from "../metadata/record-schema.ts";
 import { captureCurrency } from "../money/fx.ts";
 import { toE164 } from "../phone.ts";
-import { type QuoteExtra, QUOTE_IGNORED, quoteChecks, quoteDetails, saveQuoteLines } from "../quotes/service.ts";
+import { docChecks, docDetails, QUOTE, type QuoteExtra, SALES_ORDER, saveLines } from "../quotes/service.ts";
 import type { Tx } from "../tenant.ts";
 import type { TimelineEvent } from "../timeline.ts";
 
@@ -84,6 +84,12 @@ export const SETUP_LOOKUPS: Record<string, { table: PgTable; name: SQL }> = {
 /** Tasks, Calls and Meetings: one table, one module each (SCHEMA § activities). */
 const activity = (type: string) => entry(schema.activities, "activity", sql`subject`, ["Subject"], { scope: sql`type = ${type}`, fixed: { type } });
 
+/** Documents with priced Line_Items (quotes, sales orders, invoices): the shared service hooks. */
+const withLines = (cfg: typeof QUOTE): Partial<ModuleDef> => ({
+  check: docChecks(cfg), ignored: cfg.ignored, lineItems: true, afterWrite: saveLines(cfg),
+  decorate: (tx, fields, records) => docDetails(cfg)(tx, fields.some((f) => f.apiName === "Grand_Total"), records),
+});
+
 const MODULES = new Map<string, ModuleDef>([
   // Converted leads leave the default list (US-05); GET /Leads/{id} still reads them.
   ["Leads", entry(schema.leads, "lead", sql`(coalesce(first_name, '') || ' ' || last_name)`, ["First_Name", "Last_Name"], { normalise: mobileIn("Country", "country"), listScope: sql`NOT is_converted` })],
@@ -94,10 +100,8 @@ const MODULES = new Map<string, ModuleDef>([
     check: dealChecks,
     writable: Object.values(getTableColumns(schema.deals)).filter((c) => c.name === "type" || !SERVER_COLUMNS.has(c.name)), // deals.type is a real field; SERVER_COLUMNS' `type` is the activity kind
   })],
-  ["Quotes", entry(schema.quotes, "quote", sql`subject`, ["Subject"], {
-    check: quoteChecks, ignored: QUOTE_IGNORED, lineItems: true, afterWrite: saveQuoteLines,
-    decorate: (tx, fields, records) => quoteDetails(tx, fields.some((f) => f.apiName === "Grand_Total"), records),
-  })],
+  ["Quotes", entry(schema.quotes, "quote", sql`subject`, ["Subject"], withLines(QUOTE))],
+  ["Sales_Orders", entry(schema.salesOrders, "sales_order", sql`subject`, ["Subject"], withLines(SALES_ORDER))],
   ["Products", entry(schema.products, "product", sql`product_name`, ["Product_Name"], { adminWrite: true })],
   ["Tasks", activity("task")],
   ["Calls", activity("call")],
@@ -118,10 +122,13 @@ export function moduleDef(name: string): ModuleDef {
 }
 
 /** Computed fields and the fields they are computed from, per module: hidden when any source is hidden. */
+const DOCUMENT_TOTALS = { Grand_Total: ["Sub_Total", "VAT_Total", "Adjustment"], VAT_Total_OMR: ["VAT_Total", "Exchange_Rate"], Grand_Total_OMR: ["Sub_Total", "VAT_Total", "Adjustment", "Exchange_Rate"] };
 const DERIVED_FROM: Record<string, Record<string, string[]>> = {
   Deals: { Expected_Revenue: ["Amount", "Probability"] },
   // Every source of each total, so one hidden source hides it (the line items and VAT summary follow Grand_Total in quoteDetails).
-  Quotes: { Grand_Total: ["Sub_Total", "VAT_Total", "Adjustment"], VAT_Total_OMR: ["VAT_Total", "Exchange_Rate"], Grand_Total_OMR: ["Sub_Total", "VAT_Total", "Adjustment", "Exchange_Rate"] },
+  Quotes: DOCUMENT_TOTALS,
+  Sales_Orders: DOCUMENT_TOTALS,
+  Invoices: DOCUMENT_TOTALS,
 };
 
 export type Field = FieldDef & { lookupModule: string | null };

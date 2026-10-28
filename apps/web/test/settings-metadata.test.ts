@@ -44,7 +44,7 @@ describe("settings metadata endpoints (T1.19)", () => {
   it("a rep lists only their own org's fields, with active picklist values and their access", async () => {
     const res = await call(fieldsRoute, "GET", "/settings/fields?module=Sales_Orders", { cookie: rep });
     expect(res.status).toBe(200);
-    expect(res.json().data).toEqual([
+    expect(res.json().data.filter((f: { is_system: boolean }) => !f.is_system)).toEqual([
       expect.objectContaining({
         api_name: "Region",
         data_type: "picklist",

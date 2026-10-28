@@ -39,6 +39,7 @@ describe("related lists and layouts (T2.10)", () => {
       { api_name: "Contacts", module: "Contacts", label_key: "related.Contacts" },
       { api_name: "Deals", module: "Deals", label_key: "related.Deals" },
       { api_name: "Quotes", module: "Quotes", label_key: "related.Quotes" },
+      { api_name: "Sales_Orders", module: "Sales_Orders", label_key: "related.Sales_Orders" },
     ]);
 
     const layouts = (await call(layoutsRoute, "GET", "/settings/layouts?module=Accounts", { cookie: rep })).json().data;

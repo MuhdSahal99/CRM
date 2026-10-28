@@ -19,6 +19,35 @@ const address = (prefix: string, code: string): Spec[] => [
 const owner: Spec = { api: "Owner", type: "user_lookup", col: "owner_id" };
 const description: Section = { label: "description_information", columns: 1, fields: [{ api: "Description", type: "textarea", col: "description", max: 32000 }] };
 
+/** The sections Quotes, Sales Orders and Invoices share (ADR-0007): `head` is the document-specific part of the first section. */
+function documentSections(head: Spec[]): Section[] {
+  return [
+    {
+      label: "quote_information",
+      fields: [
+        owner,
+        text("Subject", "subject", 255, true),
+        ...head,
+        { api: "Account_Name", type: "lookup", col: "account_id", lookup: "Accounts", req: true },
+        { api: "Contact_Name", type: "lookup", col: "contact_id", lookup: "Contacts" },
+        { api: "Deal_Name", type: "lookup", col: "deal_id", lookup: "Deals" },
+        pick("Currency", "currency"),
+        { api: "Exchange_Rate", type: "decimal", col: "exchange_rate", ro: true },
+        // Totals are written only by the pricing engine (ADR-0007): read-only for every client.
+        { api: "Sub_Total", type: "currency", col: "sub_total", ro: true },
+        { api: "VAT_Total", type: "currency", col: "vat_total", ro: true },
+        { api: "Adjustment", type: "currency", col: "adjustment" },
+        { api: "Grand_Total", type: "currency", col: "grand_total", ro: true },
+        { api: "VAT_Total_OMR", type: "currency", col: "vat_total_omr", ro: true },
+        { api: "Grand_Total_OMR", type: "currency", col: "grand_total_omr", ro: true },
+      ],
+    },
+    { label: "address_information", fields: [...address("Billing", "Code"), ...address("Shipping", "Code")] },
+    { label: "terms_and_conditions", columns: 1, fields: [{ api: "Terms_and_Conditions", type: "textarea", col: "terms", max: 32000 }] },
+    description,
+  ];
+}
+
 /** Picklist api_name → stored values, in display order (reference §2.4; admins may edit them later). */
 export const SYSTEM_PICKLISTS: Record<string, string[]> = {
   Account_Type: ["Analyst", "Competitor", "Customer", "Distributor", "Integrator", "Investor", "Partner", "Press", "Prospect", "Reseller", "Other"],
@@ -35,6 +64,8 @@ export const SYSTEM_PICKLISTS: Record<string, string[]> = {
   Deal_Type: ["New Business", "Existing Business"],
   Currency: ["OMR", "AED", "INR"], // active currencies; each needs an exchange rate to be used (T6.04)
   VAT_Category: ["standard", "zero_rated", "exempt"], // the vat_category enum (US-08)
+  SO_Status: ["created", "approved", "delivered", "cancelled"], // the so_status enum, in order
+  Invoice_Status: ["draft", "issued", "paid", "cancelled"], // the invoice_status enum, in order
   Quote_Stage: ["draft", "negotiation", "delivered", "on_hold", "confirmed", "closed_won", "closed_lost"], // the quote_stage enum, in order
   Reason_For_Loss: ["Price", "Competitor", "No Budget", "No Decision", "Other"],
   Forecast_Category: ["pipeline", "best_case", "committed", "closed", "omitted"], // the forecast_category enum, in order
@@ -120,33 +151,31 @@ export const SYSTEM_FIELDS: Record<string, Section[]> = {
     },
     description,
   ],
-  Quotes: [
-    {
-      label: "quote_information",
-      fields: [
-        owner,
-        text("Subject", "subject", 255, true),
-        { api: "Quote_Number", type: "text", col: "quote_number", max: 30, ro: true },
-        pick("Quote_Stage", "quote_stage"),
-        { api: "Valid_Till", type: "date", col: "valid_till" },
-        { api: "Account_Name", type: "lookup", col: "account_id", lookup: "Accounts", req: true },
-        { api: "Contact_Name", type: "lookup", col: "contact_id", lookup: "Contacts" },
-        { api: "Deal_Name", type: "lookup", col: "deal_id", lookup: "Deals" },
-        pick("Currency", "currency"),
-        { api: "Exchange_Rate", type: "decimal", col: "exchange_rate", ro: true },
-        // Totals are written only by the pricing engine (ADR-0007): read-only for every client.
-        { api: "Sub_Total", type: "currency", col: "sub_total", ro: true },
-        { api: "VAT_Total", type: "currency", col: "vat_total", ro: true },
-        { api: "Adjustment", type: "currency", col: "adjustment" },
-        { api: "Grand_Total", type: "currency", col: "grand_total", ro: true },
-        { api: "VAT_Total_OMR", type: "currency", col: "vat_total_omr", ro: true },
-        { api: "Grand_Total_OMR", type: "currency", col: "grand_total_omr", ro: true },
-      ],
-    },
-    { label: "address_information", fields: [...address("Billing", "Code"), ...address("Shipping", "Code")] },
-    { label: "terms_and_conditions", columns: 1, fields: [{ api: "Terms_and_Conditions", type: "textarea", col: "terms", max: 32000 }] },
-    description,
-  ],
+  Quotes: documentSections([
+    { api: "Quote_Number", type: "text", col: "quote_number", max: 30, ro: true },
+    pick("Quote_Stage", "quote_stage"),
+    { api: "Valid_Till", type: "date", col: "valid_till" },
+  ]),
+  Sales_Orders: documentSections([
+    { api: "SO_Number", type: "text", col: "so_number", max: 30, ro: true },
+    pick("Status", "status", "SO_Status"),
+    { api: "Due_Date", type: "date", col: "due_date" },
+    { api: "Quote_Name", type: "lookup", col: "quote_id", lookup: "Quotes", ro: true },
+    text("Customer_No", "customer_no", 40),
+    text("Purchase_Order_Ref", "purchase_order_ref", 60),
+  ]),
+  // Invoices change only through the draft editor and the issue, cancel and mark-paid actions (ADR-0008): the status and dates are read-only.
+  Invoices: documentSections([
+    { api: "Invoice_Number", type: "text", col: "invoice_number", max: 30, ro: true },
+    { ...pick("Status", "status", "Invoice_Status"), ro: true },
+    { api: "Invoice_Date", type: "date", col: "invoice_date", ro: true },
+    { api: "Due_Date", type: "date", col: "due_date" },
+    { api: "Sales_Order_Name", type: "lookup", col: "sales_order_id", lookup: "Sales_Orders", ro: true },
+    text("Customer_No", "customer_no", 40),
+    text("Purchase_Order_Ref", "purchase_order_ref", 60),
+    { api: "Paid_At", type: "datetime", col: "paid_at", ro: true },
+    { api: "Cancel_Reason", type: "textarea", col: "cancel_reason", ro: true },
+  ]),
   Accounts: [
     {
       label: "account_information",

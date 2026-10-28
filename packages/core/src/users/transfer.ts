@@ -8,13 +8,14 @@ export const TransferInput = z.object({ to_user_id: z.uuid() });
 
 /**
  * The record kinds a transfer moves, with the SQL that says a row is still open. Closed records stay with their owner.
- * T8.03 adds sales orders here.
+ * Sales orders are open until delivered or cancelled.
  */
 const TRANSFERABLE: { module: string; table: string; recordType: TimelineEvent["recordType"]; open: string }[] = [
   { module: "Leads", table: "leads", recordType: "lead", open: "NOT is_converted" },
   { module: "Deals", table: "deals", recordType: "deal", open: "stage_id IN (SELECT id FROM stages WHERE record_category = 'open')" },
   { module: "Activities", table: "activities", recordType: "activity", open: "completed_at IS NULL AND coalesce(status, '') NOT IN ('Completed', 'Held', 'Cancelled')" },
   { module: "Quotes", table: "quotes", recordType: "quote", open: "quote_stage NOT IN ('closed_won', 'closed_lost')" },
+  { module: "Sales_Orders", table: "sales_orders", recordType: "sales_order", open: "status IN ('created', 'approved')" },
 ];
 
 /**

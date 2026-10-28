@@ -69,6 +69,13 @@ export async function seedAll(authDb: Db, appDb: Db, password: string): Promise<
           await createRecords(tx, ctx, "Quotes", { data: [{ Subject: "Al Noor fit-out quote", Account_Name: { id: account.id }, Line_Items: [{ Product: { id: product.id }, Quantity: "2" }] }] });
         }
       }
+      if (SAMPLE_ACCOUNTS[rep.email]!.length > 1 && (await tx.execute(sql`SELECT 1 FROM sales_orders LIMIT 1`)).rows.length === 0) {
+        const account = (await tx.execute<{ id: string }>(sql`SELECT id FROM accounts WHERE account_name = 'Al Noor Trading LLC'`)).rows[0];
+        const product = (await tx.execute<{ id: string }>(sql`SELECT id FROM products LIMIT 1`)).rows[0];
+        if (account && product) {
+          await createRecords(tx, ctx, "Sales_Orders", { data: [{ Subject: "Al Noor fit-out order", Account_Name: { id: account.id }, Line_Items: [{ Product: { id: product.id }, Quantity: "2" }] }] });
+        }
+      }
       if (SAMPLE_ACTIVITIES[rep.email] && (await tx.execute(sql`SELECT 1 FROM activities LIMIT 1`)).rows.length === 0) {
         for (const [module, record] of SAMPLE_ACTIVITIES[rep.email]!) await createRecords(tx, ctx, module, { data: [record] });
       }

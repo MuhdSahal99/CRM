@@ -494,17 +494,17 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 8: Sales Orders, Invoices, PDF (US-11, US-12)
 
-#### T8.01 Sales order tables · S
+#### T8.01 Sales order tables · S ✅
 - **Files:** schema and migration for `sales_orders` and `sales_order_lines`; `can_see` and the metadata seed extended.
 - **Tests first:** I: catalog guard and `parent_visibility` on the lines.
 - **Done when:** the tables match SCHEMA.
 
-#### T8.02 Convert Quote → Sales Order · M
+#### T8.02 Convert Quote → Sales Order · M ✅
 - **Files:** `apps/web/app/api/v1/Quotes/[id]/actions/convert/route.ts`, `packages/core/src/conversions.ts`.
 - **Tests first:** I: lines, addresses, the account/contact/deal, the currency and the **stored rate** are copied, even after the org rate has changed. `SO.quote_id = Q.id`. Idempotent with a key (**US-11**).
 - **Done when:** the SO is priced with the copied rate and VAT snapshot.
 
-#### T8.03 Sales Orders API, related lists, transfer · S
+#### T8.03 Sales Orders API, related lists, transfer · S ✅
 - **Files:** registry entry `Sales_Orders`, `transfer.ts` (adds SOs).
 - **Tests first:** I: the visibility matrix covers SOs. Transfer moves open SOs.
 - **Done when:** SO CRUD works.

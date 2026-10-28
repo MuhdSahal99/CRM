@@ -896,7 +896,7 @@ paths:
     post:
       tags: [Documents]
       operationId: convertQuote
-      summary: Convert a quote to a Sales Order or Invoice (US-11)
+      summary: Convert a quote to a Sales Order (US-11). Invoices come from a Sales Order, never straight from a quote
       description: |
         Copies the line items, addresses, Account, Contact, Deal, currency and the **stored** exchange rate.
         The rate is not captured again. Sets the back-reference (`Quote_Name` on the new record).
@@ -911,7 +911,7 @@ paths:
               type: object
               required: [to]
               properties:
-                to: { type: string, enum: [Sales_Orders, Invoices] }
+                to: { type: string, enum: [Sales_Orders] }
       responses:
         '201': { $ref: '#/components/responses/WriteResult' }
         '401': { $ref: '#/components/responses/Unauthorized' }
