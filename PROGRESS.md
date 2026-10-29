@@ -2,3 +2,4 @@
 
 - Slice 8: done (T8.06 to T8.13), last commit 7e23b37. Review queue: T8.06 and the invoice-numbering checkpoint. Needs from you: S3_*/CHROMIUM_PATH in .env.local, a built worker image (see PRODUCTION_READINESS).
 - Slice 9: done (T9.01 to T9.08), last commit d39b6fe. Review queue: T9.05 and the share-links checkpoint. Needs from you: SMTP_* and S3_*/CHROMIUM_PATH env for prod, OQ-09 (SMTP provider/domain/SPF/DKIM), a built worker image; tests needing Mailpit/MinIO/Chromium skip without MAILPIT_URL/S3_BUCKET/CHROMIUM_PATH.
+- Slice 11: done (T11.01 to T11.12) except the work only a person with staging can do: the restore drill, the 100k load run and the real Zoho reconciliation (tooling and runbook are written). Last commit b173621. Review queue: T11.12 and the go-live checkpoint. `/security-review` could not run (no `origin` remote); each slice was reviewed by hand instead.
