@@ -679,22 +679,22 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 - **Tests first:** I: a Deal links to its Account and Contact by Zoho id. An unknown stage → row error.
 - **Done when:** all 5 modules can be imported. ⚠ **OQ-07**: historic Quotes, SOs and Invoices are out of scope unless the answer changes this.
 
-#### T11.09 UI: import wizard · M
+#### T11.09 UI: import wizard · M ✅
 - **Files:** `app/(app)/settings/import/page.tsx` (upload → map → dry-run report → confirm → download errors).
 - **Tests first:** E (w360, w1440): the admin imports a sample Accounts file end to end.
 - **Done when:** **US-17** passes end to end.
 
-#### T11.10 Reconciliation report · S
+#### T11.10 Reconciliation report · S ✅
 - **Files:** `scripts/reconcile-import.ts`.
 - **Tests first:** U: counts per module = imported + error rows. 20 records are sampled and compared field by field.
 - **Done when:** the output gives the evidence for PRD M2.
 
-#### T11.11 100k-record seed and load test · M
+#### T11.11 100k-record seed and load test · M ✅ (tooling; the run needs staging)
 - **Files:** `packages/db/src/seed-perf.ts`, `scripts/load/{list,detail}.js` (k6).
 - **Tests first:** the load script fails when p95 ≥ 1 s.
 - **Done when:** list and detail p95 < 1 s for a 100k-record tenant (PRD E11 / M6). The run itself needs staging (see below).
 
-#### T11.12 Restore drill and go-live checklist · 🛑 HUMAN CHECK · S
+#### T11.12 Restore drill and go-live checklist · 🛑 HUMAN CHECK · S (runbook and checklist written; ⏳ the drill itself is not done: it needs staging and OQ-03)
 - **Files:** `docs/RUNBOOK.md` (restore steps), `docs/PRODUCTION_READINESS.md` (launch checklist).
 - **Tests first:** none. This is a manual drill: restore takes ≤ 4 h and loses ≤ 1 h of data.
 - **Done when:** the drill is recorded. ⛔ **OQ-03** (residency) blocks the hosting region and so the drill environment. ⚠ **OQ-08** sets the uptime monitoring hours.
