@@ -34,3 +34,14 @@
 - Also review: lib/rate-limit.ts (30 requests/min per IP; ten bad tokens block the IP for 15 minutes; fails open if Redis is down; keys on the right-most X-Forwarded-For), mail.ts (an org's SMTP host must be public on port 25/465/587 and never receives the shared credentials), and the e2e specs email.spec.ts / whatsapp.spec.ts, which start the worker themselves.
 - Needs from you: OQ-09 (SMTP provider, domain, SPF/DKIM) and SMTP_USERNAME/SMTP_PASSWORD/SMTP_PASSWORD_HOST/SMTP_FROM_DOMAINS in the prod environment (PRODUCTION_READINESS).
 - Commits: T9.01 b7a65c9 (+ hardening 03e88c4, 6702ff9), T9.02 1250f70, T9.03 433948e, T9.04 b6f99b7, T9.05 3364180, T9.06 d981cde, T9.07 9ca74b1, T9.08 490b1a1
+
+## T11.12 Restore drill and go-live checklist (HUMAN CHECK)
+- Review: docs/RUNBOOK.md (restore steps, deploy, rollback, incidents) and the go-live gate in docs/PRODUCTION_READINESS.md. **The drill has not been run**: it needs a staging environment and the hosting region (OQ-03). The drill log in the runbook is empty on purpose.
+- Also not run, only built: the 100k-record load test (packages/db/src/seed-perf.ts, scripts/load/*.js, needs staging and k6) and the Zoho reconciliation on real exports (`pnpm reconcile:import`).
+- Commit: 55cc6fa
+
+## Checkpoint: go-live gate (slice 11, HUMAN CHECK)
+- Review: the import path end to end on a real Zoho export (Settings → Import from Zoho): the dry run writes nothing (AC-53), owners from another org are flagged (AC-50), ambiguous account names are errors (AC-52), the errors CSV is formula-safe (AC-55), a re-import creates no duplicates; and packages/core/src/import/ (row.ts runs the same services as the API inside a rolled-back savepoint for the dry run).
+- Product decisions to confirm: a Zoho product with no VAT category is imported as "standard" (modules.ts `fill`); mapping the Zoho Record Id is mandatory; a row matching an existing Zoho id is an update, counted as a duplicate; one import per org at a time.
+- Files: packages/core/src/import/, apps/web/app/api/v1/imports/, apps/web/app/(app)/app/settings/import/, apps/web/test/imports.test.ts, apps/web/e2e/import.spec.ts
+- Commits: T11.01 to T11.08 9246dc5, T11.09 and T11.10 (wizard and reconcile), T11.11 and T11.12 55cc6fa
