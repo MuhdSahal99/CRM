@@ -74,6 +74,10 @@ describe("tenant isolation (ADR-0003)", () => {
         SELECT gen_random_uuid(), $1, 'account', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), (SELECT id FROM files WHERE org_id = $1 LIMIT 1), 'x@example.test', 'S', $2`, [org, manager]);
       await queryAs(app, admin, `INSERT INTO share_links (id, org_id, file_id, record_type, record_id, token_hash, expires_at, created_by)
         SELECT gen_random_uuid(), $1, (SELECT id FROM files WHERE org_id = $1 LIMIT 1), 'account', (SELECT id FROM accounts WHERE org_id = $1 LIMIT 1), decode(md5(random()::text) || md5(random()::text), 'hex'), now() + interval '1 day', $2`, [org, manager]);
+      await queryAs(app, admin, `INSERT INTO import_jobs (id, org_id, module, source_file_id, mapping, status, created_by, updated_by)
+        SELECT gen_random_uuid(), $1, 'accounts', (SELECT id FROM files WHERE org_id = $1 LIMIT 1), '{}', 'done', $2, $2`, [org, manager]);
+      await queryAs(app, admin, `INSERT INTO import_rows (id, org_id, job_id, row_no, raw, status)
+        SELECT gen_random_uuid(), $1, (SELECT id FROM import_jobs WHERE org_id = $1 LIMIT 1), 1, '{}', 'valid'`, [org]);
       await queryAs(app, { org_id: org }, `INSERT INTO document_sequences (org_id, doc_type, prefix) VALUES ($1, 'quote', 'QT-')`, [org]);
       await queryAs(app, { org_id: org }, `INSERT INTO idempotency_keys (org_id, user_id, key, request_hash, status) VALUES ($1, $2, 'k', decode('00', 'hex'), 'in_progress')`, [org, manager]);
     }
@@ -107,7 +111,7 @@ describe("tenant isolation (ADR-0003)", () => {
   it("with org A's context, crm_app sees only org A in every tenant table", async () => {
     for (const table of tenantTables) {
       const column = table === "orgs" ? "id" : "org_id";
-      const rows = await queryAs(app, { org_id: orgs.a, see_all: "on" }, `SELECT DISTINCT ${column} AS org FROM "${table}"`);
+      const rows = await queryAs(app, { org_id: orgs.a, see_all: "on", role: "admin" }, `SELECT DISTINCT ${column} AS org FROM "${table}"`); // an Admin sees the admin-only tables too; isolation is what is checked
       expect({ table, orgs: rows.map((r) => r.org) }).toEqual({ table, orgs: [orgs.a] });
     }
   });
