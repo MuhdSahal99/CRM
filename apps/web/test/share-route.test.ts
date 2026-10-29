@@ -1,4 +1,4 @@
-import { closeQueues, contextForMember, createFile, createLogger, getAuthDb, hashShareToken, log, putFile, withTenant } from "@crm/core";
+import { closeQueues, contextForMember, createFile, createLogger, getAuthDb, hashShareToken, log, newShareToken, putFile, withTenant } from "@crm/core";
 import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import * as moduleRoute from "../app/api/v1/[module]/route";
@@ -82,7 +82,7 @@ describe.skipIf(!process.env.S3_BUCKET)("public share link route (T9.06)", () =>
     const live = await mint();
     const revoked = await mint();
     await call(linkRoute, "DELETE", `/Quotes/${quote}/share_links/${revoked.id}`, { cookie: rep, params: { module: "Quotes", id: quote, link_id: revoked.id } });
-    const expiredToken = "E".repeat(43);
+    const expiredToken = newShareToken(); // unique: token hashes are unique across the whole table, and other test files insert their own
     await queryAs(app, adminCtx, `INSERT INTO share_links (id, org_id, file_id, record_type, record_id, token_hash, created_at, expires_at, created_by)
       SELECT gen_random_uuid(), org_id, file_id, record_type, record_id, $1, now() - interval '8 days', now() - interval '1 second', created_by FROM share_links WHERE id = $2`, [hashShareToken(expiredToken), live.id]);
     const answers = await Promise.all([fetchShare("R".repeat(43)), fetchShare(expiredToken), fetchShare(revoked.token), fetchShare("short"), fetchShare(live.token + "%2F..")].map(async (p) => snapshot(await p)));
@@ -110,7 +110,7 @@ describe.skipIf(!process.env.S3_BUCKET)("public share link route (T9.06)", () =>
 
   it("AC-08: a link stops working one second after expires_at", async () => {
     const live = await mint();
-    const token = "T".repeat(43);
+    const token = newShareToken();
     await queryAs(app, adminCtx, `INSERT INTO share_links (id, org_id, file_id, record_type, record_id, token_hash, created_at, expires_at, created_by)
       SELECT gen_random_uuid(), org_id, file_id, record_type, record_id, $1, now() - interval '1 day', now() + interval '1500 milliseconds', created_by FROM share_links WHERE id = $2`, [hashShareToken(token), live.id]);
     expect((await fetchShare(token)).status).toBe(200);

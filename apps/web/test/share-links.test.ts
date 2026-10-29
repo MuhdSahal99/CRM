@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { closeQueues, hashShareToken, TOKEN_FORMAT } from "@crm/core";
+import { closeQueues, hashShareToken, newShareToken, TOKEN_FORMAT } from "@crm/core";
 import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as moduleRoute from "../app/api/v1/[module]/route";
@@ -123,12 +123,12 @@ describe("share links (T9.05)", () => {
     const live = (await create(rep, quote, { to_contact_id: mobile })).json().data[0];
     const insert = (token: string, createdAgo: string, expiresIn: string) => queryAs(app, adminCtx, `INSERT INTO share_links (id, org_id, file_id, record_type, record_id, token_hash, created_at, expires_at, created_by)
       SELECT gen_random_uuid(), org_id, file_id, record_type, record_id, $1, now() - $2::interval, now() + $3::interval, created_by FROM share_links WHERE id = $4`, [hashShareToken(token), createdAgo, expiresIn, live.id]);
-    const [expired, fresh] = ["E".repeat(43), "F".repeat(43)];
+    const [expired, fresh] = [newShareToken(), newShareToken()];
     await insert(expired, "8 days", "-1 second");
     await insert(fresh, "1 day", "6 days");
     expect(await resolve(expired)).toHaveLength(0);
     expect(await resolve(fresh)).toHaveLength(1);
-    await expect(insert("G".repeat(43), "0 seconds", "31 days")).rejects.toThrow(/share_links_ttl/);
+    await expect(insert(newShareToken(), "0 seconds", "31 days")).rejects.toThrow(/share_links_ttl/);
   });
 
   it("a deleted document's links end with it: deleting revokes them, and the resolver ignores a deleted parent even if nothing revoked the link", async () => {

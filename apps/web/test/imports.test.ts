@@ -208,6 +208,11 @@ describe("Zoho import (US-17)", () => {
       expect((await queryAs(app, adminCtx, "SELECT d.amount, d.closing_date::text AS closing, s.api_value FROM deals d JOIN stages s ON s.id = d.stage_id WHERE d.zoho_id = $1", [`${tag}-601`]))[0]).toMatchObject({ amount: "1000.500", closing: "2026-12-31", api_value: "Identify Decision Makers" });
     });
 
+    it("a Zoho id over 100 characters is a row error, never truncated into another record's id", async () => {
+      const { id } = await start("Accounts", [["Record Id", "Account Name"], ["z".repeat(101), "Too long id"]]);
+      expect(await job(id)).toMatchObject({ valid_rows: 0, error_rows: 1, row_errors: [{ row_no: 1, column: "Record Id", message: expect.stringMatching(/longer than 100/) }] });
+    });
+
     it("a file that cannot be parsed fails the job with a message and writes nothing", async () => {
       const bad = 'Record Id,Account Name\r\n1,"fine"\r\n2,"never closed\r\n';
       const res = await json(await upload(admin, { module: "Accounts", file: bad, mapping: { "Record Id": "zoho_id", "Account Name": "Account_Name" } }));

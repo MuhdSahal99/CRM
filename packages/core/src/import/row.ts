@@ -103,7 +103,11 @@ export async function prepareRow(tx: Tx, mappable: Field[], mapping: Record<stri
     if (!cell) continue;
     const fail = (message: string) => out.errors.push({ column: heading, message });
     if (cell.length > LIMITS.cellChars) { fail(`The cell is longer than ${LIMITS.cellChars.toLocaleString("en-US")} characters.`); continue; }
-    if (target === ZOHO_ID) { out.zohoId = cell.slice(0, 100); continue; }
+    if (target === ZOHO_ID) { // never truncated: two long ids that differ late would otherwise collide into one record
+      if (cell.length > 100) fail("The Zoho record id is longer than 100 characters.");
+      else out.zohoId = cell;
+      continue;
+    }
     const f = byApi.get(target)!;
     if (f.dataType === "user_lookup") {
       // AC-50: only members of this org; anything else is the importing Admin, flagged for review.
