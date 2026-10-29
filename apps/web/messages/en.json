@@ -471,6 +471,7 @@
     "orgSettings": "Organisation",
     "vatRates": "VAT rates",
     "exchangeRates": "Exchange rates",
+    "import": "Import from Zoho",
     "activities": "My Activities"
   },
   "modules": {
@@ -1205,5 +1206,40 @@
     "until": "until {date}",
     "opened": "{count, plural, one {Opened once} other {Opened # times}}",
     "revoke": "Revoke"
+  },
+  "import": {
+    "metaTitle": "Import from Zoho",
+    "title": "Import from Zoho",
+    "lead": "Upload a CSV export from Zoho CRM, map its columns, and check the result before anything is written. Nothing changes in the CRM until you confirm.",
+    "step1": "Choose a file",
+    "step2": "Map the columns",
+    "step3": "Result",
+    "module": "What are you importing?",
+    "file": "CSV file (up to 20 MB, 100,000 rows)",
+    "mapTitle": "Map the columns",
+    "mapHint": "Each column goes to one field. Map the Zoho Record Id so that importing the file again updates records instead of duplicating them. Columns set to Do not import are ignored.",
+    "mapTo": "Field for column {column}",
+    "skip": "Do not import",
+    "zohoId": "Zoho record id",
+    "check": "Check the file",
+    "working": "Checking the file…",
+    "reportTitle": "Dry run result",
+    "doneTitle": "Import finished",
+    "failedTitle": "The import could not finish",
+    "status": { "uploaded": "Queued", "validating": "Checking", "validated": "Ready", "importing": "Importing", "done": "Done", "failed": "Failed", "cancelled": "Cancelled" },
+    "rows": "Rows",
+    "ready": "Ready to import",
+    "imported": "Imported",
+    "duplicates": "Already in the CRM",
+    "flagged": "Owner not found",
+    "errors": "Errors",
+    "dryRunNote": "Rows already in the CRM (same Zoho id) are updated, not duplicated. Rows whose owner is not a user here are assigned to you and flagged for review. Rows with errors are skipped and can be downloaded.",
+    "confirm": "Import {count, plural, one {# row} other {# rows}}",
+    "rowErrors": "First errors",
+    "rowError": "Row {row}, {column}: {message}",
+    "download": "Download the failed rows (CSV)",
+    "another": "Import another file",
+    "tooLarge": "The file is larger than 20 MB.",
+    "failed": "The import could not be started. Try again."
   }
 }

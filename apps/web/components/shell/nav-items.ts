@@ -18,6 +18,7 @@ export function navItems(modules: { api_name: string; label_key: string }[], rol
           { href: "/app/settings/org", labelKey: "shell.orgSettings" },
           { href: "/app/settings/vat", labelKey: "shell.vatRates" },
           { href: "/app/settings/exchange-rates", labelKey: "shell.exchangeRates" },
+          { href: "/app/settings/import", labelKey: "shell.import" },
         ]
       : []),
   ];

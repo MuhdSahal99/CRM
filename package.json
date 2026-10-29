@@ -8,6 +8,7 @@
     "check": "pnpm -r check && node scripts/check-temp-dev.ts",
     "test": "pnpm -r --workspace-concurrency=1 test && node --test \"scripts/*.test.ts\"",
     "e2e": "pnpm --filter web e2e",
+    "reconcile:import": "node --experimental-transform-types --env-file-if-exists=.env.local scripts/reconcile-import.ts",
     "infra:up": "docker compose --env-file .env.local up -d --wait",
     "infra:storage": "docker compose --env-file .env.local --profile storage up -d --wait minio",
     "infra:down": "docker compose --env-file .env.local down",

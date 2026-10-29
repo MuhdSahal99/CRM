@@ -1,4 +1,4 @@
-import { closeQueues, contextForMember, getAuthDb, IMPORT_MODULES, type ImportModuleName, purgeFinishedImports, validateImport, writeImport } from "@crm/core";
+import { closeQueues, contextForMember, getAuthDb, IMPORT_MODULES, type ImportModuleName, purgeFinishedImports, reconcileJob, validateImport, withTenant, writeImport } from "@crm/core";
 import { connectAsApp, connectAsAuth, queryAs } from "@crm/db/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as moduleRoute from "../app/api/v1/[module]/route";
@@ -134,6 +134,8 @@ describe("Zoho import (US-17)", () => {
       const done = await confirm(id, ctx);
       expect(done).toMatchObject({ status: "done", imported_rows: 2, error_rows: 2 });
       expect(await rowsOf("accounts")).toBe(before + 2);
+      const evidence = await withTenant(ctx, (tx) => reconcileJob(tx, id, 20)); // T11.10: counts add up and the sampled records match their rows
+      expect(evidence).toMatchObject({ ok: true, sampled: 2, mismatches: [], counts: { accounted: 4, total: 4 } });
       const owner = (await queryAs(app, adminCtx, "SELECT owner_id, needs_review, billing_country, phone FROM accounts WHERE zoho_id = $1", [`${tag}-101`]))[0];
       expect(owner).toMatchObject({ owner_id: adminId, needs_review: true, billing_country: "OM" }); // AC-50: the importing Admin, flagged
       expect((await queryAs(app, adminCtx, "SELECT billing_country FROM accounts WHERE zoho_id = $1", [`${tag}-100`]))[0].billing_country).toBe("OM"); // "Oman" → OM

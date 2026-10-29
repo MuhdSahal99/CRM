@@ -46,3 +46,4 @@ export { CreateShareLinkInput, createShareLink, hashShareToken, listShareLinks, 
 export { confirmImport, createImport, getImport, ImportModule, importErrorsCsv, listImports, purgeFinishedImports, MappingInput, validateImport, writeImport } from "./import/run.ts";
 export { IMPORT_MODULES, IMPORT_MODULE_NAMES, type ImportModuleName } from "./import/modules.ts";
 export { ImportError, LIMITS as IMPORT_LIMITS } from "./import/parse.ts";
+export { reconcileJob } from "./import/reconcile.ts";
