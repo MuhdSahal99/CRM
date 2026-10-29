@@ -125,7 +125,8 @@ export async function prepareRow(tx: Tx, mappable: Field[], mapping: Record<stri
     }
   }
   for (const [api, value] of Object.entries(fill)) if (!(api in out.record)) out.record[api] = value;
-  if (!out.zohoId) out.errors.push({ column: Object.keys(mapping).find((h) => mapping[h] === ZOHO_ID) ?? ZOHO_ID, message: "The Zoho record id is empty." });
+  const idColumn = Object.keys(mapping).find((h) => mapping[h] === ZOHO_ID) ?? ZOHO_ID;
+  if (!out.zohoId && !out.errors.some((e) => e.column === idColumn)) out.errors.push({ column: idColumn, message: "The Zoho record id is empty." });
   return out;
 }
 
