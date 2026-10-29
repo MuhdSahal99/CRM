@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { provisionOrg } from "./metadata/seed-org.ts";
 import { convertSalesOrder } from "./conversions.ts";
 import { createRecords } from "./modules/write.ts";
+import { createFile } from "./storage.ts";
 import { withTenant } from "./tenant.ts";
 
 /** Sample accounts (the first gets a contact) per seeded org, created by its first rep through the record service (skipped once any exist). */
@@ -40,6 +41,13 @@ export async function seedAll(authDb: Db, appDb: Db, password: string): Promise<
     await withTenant(admin, async (tx) => {
       if ((await tx.execute(sql`SELECT 1 FROM products LIMIT 1`)).rows.length === 0) {
         await createRecords(tx, admin, "Products", { data: [{ Product_Name: "Consulting day", Product_Code: "CONS-DAY", VAT_Category: "standard", Unit_Price: "250.000", Usage_Unit: "day" }] });
+      }
+      // One finished, empty import job, so the visibility matrix has an Admin-only row to address (its CSV is a placeholder: no object is stored).
+      if ((await tx.execute(sql`SELECT 1 FROM import_jobs LIMIT 1`)).rows.length === 0) {
+        const file = await createFile(tx, { kind: "import_csv", filename: "sample.csv", contentType: "text/csv" });
+        await tx.execute(sql`
+          INSERT INTO import_jobs (id, org_id, module, source_file_id, mapping, status, finished_at, created_by, updated_by)
+          VALUES (gen_random_uuid(), app.org_id(), 'accounts', ${file.id}, '{}'::jsonb, 'done', now(), ${user_id}, ${user_id})`);
       }
     }, appDb);
   }
