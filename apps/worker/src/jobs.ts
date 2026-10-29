@@ -1,4 +1,4 @@
-import { contextForMember, enqueueAfterCommit, getAuthDb, type Payload, QUEUES, type QueueName, type TenantContext, withTenant } from "@crm/core";
+import { contextForMember, purgeFinishedImports, validateImport, writeImport, enqueueAfterCommit, getAuthDb, type Payload, QUEUES, type QueueName, type TenantContext, withTenant } from "@crm/core";
 import { sql } from "drizzle-orm";
 import { sendEmailJob, sweepStaleEmails } from "./email.ts";
 import { renderPdfFile } from "./pdf.ts";
@@ -12,6 +12,7 @@ type Handlers = { [Q in QueueName]: (ctx: TenantContext, payload: Payload<Q>, ru
 export const handlers: Handlers = {
   pdf: (ctx, { file_id }) => withTenant(ctx, (tx) => renderPdfFile(tx, file_id)),
   email: (ctx, { email_send_id }, run) => sendEmailJob(ctx, email_send_id, run),
+  import: (ctx, { job_id, phase }) => (phase === "validate" ? validateImport(ctx, job_id) : writeImport(ctx, job_id)),
 };
 
 /** Validates the payload (a bad one throws, so the job fails into the dead-letter set), then runs the handler as the member. */
@@ -44,6 +45,7 @@ export async function sweepPendingFiles(orgId: string): Promise<number> {
 /** The sweeper's pass over one org: stale PDFs and stale emails (ADR-0011: the source row is the outbox). */
 export async function sweepOrg(orgId: string) {
   const ctx = await sweepContext(orgId);
+  if (ctx) await withTenant(ctx, purgeFinishedImports); // PII retention: parsed import rows go 90 days after their job finished
   return (await sweepPendingFiles(orgId)) + (ctx ? await sweepStaleEmails(ctx, STALE_MINUTES) : 0);
 }
 

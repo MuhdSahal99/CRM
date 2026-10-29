@@ -639,42 +639,42 @@ T1 Foundation ─┬─► T2 Accounts/Contacts ─┬─► T3 Activities/Timel
 
 ## Slice 11: Zoho CSV import and cutover (US-17, go-live gate)
 
-#### T11.01 Import tables and upload · M
+#### T11.01 Import tables and upload · M ✅
 - **Files:** migration for `import_jobs` and `import_rows` (`admin_only`), `apps/web/app/api/v1/imports/route.ts`.
 - **Tests first:** I: **AC-56**: 25 MB → 413, a binary renamed `.csv` → 422, more than the row cap → 422, and nothing reaches the CRM tables. **AC-35**: a rep `POST /imports` → 403.
 - **Done when:** the CSV is stored as a `files` row.
 
-#### T11.02 Mapping validation and streaming parse · M
+#### T11.02 Mapping validation and streaming parse · M ✅
 - **Files:** `packages/core/src/import/{mapping.ts,parse.ts}` (csv-parse, a new dependency; check with Context7).
 - **Tests first:** U: **AC-54**: mappings to `Grand_Total`, `id`, `org_id` or `Created_Time` → 422. I: **AC-57**: a 5 MB field, 5,000 columns, or unbalanced quotes → a row error or job failure with a message, with bounded memory.
 - **Done when:** only allowlisted `api_name`s can be mapped.
 
-#### T11.03 Dry run · M
+#### T11.03 Dry run · M ✅
 - **Files:** `apps/worker/src/import.ts` (validate phase), `GET /imports/{id}`.
 - **Tests first:** I: **AC-53**: a dry run writes zero CRM rows and reports counts and per-row errors. **AC-50**: an owner email from another org → assigned to the admin and flagged. **AC-52**: 0 or 2 account matches → a row error with no guessed link.
 - **Done when:** **US-17** (dry run first) is met.
 
-#### T11.04 Confirm and idempotent upsert · M
+#### T11.04 Confirm and idempotent upsert · M ✅
 - **Files:** `apps/web/app/api/v1/imports/[id]/actions/confirm/route.ts`, `apps/worker/src/import.ts` (write phase).
 - **Tests first:** I: valid rows are imported and failed rows kept. Importing the same file twice gives 0 new records, counted as duplicates. **AC-51**: a matching `zoho_id` in org A leaves A untouched. Each record gets an `imported` event.
 - **Done when:** **US-17** (no silent failure, no duplicates) is met.
 
-#### T11.05 Errors CSV · S
+#### T11.05 Errors CSV · S ✅
 - **Files:** `apps/web/app/api/v1/imports/[id]/errors/route.ts`.
 - **Tests first:** U: **AC-55**: cells starting with `=`, `+`, `@` or `-` are prefixed with `'`.
 - **Done when:** failed rows download with their messages.
 
-#### T11.06 Module mappers: Accounts and Products · S
+#### T11.06 Module mappers: Accounts and Products · S ✅
 - **Files:** `packages/core/src/import/modules/{accounts,products}.ts`.
 - **Tests first:** I: a Zoho sample export of each imports field-for-field.
 - **Done when:** these two modules can be imported.
 
-#### T11.07 Module mappers: Contacts and Leads · S
+#### T11.07 Module mappers: Contacts and Leads · S ✅
 - **Files:** `packages/core/src/import/modules/{contacts,leads}.ts`.
 - **Tests first:** I: a Contact links to its Account by Zoho id, falling back to name. Phones are normalised to E.164.
 - **Done when:** these two modules can be imported.
 
-#### T11.08 Module mapper: Deals · S
+#### T11.08 Module mapper: Deals · S ✅
 - **Files:** `packages/core/src/import/modules/deals.ts` (Zoho stage → seeded stage map).
 - **Tests first:** I: a Deal links to its Account and Contact by Zoho id. An unknown stage → row error.
 - **Done when:** all 5 modules can be imported. ⚠ **OQ-07**: historic Quotes, SOs and Invoices are out of scope unless the answer changes this.

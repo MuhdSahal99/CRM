@@ -1285,9 +1285,8 @@ paths:
       summary: Upload a Zoho CSV export with a column mapping; starts a dry run (Admin)
       description: |
         Nothing is written to CRM tables until the import is confirmed. Limits: max 20 MB, CSV text only
-        (content-sniffed), max 100,000 rows.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+        (content-sniffed), max 100,000 rows, max 200 columns, max 1 MB per row. Not keyed by Idempotency-Key:
+        only one import per org runs at a time (409 `IN_PROGRESS`), which also stops a double submit.
       requestBody:
         required: true
         content:
@@ -2137,6 +2136,7 @@ components:
         duplicate_rows: { type: integer, description: 'Matched on stored Zoho id; updated, not duplicated' }
         flagged_rows: { type: integer, description: Owner email had no match; assigned to the importing Admin }
         imported_rows: { type: integer }
+        failure_message: { type: [string, 'null'], description: A failure of the job itself (an unreadable file), not of one row }
         row_errors:
           type: array
           description: First 100 errors; the full list is in GET /imports/{id}/errors

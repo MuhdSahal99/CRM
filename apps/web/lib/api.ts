@@ -24,6 +24,7 @@ type Handler<S extends z.ZodType> = (args: {
   input: z.output<S>;
   params: Record<string, string>;
   tx: Tx;
+  request: Request;
 }) => Promise<Envelope | Response>; // a Response (a file download) is returned as it is
 
 /**
@@ -32,7 +33,7 @@ type Handler<S extends z.ZodType> = (args: {
  * Input comes from the query string on GET/DELETE and from the JSON body otherwise; unknown keys are stripped.
  * `idempotent` routes honour an Idempotency-Key header (ADR-0015).
  */
-export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: Permission; status?: number; idempotent?: true; redact?: (body: never) => unknown }, handler: Handler<S>) {
+export function apiRoute<S extends z.ZodType>(options: { input: S; upload?: true; permission?: Permission; status?: number; idempotent?: true; redact?: (body: never) => unknown }, handler: Handler<S>) {
   return async (request: Request, route?: { params?: Promise<Record<string, string>> }): Promise<Response> => {
     const started = performance.now();
     let session: TenantContext | null = null;
@@ -44,13 +45,13 @@ export function apiRoute<S extends z.ZodType>(options: { input: S; permission?: 
 
       const raw = ["GET", "DELETE"].includes(request.method)
         ? Object.fromEntries(new URL(request.url).searchParams)
-        : await readJsonBody(request);
+        : options.upload ? {} : await readJsonBody(request); // an upload route reads its own multipart body, size-capped, in the handler
       const parsed = options.input.safeParse(raw);
       if (!parsed.success) throw validationError(parsed.error, raw);
 
       const params = (await route?.params) ?? {}; // Next passes no params to a route without dynamic segments
       if (params.id !== undefined && !z.uuid().safeParse(params.id).success) throw new NotFound(); // never reaches SQL
-      const run = (tx: Tx) => handler({ ctx, input: parsed.data, params, tx });
+      const run = (tx: Tx) => handler({ ctx, input: parsed.data, params, tx, request });
       const status = options.status ?? 200;
       const key = options.idempotent && request.headers.get("idempotency-key");
       if (key && (key.length < 8 || key.length > 255)) {

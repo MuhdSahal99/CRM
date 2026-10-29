@@ -606,8 +606,9 @@ The plaintext token is never stored. `resolve_share_link(bytea)` is `SECURITY DE
 | source_file_id | uuid | composite FK → files RESTRICT |
 | mapping | jsonb | NOT NULL; CSV header → field api_name |
 | status | enum | uploaded, validating, validated, importing, done, failed, cancelled |
-| total_rows, valid_rows, error_rows, imported_rows, duplicate_rows, flagged_rows | int | |
-| errors_file_id | uuid | FK → files (CSV of failed rows, formula-escaped) |
+| total_rows, valid_rows, error_rows, imported_rows, duplicate_rows, flagged_rows | int | Recounted from the rows. A row that matches an existing Zoho id is `duplicate` (updated, no new record) even if its owner is unknown |
+| failure_message | text | NULL; a failure of the job itself (an unreadable file) |
+| errors_file_id | uuid | FK → files; unused: the errors CSV is generated on request from the failed rows, formula-escaped |
 | confirmed_at, confirmed_by, finished_at | | nothing is written to CRM tables until `confirmed_at` is set (dry run first) |
 
 #### `import_rows`
@@ -664,3 +665,4 @@ Re-importing the same file creates no duplicates. Rows are upserted on `UNIQUE (
 | 0027 | 2026-10-29 | `email_sends`: enum `email_status`; composite FKs to `files` (RESTRICT), `member` and `contacts` (SET NULL on the contact), CHECKs `email_sends_no_line_breaks` (no CR or LF in subject or address, AC-44) and `email_sends_body_length`, outbox index `(org_id, status, queued_at) WHERE status IN ('queued','sending')`; trigger `email_sends_check_record_ref` (also added to `files`); `crm_app` has SELECT, INSERT, UPDATE; RLS `tenant_isolation` plus restrictive `record_visibility` | 9 |
 | 0028 | 2026-10-29 | `share_links`: unique `token_hash` (sha256, 32 bytes), CHECKs `share_links_ttl` (expires after creation, at most 30 days) and `share_links_token_hash_len`; composite FKs to `files`, `member` (created_by, revoked_by); trigger `share_links_check_record_ref`; `crm_app` has SELECT, INSERT and UPDATE of `revoked_at`, `revoked_by` only; RLS `tenant_isolation` plus restrictive `record_visibility`; policies `resolver` for `crm_owner` on `share_links` (all) and `files` (select); function `public.resolve_share_link(bytea)` `SECURITY DEFINER`, owned by `crm_owner`, `search_path = pg_catalog, public`, returns `(share_link_id, storage_key, filename, content_type)` for a live link and bumps its counters, EXECUTE for `crm_app` only | 9 |
 | 0029 | 2026-10-29 | `resolve_share_link` replaced: a link also needs its quote, sales order or invoice to exist (`deleted_at IS NULL`); `crm_owner` read policies `resolver` on `quotes`, `sales_orders`, `invoices` for it. Deleting a document revokes its links (application code) | 9 |
+| 0030 | 2026-10-29 | `import_jobs`, `import_rows`: enums `import_module`, `import_status`, `import_row_status`; unique `(org_id, job_id, row_no)`, composite FKs to `files` and `member`, rows cascade from the job; trigger `import_jobs_audit`; `import_rows_delete_guard` (a row can be deleted only 90 days after its job finished); `crm_app` has SELECT, INSERT, UPDATE (and DELETE on rows); RLS `tenant_isolation` plus restrictive `admin_only` | 11 |

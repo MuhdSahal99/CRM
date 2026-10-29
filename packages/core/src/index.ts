@@ -43,3 +43,6 @@ export { loadSmtp, messageIdFor, SmtpNotConfigured, sendMail, type Smtp } from "
 export { requestEmail, SendEmailInput } from "./emails/request.ts";
 export { isDocModule } from "./documents-pdf.ts";
 export { CreateShareLinkInput, createShareLink, hashShareToken, listShareLinks, resolveShareLink, newShareToken, redactShareLinks, revokeShareLink, TOKEN_FORMAT } from "./share-links.ts";
+export { confirmImport, createImport, getImport, ImportModule, importErrorsCsv, listImports, purgeFinishedImports, MappingInput, validateImport, writeImport } from "./import/run.ts";
+export { IMPORT_MODULES, IMPORT_MODULE_NAMES, type ImportModuleName } from "./import/modules.ts";
+export { ImportError, LIMITS as IMPORT_LIMITS } from "./import/parse.ts";
