@@ -44,7 +44,7 @@ test("T1.24: the top bar shows the org and account; sign out returns to /login a
   await signInToApp(page, "rep.a@saqient.test");
   const bar = page.getByRole("banner");
   await expect(bar.getByText("Saqient", { exact: true })).toBeVisible();
-  await expect(bar.getByRole("group", { name: "Color theme" })).toBeVisible();
+  await expect(bar.getByRole("button", { name: "Color theme" })).toBeVisible();
   await noPageScroll(page);
   await bar.getByRole("button", { name: "Account" }).click();
   await expect(page.getByRole("menu").getByText("rep.a@saqient.test")).toBeVisible();

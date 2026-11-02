@@ -1,5 +1,5 @@
 import "./globals.css";
-import { IBM_Plex_Sans, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { IBM_Plex_Sans_Arabic, Urbanist } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { ThemeProvider } from "next-themes";
@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Self-hosted at build time by next/font: no runtime request to Google.
-const latin = IBM_Plex_Sans({ subsets: ["latin"], variable: "--font-latin" });
+const latin = Urbanist({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-latin" });
 // Arabic glyphs fall through to this face via unicode-range; not preloaded while the UI is English-only.
 const arabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic"],
@@ -29,7 +29,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <body>
         <NextIntlClientProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <ThemeProvider
+            attribute="data-theme"
+            defaultTheme="dark"
+            enableSystem
+            storageKey="app:theme"
+            themes={["light", "dark"]}
+          >
+            <div aria-hidden className="app-backdrop" />
             <TooltipProvider>
               {children}
               <Toaster />

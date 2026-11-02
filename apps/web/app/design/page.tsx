@@ -83,8 +83,7 @@ const VAT_CATEGORIES = ["standard", "zero_rated", "exempt"] as const;
 const BADGE_VARIANTS = ["default", "secondary", "outline", "destructive"] as const;
 const CURRENCIES = ["OMR", "AED", "INR"] as const;
 const TABLE_STATES = ["ready", "loading", "empty", "error"] as const;
-const CHART_SLOTS = [1, 2, 3, 4, 5, 6, 7, 8];
-const ORDINAL_SLOTS = [1, 2, 3, 4, 5];
+const CHART_SLOTS = [1, 2, 3, 4];
 // Showcase only: hover can't be forced from CSS, so mirror each variant's hover class here.
 const HOVER: Record<(typeof VARIANTS)[number], string> = {
   default: "bg-primary/80",
@@ -241,14 +240,6 @@ export default async function DesignPage() {
                 <li key={n} className="flex flex-col items-center gap-1 text-xs">
                   <span aria-hidden className="size-8 rounded-sm" style={{ background: `var(--chart-${n})` }} />
                   <code>{`chart-${n}`}</code>
-                </li>
-              ))}
-            </ol>
-            <ol className="flex flex-wrap gap-1">
-              {ORDINAL_SLOTS.map((n) => (
-                <li key={n} className="flex flex-col items-center gap-1 text-xs">
-                  <span aria-hidden className="size-8 rounded-sm" style={{ background: `var(--ordinal-${n})` }} />
-                  <code>{`ordinal-${n}`}</code>
                 </li>
               ))}
             </ol>

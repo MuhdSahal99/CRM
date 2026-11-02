@@ -32,7 +32,9 @@ function ChartFigure({ title, data, children }: { title: ReactNode; data: Datum[
   );
 }
 
-const ORDINAL = ["--ordinal-1", "--ordinal-2", "--ordinal-3", "--ordinal-4", "--ordinal-5"];
+// The four semantic roles (sky, lime, coral, ink); later stages reuse the last one.
+const ORDINAL = ["--chart-1", "--chart-2", "--chart-3", "--chart-4"];
+const slotVar = (slot: number) => `--chart-${((slot - 1) % ORDINAL.length) + 1}`;
 
 // Charts keep LTR geometry in RTL pages (DESIGN_SYSTEM.md § Charts); text inside still shapes correctly.
 export function PipelineFunnel({ title, data }: { title: ReactNode; data: (Datum & { label: string })[] }) {
@@ -67,7 +69,7 @@ export function PipelineFunnel({ title, data }: { title: ReactNode; data: (Datum
 
 export function Donut({ title, data, centerLabel }: { title: ReactNode; data: (Datum & { slot: number })[]; centerLabel: ReactNode }) {
   // `slot` (1–8) is fixed per category by the caller, so filtering never repaints the survivors.
-  const config = Object.fromEntries(data.map((d) => [d.key, { label: d.name, color: `var(--chart-${d.slot})` }])) satisfies ChartConfig;
+  const config = Object.fromEntries(data.map((d) => [d.key, { label: d.name, color: `var(${slotVar(d.slot)})` }])) satisfies ChartConfig;
   return (
     <ChartFigure title={title} data={data}>
       <div className="relative mx-auto size-48">
@@ -90,7 +92,7 @@ export function Donut({ title, data, centerLabel }: { title: ReactNode; data: (D
       <ul className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs">
         {data.map((d) => (
           <li key={d.key} className="flex items-center gap-1.5">
-            <span aria-hidden className="size-2.5 rounded-xs" style={{ background: `var(--chart-${d.slot})` }} />
+            <span aria-hidden className="size-2.5 rounded-xs" style={{ background: `var(${slotVar(d.slot)})` }} />
             {d.name}
           </li>
         ))}
