@@ -80,6 +80,7 @@ test("T5.10 (US-03): the deactivate dialog can transfer the user's open records 
   await confirm.getByLabel("Transfer their open records to").selectOption({ label: "Saqient Admin" });
   await noPageScroll(page);
   await confirm.getByRole("button", { name: "Deactivate" }).click();
-  await expect(confirm).toBeHidden();
+  // Two requests in a row (transfer, then deactivate); on a cold dev server each compiles its route first (~2 s idle, more in CI).
+  await expect(confirm).toBeHidden({ timeout: 15_000 });
   await expect(page.getByText("Deactivated", { exact: true })).toBeVisible();
 });
