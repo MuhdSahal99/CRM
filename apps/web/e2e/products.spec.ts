@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { noPageScroll, phoneAndDesktop, signInToApp } from "./helpers";
+import { clickUntil, noPageScroll, phoneAndDesktop, signInToApp } from "./helpers";
 
 phoneAndDesktop();
 
 test("T6.06 (US-08): the admin creates a Zero-rated product; a rep sees it read-only", async ({ page, browser }) => {
+  test.slow(); // two sign-ins and a 200-row list on a cold dev server
   const code = `ZR-${crypto.randomUUID().slice(0, 8)}`;
   const name = `Zero Product ${code}`;
   await signInToApp(page, "admin@saqient.test");
@@ -24,8 +25,7 @@ test("T6.06 (US-08): the admin creates a Zero-rated product; a rep sees it read-
   await rep.goto("/app/Products?per_page=200");
   await expect(rep.getByRole("link", { name }).first()).toBeVisible({ timeout: 30_000 });
   await expect(rep.getByRole("link", { name: "New" })).toHaveCount(0);
-  await rep.getByRole("link", { name }).first().click();
-  await expect(rep.getByRole("heading", { name })).toBeVisible();
+  await clickUntil(rep.getByRole("link", { name }).first(), () => expect(rep.getByRole("heading", { name })).toBeVisible({ timeout: 8_000 }));
   await expect(rep.getByRole("link", { name: "Edit" })).toHaveCount(0);
   await rep.close();
 });

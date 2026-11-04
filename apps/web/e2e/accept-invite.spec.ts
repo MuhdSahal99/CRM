@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { noPageScroll, phoneAndDesktop, signInToApp } from "./helpers";
+import { clickUntil, noPageScroll, phoneAndDesktop, signInToApp } from "./helpers";
 
 phoneAndDesktop();
 
@@ -7,7 +7,7 @@ test("US-03: an invited person opens the link, sets a name and password, and lan
   const email = `accept-${crypto.randomUUID().slice(0, 8)}@example.test`;
   await signInToApp(page, "admin@saqient.test");
   await page.goto("/app/settings/users");
-  await page.getByRole("button", { name: "Invite user" }).click();
+  await clickUntil(page.getByRole("button", { name: "Invite user" }), () => expect(page.getByRole("dialog", { name: "Invite a user" })).toBeVisible({ timeout: 3_000 }));
   const dialog = page.getByRole("dialog", { name: "Invite a user" });
   await dialog.getByLabel("Name").fill("Invited Person");
   await dialog.getByLabel("Email").fill(email);

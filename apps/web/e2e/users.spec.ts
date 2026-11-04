@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createDisposableRep, noPageScroll, phoneAndDesktop, signIn, signInToApp } from "./helpers";
+import { clickUntil, createDisposableRep, noPageScroll, phoneAndDesktop, signIn, signInToApp } from "./helpers";
 
 phoneAndDesktop();
 
@@ -11,7 +11,7 @@ test("T1.25: an admin sees the org's users and invites a rep", async ({ page }) 
   await noPageScroll(page);
 
   const email = `invitee-${crypto.randomUUID().slice(0, 8)}@example.test`;
-  await page.getByRole("button", { name: "Invite user" }).click();
+  await clickUntil(page.getByRole("button", { name: "Invite user" }), () => expect(page.getByRole("dialog", { name: "Invite a user" })).toBeVisible({ timeout: 3_000 }));
   const dialog = page.getByRole("dialog", { name: "Invite a user" });
   await dialog.getByLabel("Name").fill("Invited Rep");
   await dialog.getByLabel("Email").fill(email);
@@ -20,16 +20,16 @@ test("T1.25: an admin sees the org's users and invites a rep", async ({ page }) 
   await page.getByRole("option", { name: "Sales Manager" }).click();
   await dialog.getByRole("button", { name: "Send invite" }).click();
 
-  await expect(dialog.getByLabel("Invitation link")).toHaveValue(/\/accept-invite\/[A-Za-z0-9_-]{43}$/);
+  await expect(dialog.getByLabel("Invitation link")).toHaveValue(/\/accept-invite\/[A-Za-z0-9_-]{43}$/, { timeout: 15_000 });
   await dialog.getByRole("button", { name: "Close" }).first().click();
-  await expect(page.getByText(email).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByText(email).filter({ visible: true }).first()).toBeVisible({ timeout: 15_000 }); // the list refreshes after the dialog closes
   await noPageScroll(page);
 });
 
 test("T1.25: the invite form shows the server's error under the field", async ({ page }) => {
   await signInToApp(page, "admin@saqient.test");
   await page.goto("/app/settings/users");
-  await page.getByRole("button", { name: "Invite user" }).click();
+  await clickUntil(page.getByRole("button", { name: "Invite user" }), () => expect(page.getByRole("dialog", { name: "Invite a user" })).toBeVisible({ timeout: 3_000 }));
   const dialog = page.getByRole("dialog", { name: "Invite a user" });
   await dialog.getByLabel("Name").fill("Duplicate");
   await dialog.getByLabel("Email").fill("rep.b@saqient.test");

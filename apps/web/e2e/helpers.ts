@@ -1,17 +1,52 @@
 import { createDb, newId } from "@crm/db";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import { sql } from "drizzle-orm";
+import { clearThrottle } from "./global-setup";
 
 // Seeded users (docs/PRODUCTION_READINESS.md); the password comes from SEED_PASSWORD in the root .env.local.
 export const PASSWORD = process.env.SEED_PASSWORD ?? "";
+
+/**
+ * Waits until the page is interactive: every button and input in <main> and in an open dialog has its React handlers attached.
+ * A click before this lands on server-rendered markup and is lost (the dev server hydrates late on a busy machine).
+ */
+export async function hydrated(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const els = [...document.querySelectorAll("main button, main input, main select, main textarea, [role=dialog] button")];
+      return els.every((e) => Object.keys(e).some((k) => k.startsWith("__reactProps")));
+    },
+    null,
+    { timeout: 30_000 },
+  );
+}
+
+/**
+ * Clicks until the click has its effect. On a dev server a late Fast Refresh can remount the page after it hydrates and
+ * drop the first click; this retries the click together with the outcome it must produce (no fixed sleep).
+ */
+export async function clickUntil(target: Locator, outcome: () => Promise<void>) {
+  await expect(async () => {
+    await target.click({ timeout: 5_000 });
+    await outcome();
+  }).toPass({ timeout: 30_000 });
+}
 
 /** Runs a spec at phone and desktop width only (colour scheme is irrelevant), each test as its own client IP. */
 export function phoneAndDesktop() {
   test.beforeEach(async ({ page }, info) => {
     test.skip(!/^w(360|1440)-light$/.test(info.project.name), "runs at phone and desktop widths; colour scheme is irrelevant");
     if (!PASSWORD) throw new Error("SEED_PASSWORD is not set (root .env.local)");
+    await clearThrottle();
     // Every local request otherwise shares one per-IP sign-in bucket (AC-31, 10 per 15 min).
+    // Every navigation inside the app returns once the page is interactive, so no spec clicks into a pre-hydration page.
+    const goto = page.goto.bind(page);
+    page.goto = async (url, options) => {
+      const response = await goto(url, options);
+      if (new URL(page.url()).pathname.startsWith("/app")) await hydrated(page);
+      return response;
+    };
     await page.setExtraHTTPHeaders({ "x-forwarded-for": `10.${Array.from({ length: 3 }, () => Math.floor(Math.random() * 256)).join(".")}` });
   });
 }

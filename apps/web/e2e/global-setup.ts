@@ -1,8 +1,10 @@
 import { Redis } from "ioredis";
 
-// Each run signs the same seeded users in many times; the per-account sign-in limit (AC-31: 20 per 15 min) would
-// otherwise lock them out across back-to-back runs. Clears only the throttle counters, in the dev/CI Redis.
-export default async function globalSetup() {
+/**
+ * The sign-in limit (AC-31: 20 per account per 15 min) is per account, and the seeded users sign in many times per run,
+ * so the counters are cleared before the run and before every spec. Clears only the throttle counters, in the dev/CI Redis.
+ */
+export async function clearThrottle() {
   if (!process.env.REDIS_URL) throw new Error("REDIS_URL is not set (root .env.local)");
   const redis = new Redis(process.env.REDIS_URL);
   try {
@@ -12,3 +14,5 @@ export default async function globalSetup() {
     redis.disconnect();
   }
 }
+
+export default clearThrottle;

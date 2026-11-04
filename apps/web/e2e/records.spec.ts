@@ -13,8 +13,10 @@ test("T2.11: the Accounts list renders from metadata, pages, and has an empty st
   // Phone: a card list; desktop: a table with metadata-driven column headers.
   if (isPhone(page)) await expect(page.getByRole("list", { name: "Accounts" })).toBeVisible();
   else await expect(page.getByRole("columnheader", { name: "Account Name" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Al Noor Trading LLC" }).filter({ visible: true })).toBeVisible();
   await noPageScroll(page);
+  // Other specs add accounts, which push the seeded one off the newest-first first page: read the oldest-first page.
+  await page.goto("/app/Accounts?sort_order=asc");
+  await expect(page.getByRole("link", { name: "Al Noor Trading LLC" }).filter({ visible: true })).toBeVisible();
 
   await page.goto("/app/Accounts?per_page=1");
   await page.getByRole("link", { name: "Next page" }).click();
