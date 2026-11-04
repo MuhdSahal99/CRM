@@ -472,7 +472,24 @@
     "vatRates": "VAT rates",
     "exchangeRates": "Exchange rates",
     "import": "Import from Zoho",
-    "activities": "My Activities"
+    "activities": "My Activities",
+    "brand": "Saqient",
+    "skip": "Skip to content",
+    "dock": "Quick actions",
+    "search": "Search",
+    "create": "Create",
+    "today": "Today",
+    "settings": "Settings",
+    "newModule": "New {module}",
+    "palette": {
+      "title": "Command palette",
+      "description": "Search pages and records, or start a new one.",
+      "placeholder": "Search or jump to…",
+      "empty": "No results.",
+      "pages": "Pages",
+      "records": "Records",
+      "actions": "Actions"
+    }
   },
   "modules": {
     "Leads": "Leads",

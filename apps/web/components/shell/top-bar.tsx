@@ -1,28 +1,38 @@
 "use client";
 
-import { LogOutIcon, UserIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { LogOutIcon, OrbitIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/lib/auth-client";
+import { CommandPalette, type SearchModule } from "./command-palette";
+import { Dock } from "./dock";
 import type { NavItem } from "./nav-items";
-import { MobileNav } from "./sidebar";
+import { activeHref, PillTabs } from "./pill-tabs";
 
-type Props = { items: NavItem[]; orgName: string; user: { name: string; email: string } };
+type Props = { items: NavItem[]; user: { name: string; email: string }; searchModules: SearchModule[] };
 
-/** Sticky app bar: phone menu, org name, theme, and the account menu with sign out. */
-export function TopBar({ items, orgName, user }: Props) {
+/** The shell chrome: transparent sticky top bar (brand, pill tabs, account), the dock, and the ⌘K palette. */
+export function TopBar({ items, user, searchModules }: Props) {
   const t = useTranslations("shell");
+  const tTheme = useTranslations("theme");
   const router = useRouter();
+  const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const tabs = items.filter((i) => i.group !== "settings"); // settings live in the dock, not the tabs
 
   async function onSignOut() {
     await signOut();
@@ -31,28 +41,47 @@ export function TopBar({ items, orgName, user }: Props) {
   }
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b bg-background px-4 sm:px-6">
-      <MobileNav items={items} />
-      <p className="min-w-0 flex-1 truncate font-medium">{orgName}</p>
-      <ThemeToggle />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={t("account")}>
-            <UserIcon />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-56">
-          <DropdownMenuLabel className="flex flex-col">
-            <span className="truncate">{user.name}</span>
-            <span className="truncate font-normal text-muted-foreground">{user.email}</span>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={onSignOut}>
-            <LogOutIcon className="rtl:rotate-180" />
-            {t("signOut")}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </header>
+    <>
+      <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-(--gutter) py-3 md:min-h-(--topbar-h) md:flex-nowrap xl:grid xl:grid-cols-[1fr_auto_1fr]">
+        <Link href="/app" className="flex items-center gap-2.5 rounded-full">
+          <span aria-hidden className="grid size-8 place-items-center rounded-[10px] bg-primary text-primary-foreground">
+            <OrbitIcon className="size-[18px]" strokeWidth={1.6} />
+          </span>
+          <span className="text-xl font-semibold tracking-tight">{t("brand")}</span>
+        </Link>
+        <div className="order-last min-w-0 basis-full md:order-none md:basis-auto md:flex-1 xl:flex-none">
+          <PillTabs items={tabs} active={activeHref(tabs, pathname)} />
+        </div>
+        <div className="flex items-center justify-end gap-2 md:flex-none">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" aria-label={t("account")} className="grid size-9 place-items-center rounded-full bg-pill text-sm font-semibold text-on-pill">
+                {user.name.trim().charAt(0).toUpperCase()}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-auto min-w-56">
+              <DropdownMenuLabel className="flex flex-col">
+                <span className="truncate">{user.name}</span>
+                <span className="truncate font-normal text-muted-foreground">{user.email}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{tTheme("label")}</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                <DropdownMenuRadioItem value="light">{tTheme("light")}</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="dark">{tTheme("dark")}</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="system">{tTheme("system")}</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={onSignOut}>
+                <LogOutIcon className="rtl:rotate-180" />
+                {t("signOut")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      <Dock items={items} onSearch={() => setPaletteOpen(true)} searchOpen={paletteOpen} />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} items={items} searchModules={searchModules} />
+    </>
   );
 }

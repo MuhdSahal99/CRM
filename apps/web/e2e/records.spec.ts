@@ -7,7 +7,6 @@ const isPhone = (page: Page) => page.viewportSize()!.width < 768;
 
 test("T2.11: the Accounts list renders from metadata, pages, and has an empty state", async ({ page }) => {
   await signInToApp(page, "rep.a@saqient.test");
-  if (isPhone(page)) await page.getByRole("button", { name: "Open menu" }).click();
   await page.getByRole("link", { name: "Accounts" }).filter({ visible: true }).first().click();
   await expect(page).toHaveURL(/\/app\/Accounts$/);
   await expect(page.getByRole("heading", { level: 1, name: "Accounts" })).toBeVisible();
