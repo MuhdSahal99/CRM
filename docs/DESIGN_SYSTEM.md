@@ -91,6 +91,32 @@ Implemented by `formatMoney(value, currency, locale)` in `apps/web/lib/format.ts
 | Quantities | Up to 3 dp, trimmed (`2`, `1.5`, `0.125`), via next-intl `format.number` |
 | Dates | next-intl `format.dateTime`, `dateStyle: "medium"` in tables. Business dates are interpreted in `Asia/Muscat` (set in `i18n/request.ts`) |
 
+## Glass kit and measured contrast
+
+The glass primitives (`components/ui`: `glass-card` (GlassCard, HeroNumber, Tile, Well), `icon-button`, `segmented`, `filter-chip`, `search-input`, `field`, `avatar`, `status` (StatusPill, DeltaBadge, StatChip), `progress` (ProgressBar, ProgressRing, ProportionBar), `empty-state`, plus the restyled Button, Input, Select, Textarea, Checkbox, Switch, RadioGroup, Badge and Skeleton) are shown on `/design` in the "Glass kit" section: dark, light and an RTL preview, each on its own backdrop and wash (`.kit-stage`; `data-theme` on any element re-maps the tokens).
+
+**Method.** Text colour against each surface composited over the wash and a worst-case photo: the photo is taken as dark as #1f1f1f or as bright as #e0e0e0 (the real photo lies between; re-measure when `public/bg/dusk.webp` lands). Blur is ignored. `lib/glass-contrast.test.ts` recomputes these from `globals.css` and fails under 4.5:1.
+
+Glass opacity was raised from the first spec values where they failed: light `--glass`/`--glass-tile` 50% to 65%, dark `--glass` 46% to 72%, dark `--glass-tile` 52% to 72%. Text tokens: light `--faint` #575e59 to #4f5651, `--good` #3c7a14 to #2d5f0e, `--bad` #b8401f to #9a3414; dark `--muted` #c2c7c1 to #d0d4cf, `--faint` #9ca29c to #b9beb8, `--bad` #ff9a7c to #ffb199.
+
+Worst case per theme and surface (ratio, minimum of the two photo extremes; "+well" is a Well on that surface):
+
+| Pair | Light | Dark |
+|---|---|---|
+| text on glass | 13.83 | 11.81 |
+| muted on glass | 6.16 | 8.72 |
+| faint on glass | 5.79 | 6.92 |
+| text / muted / faint on glass-2 | 16.18 / 7.21 / 6.78 | 9.25 / 6.82 / 5.42 |
+| text / muted / faint on tile | 13.83 / 6.16 / 5.79 | 11.57 / 8.54 / 6.78 |
+| text / muted / faint on glass+well | 12.32 / 5.49 / 5.16 | 9.48 / 7.00 / 5.56 |
+| good / bad on glass | 5.85 / 5.60 | 9.03 / 7.47 |
+| good / bad on glass+well | 5.21 / 4.99 | 7.25 / 6.00 |
+| text / muted / faint / good / bad on float | 17.16 / 7.64 / 7.19 / 7.26 / 6.95 | 14.21 / 10.49 / 8.33 / 10.87 / 8.99 |
+| on-pill on pill | 16.75 | 7.96 |
+| on-accent on accent (lime) | 13.57 | 13.57 |
+
+DeltaBadge, Badge `alert` and the lime CTA put `--on-accent` (#13171a, in both themes) on sky, coral or lime fills; semantic colours are never the only signal (label or dot beside them).
+
 ## Patterns
 
 ### Data table (`patterns/data-table.tsx`)

@@ -17,3 +17,8 @@ export function formatMoney(value: string, currency: Currency, locale: string): 
     numberingSystem: "latn",
   }).format(value as Intl.StringNumericLiteral);
 }
+
+/** A 0-100 value as a whole percent in the locale's digits (display only). */
+export function formatPercent(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 }).format(value / 100);
+}

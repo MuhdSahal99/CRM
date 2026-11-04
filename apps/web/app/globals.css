@@ -87,15 +87,16 @@
   --blur-glass: 22px;
 }
 
-:root {
+:root,
+[data-theme="light"] {
   /* LIGHT THEME: docs/GLASS_SPEC.md section 3 */
-  --bg: #e9ece7; --text: #13171a; --muted: #4b524e; --faint: #575e59;
-  --glass: #ffffff80; --glass-2: #ffffff94; --glass-3: #ffffffdb; --glass-tile: #ffffff80;
+  --bg: #e9ece7; --text: #13171a; --muted: #4b524e; --faint: #4f5651;
+  --glass: #ffffffa6; --glass-2: #ffffff94; --glass-3: #ffffffdb; --glass-tile: #ffffffa6;
   --solid: #f4f6f2; --float: #f8faf6; --well: #1216140f;
   --line: #1216141a; --line-2: #1216142e; --rim: #ffffffb8;
   --sky: #5aa6ec; --lime: #a9d636; --coral: #f27d5f; --ink: #13171a; --cream: #f6f7f3;
   --accent: #c4ef4f; --on-accent: #13171a;
-  --good: #3c7a14; --bad: #b8401f;
+  --good: #2d5f0e; --bad: #9a3414;
   --pill: #13171a; --on-pill: #f6f7f3;
   --wash: linear-gradient(180deg, #f0f3eea8, #f0f3ee99 45%, #ecefe9b3);
   --blur: blur(22px) saturate(150%);
@@ -106,7 +107,11 @@
   --app-max: 1840px; --dock-w: 60px; --topbar-h: 64px;
   --ctl-h: 40px; --ctl-h-sm: 32px; --icon-btn: 34px;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 
+/* The shadcn tokens resolve per element, so a themed panel (data-theme on any element) re-maps them too. */
+:root,
+[data-theme] {
   /* shadcn tokens, re-pointed to the spec (section 13) */
   --radius: 0.75rem;
   --background: var(--bg);
@@ -134,12 +139,12 @@
 
 [data-theme="dark"] {
   /* DARK THEME (default) */
-  --bg: #111513; --text: #f2f4f0; --muted: #c2c7c1; --faint: #9ca29c;
-  --glass: #14171775; --glass-2: #ffffff14; --glass-3: #1e2322; --glass-tile: #16191985;
+  --bg: #111513; --text: #f2f4f0; --muted: #d0d4cf; --faint: #b9beb8;
+  --glass: #141717b8; --glass-2: #ffffff14; --glass-3: #1e2322; --glass-tile: #161919b8;
   --solid: #1a1e1d; --float: #1f2423; --well: #ffffff12;
   --line: #ffffff1a; --line-2: #ffffff2e; --rim: #ffffff26;
   --sky: #8cc4ff; --lime: #cdf06a; --coral: #ff9a7c; --ink: #f2f4f0; --cream: #f2f4f0;
-  --good: #b8e65a; --bad: #ff9a7c;
+  --good: #b8e65a; --bad: #ffb199;
   --pill: #585e5dbd; --on-pill: #f2f4f0;
   --wash: linear-gradient(180deg, #080b0a80, #080b0a6b 45%, #080b0a8c);
   --shadow: inset 0 1px 0 #ffffff1f, 0 30px 60px -30px #0009;
@@ -241,4 +246,39 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Loading skeleton: a glass-tile block with a soft shimmer sweeping toward the inline end. */
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@utility skeleton-shimmer {
+  background-color: var(--glass-tile);
+  border: 1px solid var(--line);
+  background-image: linear-gradient(90deg, transparent, var(--glass-2), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+:dir(rtl) .skeleton-shimmer {
+  animation-direction: reverse;
+}
+
+/* A themed stage for the /design kit: the same backdrop recipe as .app-backdrop, scoped to one panel so both themes sit side by side. */
+.kit-stage {
+  position: relative;
+  isolation: isolate;
+  color: var(--text);
+  background:
+    radial-gradient(60% 50% at 20% 15%, color-mix(in srgb, var(--sky) 28%, transparent), transparent 70%),
+    radial-gradient(50% 45% at 85% 80%, color-mix(in srgb, var(--coral) 24%, transparent), transparent 70%),
+    var(--bg);
+}
+.kit-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--wash);
 }

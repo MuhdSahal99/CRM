@@ -71,6 +71,7 @@
     "intro": "Tokens, components and patterns for the Saqient CRM. Every state in light and dark, with an RTL preview. Spec: docs/DESIGN_SYSTEM.md.",
     "toc": "On this page",
     "sections": {
+      "glass": "Glass kit",
       "colors": "Color tokens",
       "type": "Typography",
       "space": "Spacing, radius, elevation",
@@ -212,6 +213,113 @@
     },
     "rtl": {
       "note": "dir=\"rtl\" with the Radix DirectionProvider. UI labels stay English until ar.json lands in Phase 2; record data is Arabic sample text. Icons that point a direction are mirrored, numbers and money stay LTR."
+    },
+    "kit": {
+      "note": "Every glass primitive, in the dark and light themes and mirrored for RTL. Each panel carries its own backdrop and wash.",
+      "dark": "Dark theme",
+      "light": "Light theme",
+      "rtl": "RTL preview",
+      "card": {
+        "title": "Revenue",
+        "subtitle": "Last six months",
+        "caption": "<b>OMR</b> won in 12 months · <b>0</b> of 12 at target"
+      },
+      "range": {
+        "label": "Range",
+        "3m": "3M",
+        "6m": "6M",
+        "12m": "12M"
+      },
+      "view": {
+        "label": "View",
+        "grid": "Grid",
+        "table": "Table"
+      },
+      "actions": {
+        "expand": "Expand",
+        "more": "More actions",
+        "add": "Add",
+        "mail": "Send email"
+      },
+      "stat": {
+        "won": "Won this month",
+        "rate": "Win rate",
+        "open": "Open deals",
+        "up": "+8% vs last month",
+        "down": "−2% vs last month",
+        "flat": "0% vs last month"
+      },
+      "tile": {
+        "section": "Items",
+        "date": "Fri, 14 Nov",
+        "title": "Gulf Logistics renewal",
+        "subtitle": "Al Noor Trading LLC",
+        "stage": "Proposal · 60%",
+        "well": "Entity summary",
+        "pipeline": "Open pipeline",
+        "contact": "Last contact",
+        "contactValue": "2 days ago"
+      },
+      "buttons": {
+        "title": "Buttons",
+        "primary": "New deal",
+        "secondary": "Secondary",
+        "ghost": "Ghost",
+        "danger": "Delete",
+        "disabled": "Disabled"
+      },
+      "search": "Search the kit",
+      "chips": {
+        "title": "Search and filters",
+        "label": "Filters",
+        "mine": "My deals",
+        "team": "Team"
+      },
+      "forms": {
+        "title": "Form fields",
+        "name": "Deal name",
+        "nameValue": "Gulf Logistics renewal",
+        "hint": "Shown to the whole team.",
+        "email": "Contact email",
+        "error": "Enter a complete email address.",
+        "stage": "Stage",
+        "proposal": "Proposal",
+        "won": "Closed won",
+        "notes": "Notes",
+        "agree": "I agree",
+        "notify": "Notify me",
+        "plan": "Plan",
+        "planA": "Standard",
+        "planB": "Premium"
+      },
+      "status": {
+        "title": "Status, avatars and progress",
+        "new": "New",
+        "won": "Won",
+        "overdue": "Overdue",
+        "closed": "Closed"
+      },
+      "progress": {
+        "bar": "Quota progress",
+        "ring": "Target reached",
+        "caption": "of target"
+      },
+      "mix": {
+        "title": "Stage mix",
+        "name": "Stage",
+        "count": "Deals",
+        "value": "Value",
+        "share": "Share"
+      },
+      "empty": {
+        "section": "Empty state",
+        "title": "No deals yet",
+        "text": "Create a deal to see it here.",
+        "action": "New deal"
+      },
+      "loading": {
+        "title": "Loading"
+      }
     }
   },
   "brand": {
@@ -1208,7 +1316,12 @@
     "failed": "The email could not be queued. Try again.",
     "title": "Emails",
     "empty": "No emails sent yet.",
-    "status": { "queued": "Queued", "sending": "Sending", "sent": "Sent", "failed": "Failed" }
+    "status": {
+      "queued": "Queued",
+      "sending": "Sending",
+      "sent": "Sent",
+      "failed": "Failed"
+    }
   },
   "whatsapp": {
     "title": "Shared links",
@@ -1219,7 +1332,11 @@
     "text": "Hello {name}, here is your {title}:",
     "preparing": "The PDF is being prepared. Try again in a moment.",
     "failed": "The link could not be created. Try again.",
-    "state": { "active": "Active", "expired": "Expired", "revoked": "Revoked" },
+    "state": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
     "until": "until {date}",
     "opened": "{count, plural, one {Opened once} other {Opened # times}}",
     "revoke": "Revoke"
@@ -1243,7 +1360,15 @@
     "reportTitle": "Dry run result",
     "doneTitle": "Import finished",
     "failedTitle": "The import could not finish",
-    "status": { "uploaded": "Queued", "validating": "Checking", "validated": "Ready", "importing": "Importing", "done": "Done", "failed": "Failed", "cancelled": "Cancelled" },
+    "status": {
+      "uploaded": "Queued",
+      "validating": "Checking",
+      "validated": "Ready",
+      "importing": "Importing",
+      "done": "Done",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
     "rows": "Rows",
     "ready": "Ready to import",
     "imported": "Imported",

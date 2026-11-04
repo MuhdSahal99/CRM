@@ -42,6 +42,7 @@ test("T1.23: the dock offers search, create and today; the palette opens with Ct
 
 test("T1.23: the first Tab stop is the skip link, which moves focus to the main content", async ({ page }) => {
   await signInToApp(page, "rep.a@saqient.test");
+  await page.goto("/app"); // a fresh load, so the first Tab starts at the top of the page
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
   await page.keyboard.press("Enter");

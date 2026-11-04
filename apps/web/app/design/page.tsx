@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Money } from "@/components/money";
+import { GlassKit } from "./glass-kit";
 import { Donut, Gauge, PipelineFunnel } from "@/components/patterns/charts";
 import { DataTable, type Column } from "@/components/patterns/data-table";
 import type { KanbanColumn } from "@/components/patterns/kanban";
@@ -73,7 +74,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-const SECTIONS = ["colors", "type", "space", "buttons", "forms", "badges", "money", "table", "kanban", "lineItems", "charts", "overlays", "rtl"] as const;
+const SECTIONS = ["glass", "colors", "type", "space", "buttons", "forms", "badges", "money", "table", "kanban", "lineItems", "charts", "overlays", "rtl"] as const;
 const VARIANTS = ["default", "secondary", "outline", "ghost", "destructive", "link"] as const;
 const STAGES: Stage[] = ["qualification", "needs_analysis", "proposal", "negotiation", "closed_won", "closed_lost"];
 const KANBAN_STAGES: Stage[] = ["qualification", "needs_analysis", "proposal", "negotiation"];
@@ -205,6 +206,23 @@ export default async function DesignPage() {
       </nav>
 
       <main>
+        <Section id="glass" title={t("sections.glass")}>
+          <p className="mb-4 max-w-prose text-muted-foreground">{t("kit.note")}</p>
+          <div className="flex flex-col gap-6">
+            <div data-theme="dark" data-kit="dark" role="group" aria-label={t("kit.dark")} className="kit-stage overflow-hidden rounded-card">
+              <GlassKit />
+            </div>
+            <div data-theme="light" data-kit="light" role="group" aria-label={t("kit.light")} className="kit-stage overflow-hidden rounded-card">
+              <GlassKit />
+            </div>
+            <div data-theme="dark" data-kit="rtl" dir="rtl" lang="ar" role="group" aria-label={t("kit.rtl")} className="kit-stage overflow-hidden rounded-card">
+              <DirectionProvider dir="rtl">
+                <GlassKit />
+              </DirectionProvider>
+            </div>
+          </div>
+        </Section>
+
         <Section id="colors" title={t("sections.colors")}>
           <p className="mb-4 max-w-prose text-muted-foreground">{t("colors.note")}</p>
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
