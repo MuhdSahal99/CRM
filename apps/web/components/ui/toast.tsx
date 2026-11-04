@@ -5,7 +5,7 @@ import { CircleCheckIcon, InfoIcon, OctagonXIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { toast as sonner } from "sonner";
-import { toastIn } from "@/lib/motion";
+import { TOAST_MS, toastIn } from "@/lib/motion";
 
 type Kind = "success" | "info" | "error";
 const ICON = { success: CircleCheckIcon, info: InfoIcon, error: OctagonXIcon };
@@ -38,5 +38,5 @@ function ToastPill({ kind, message, onUndo, dismiss }: { kind: Kind; message: st
 /** Glass toast pill, bottom-centre, 4s (Toaster sets the region's aria-live="polite"). `onUndo` adds an Undo text button. */
 export function notify(message: string, opts: { kind?: Kind; onUndo?: () => void } = {}) {
   const { kind = "success", onUndo } = opts;
-  return sonner.custom((id) => <ToastPill kind={kind} message={message} onUndo={onUndo} dismiss={() => sonner.dismiss(id)} />, { duration: 4000 });
+  return sonner.custom((id) => <ToastPill kind={kind} message={message} onUndo={onUndo} dismiss={() => sonner.dismiss(id)} />, { duration: TOAST_MS });
 }

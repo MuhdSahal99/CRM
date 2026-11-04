@@ -10,6 +10,8 @@ type Target = gsap.TweenTarget;
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
 const EASE_OUT = "power3.out";
+/** How long a toast stays, in ms. */
+export const TOAST_MS = 4000;
 
 /** True when the user asked for less motion. False on the server. */
 export function prefersReducedMotion(): boolean {

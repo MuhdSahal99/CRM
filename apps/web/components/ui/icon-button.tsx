@@ -6,7 +6,7 @@ import * as React from "react";
 import { iconTap, magnetic } from "@/lib/motion";
 
 const iconButtonVariants = cva(
-  "relative inline-grid shrink-0 place-items-center rounded-full text-foreground transition-colors duration-200 ease-glass disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:stroke-[1.6]",
+  "relative inline-grid shrink-0 place-items-center rounded-full text-foreground transition-colors duration-(--dur) ease-glass disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:stroke-[1.6]",
   {
     variants: {
       size: {

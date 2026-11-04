@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import type { NavItem } from "./nav-items";
 
-const BTN = "relative grid size-10 shrink-0 place-items-center rounded-full text-foreground transition-colors duration-200 ease-glass hover:bg-accent pointer-coarse:size-11";
+const BTN = "relative grid size-10 shrink-0 place-items-center rounded-full text-foreground transition-colors duration-(--dur) ease-glass hover:bg-accent pointer-coarse:size-11";
 
 function Tip({ label, children }: { label: string; children: React.ReactNode }) {
   const rtl = useLocale() === "ar";
@@ -44,7 +44,7 @@ export function Dock({ items, onSearch, searchOpen }: { items: NavItem[]; onSear
   return (
     <aside
       aria-label={t("dock")}
-      className="glass fixed z-40 flex items-center gap-1 rounded-full p-2 max-md:inset-x-3 max-md:bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-md:justify-around md:inset-s-4 md:top-1/2 md:w-(--dock-w) md:-translate-y-1/2 md:flex-col md:rounded-[30px] md:py-2.5"
+      className="glass fixed z-40 flex items-center gap-1 rounded-full p-2 max-md:inset-x-3 max-md:bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-md:justify-around md:inset-s-4 md:top-1/2 md:w-(--dock-w) md:-translate-y-1/2 md:flex-col md:rounded-dock md:py-2.5"
     >
       <Tip label={t("search")}>
         <button type="button" aria-label={t("search")} aria-keyshortcuts="Control+K Meta+K" onClick={onSearch} className={on(searchOpen)}>

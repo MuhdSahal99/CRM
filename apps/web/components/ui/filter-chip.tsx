@@ -16,7 +16,7 @@ export function FilterChip({
       aria-pressed={selected}
       data-slot="filter-chip"
       className={cn(
-        "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-200 ease-glass pointer-coarse:h-11 [&_svg]:size-4 [&_svg]:stroke-[1.6]",
+        "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-(--dur) ease-glass pointer-coarse:h-11 [&_svg]:size-4 [&_svg]:stroke-[1.6]",
         selected ? "border-transparent bg-pill text-on-pill" : "border-line-2 text-foreground hover:bg-glass-2",
         avatar && "ps-1.5",
         className,

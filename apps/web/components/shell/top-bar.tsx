@@ -44,7 +44,7 @@ export function TopBar({ items, user, searchModules }: Props) {
     <>
       <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-(--gutter) py-3 md:min-h-(--topbar-h) md:flex-nowrap xl:grid xl:grid-cols-[1fr_auto_1fr]">
         <Link href="/app" className="flex items-center gap-2.5 rounded-full">
-          <span aria-hidden className="grid size-8 place-items-center rounded-[10px] bg-primary text-primary-foreground">
+          <span aria-hidden className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground">
             <OrbitIcon className="size-[18px]" strokeWidth={1.6} />
           </span>
           <span className="text-xl font-semibold tracking-tight">{t("brand")}</span>

@@ -89,7 +89,7 @@ export function Segmented({
             value={o.value}
             data-segment=""
             className={cn(
-              "relative inline-flex h-7 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-200 pointer-coarse:h-10 [&_svg]:size-4 [&_svg]:stroke-[1.6]",
+              "relative inline-flex h-7 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-(--dur) pointer-coarse:h-10 [&_svg]:size-4 [&_svg]:stroke-[1.6]",
               o.value === value ? "text-on-pill" : "text-muted-foreground hover:text-foreground",
             )}
           >

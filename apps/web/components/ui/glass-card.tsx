@@ -35,7 +35,7 @@ export function HeroNumber({ value, caption, className }: { value: React.ReactNo
   );
 }
 
-const tileVariants = cva("rounded-tile border border-line bg-glass-tile p-4 transition-[border-color,transform] duration-200 ease-glass", {
+const tileVariants = cva("rounded-tile border border-line bg-glass-tile p-4 transition-[border-color,transform] duration-(--dur) ease-glass", {
   variants: {
     tint: {
       none: "",

@@ -81,7 +81,7 @@ function DealCard({ card, column, columns, moveLabel, onMove, compact }: CardPro
       data-card-id={card.id}
       {...listeners}
       className={cn(
-        "flex items-start gap-1 rounded-tile border border-line p-3 transition-[border-color,opacity] duration-200 ease-glass hover:border-line-2",
+        "flex items-start gap-1 rounded-tile border border-line p-3 transition-[border-color,opacity] duration-(--dur) ease-glass hover:border-line-2",
         TONE_TINT[column.tone ?? "sky"],
         isDragging && "opacity-30",
       )}
@@ -146,7 +146,7 @@ function StageColumn({ col, ...rest }: { col: KanbanColumn } & Omit<CardProps, "
     <section
       ref={setNodeRef}
       aria-label={col.title}
-      className={cn("glass flex flex-col gap-3 rounded-card p-3 transition-[border-color,box-shadow] duration-200 ease-glass", COLUMN_W, isOver && "border-line-2 shadow-pop")}
+      className={cn("glass flex flex-col gap-3 rounded-card p-3 transition-[border-color,box-shadow] duration-(--dur) ease-glass", COLUMN_W, isOver && "border-line-2 shadow-pop")}
     >
       <header className="flex items-center gap-2 px-1">
         <span aria-hidden className={cn("size-2.5 shrink-0 rounded-full", TONE_BG[col.tone ?? "sky"])} />
@@ -177,7 +177,7 @@ function OutcomeZone({ col, ...rest }: { col: KanbanColumn } & Omit<CardProps, "
     <section
       ref={setNodeRef}
       aria-label={col.title}
-      className={cn("flex flex-col gap-3 rounded-card border-2 border-dashed border-line-2 p-3 transition-[border-color,background-color] duration-200 ease-glass", isOver && "border-text bg-glass-2")}
+      className={cn("flex flex-col gap-3 rounded-card border-2 border-dashed border-line-2 p-3 transition-[border-color,background-color] duration-(--dur) ease-glass", isOver && "border-text bg-glass-2")}
     >
       <header className="flex flex-col items-center gap-1 px-2 py-3 text-center">
         <span aria-hidden className={cn("grid size-11 place-items-center rounded-full", col.outcome === "won" ? "bg-lime text-on-accent" : "bg-coral text-on-accent")}>

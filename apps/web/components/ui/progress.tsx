@@ -59,7 +59,7 @@ export function ProportionBar({ segments, label, headers, className }: { segment
         {segments
           .filter((s) => s.count > 0)
           .map((s) => (
-            <span key={s.key} className={cn("rounded-[10px]", TONE_BG[s.tone])} style={{ flexGrow: s.count, flexBasis: 0 }} />
+            <span key={s.key} className={cn("rounded-md", TONE_BG[s.tone])} style={{ flexGrow: s.count, flexBasis: 0 }} />
           ))}
       </div>
       <table className="w-full text-[13px]">

@@ -73,6 +73,7 @@
   --radius-tile: var(--r-tile);
   --radius-well: var(--r-well);
   --radius-ctl: var(--r-ctl);
+  --radius-dock: var(--r-dock);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -104,7 +105,8 @@
   --shadow-pop: 0 24px 60px -18px #0f191459, 0 2px 6px #0f191414;
   /* Tinted tiles (GLASS_SPEC 3): light = a pastel mix with white, dark = ~22% over the tile. Derived, not new colours. */
   --tint-pct: 62%; --tint-pct-ink: 12%; --tint-base: #ffffff;
-  --r-card: 22px; --r-tile: 18px; --r-well: 14px; --r-ctl: 999px;
+  --r-card: 22px; --r-tile: 18px; --r-well: 14px; --r-ctl: 999px; --r-dock: 30px;
+  --dur-fast: 100ms; --dur: 200ms; --dur-slow: 300ms;
   --gap: 16px; --pad: 20px; --gutter: clamp(16px, 1.6vw, 28px);
   --app-max: 1840px; --dock-w: 60px; --topbar-h: 64px;
   --ctl-h: 40px; --ctl-h-sm: 32px; --icon-btn: 34px;

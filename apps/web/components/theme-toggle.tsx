@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 const noop = () => () => {};
 
 // Both icons stay mounted; the inactive one is turned 90° and faded out, so the swap is a rotate + crossfade.
-const ICON = "col-start-1 row-start-1 transition-[transform,opacity] duration-300 ease-glass";
+const ICON = "col-start-1 row-start-1 transition-[transform,opacity] duration-(--dur-slow) ease-glass";
 
 export function ThemeToggle() {
   const t = useTranslations("theme");

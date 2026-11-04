@@ -1,13 +1,13 @@
 # Design system
 
-Status: **v1** (2026-10-27) · Tokens: `apps/web/app/globals.css` · Live reference: `/design` (light, dark, RTL)
-Requirements: PRD G6/E11 · Decisions: [ADR-0016](adr/0016-i18n-rtl-mobile-first.md) (i18n, RTL, mobile), [ADR-0007](adr/0007-money-vat-currency.md) (money)
+Status: **v2, glass** (ADR-0018) · Tokens: `apps/web/app/globals.css` · Live reference: `/design` (light, dark, RTL)
+Requirements: PRD G6/E11 · Decisions: [ADR-0018](adr/0018-glass-visual-language.md) (glass), [ADR-0016](adr/0016-i18n-rtl-mobile-first.md) (i18n, RTL, mobile), [ADR-0007](adr/0007-money-vat-currency.md) (money)
 
-This is the contract every CRM screen builds on. Components come from shadcn/ui (Radix base, `radix-vega` style, initialised with `--rtl`), so they use logical classes. Patterns live in `apps/web/components/patterns/`.
+This is the contract every CRM screen builds on. Components come from shadcn/ui (Radix base, initialised with `--rtl`) restyled to the glass spec ([GLASS_SPEC](design/GLASS_SPEC.md)), so they use logical classes. Patterns live in `apps/web/components/patterns/`.
 
 ## Principles
 
-1. **Dense, calm, flat.** Reps scan tables and money all day. Use borders before shadows, a single accent color, and 150–200 ms motion only where it explains a change.
+1. **Dense, calm, glass.** Reps scan tables and money all day. Frosted surfaces sit on one photo and wash, one lime accent marks the primary action, and motion (GSAP, `lib/motion.ts`, or the `--dur*` tokens) only explains a change.
 2. **Every number is the server's number.** The UI formats decimal strings it receives. It never computes totals (CLAUDE.md, ADR-0007).
 3. **Phone first.** Everything works at 360 px with no page-level horizontal scroll, and screens widen at `sm` 640, `md` 768, `lg` 1024 and `xl` 1280.
 4. **Text is translatable and direction-neutral.** There are no literal strings and no left/right, so Arabic in Phase 2 is a translation job, not a refactor.
@@ -15,27 +15,15 @@ This is the contract every CRM screen builds on. Components come from shadcn/ui 
 
 ## Color
 
-All colors are semantic CSS variables (OKLCH) defined in `:root` and `.dark`, and exposed to Tailwind via `@theme inline` (`bg-primary`, `text-muted-foreground`, …). Raw hex or Tailwind palette classes (`bg-blue-600`) are not used in components.
+Colours are semantic CSS variables in `globals.css`: hex values in `:root`/`[data-theme="light"]` and `[data-theme="dark"]`, exposed to Tailwind via `@theme inline` (`bg-glass`, `text-muted`, `bg-accent`, …). `data-theme` on any element re-maps the tokens for that subtree. Components never use raw hex or Tailwind palette classes; the only literals outside `globals.css` and `lib/motion.ts` are the recharts attribute selectors in `ui/chart.tsx` and the standalone expired-link page in `lib/share-response.ts`.
 
-| Token pair | Use | Light | Dark | Contrast L / D |
-|---|---|---|---|---|
-| `background` / `foreground` | Page | slate-50 / slate-900 | slate-950 / slate-50 | 17.05 / 19.27 |
-| `card` / `card-foreground` | Surfaces, tables, popovers | white / slate-900 | slate-900 / slate-50 | 17.84 / 17.05 |
-| `primary` / `primary-foreground` | Primary actions, links, selection | blue-800 `#1E40AF` / white | blue-400 / slate-950 | 8.84 / 7.65 |
-| `muted` / `muted-foreground` | Secondary text, column backgrounds | slate-100 / slate-600 | slate-800 / slate-400 | 6.90 / 5.58 |
-| `accent` / `accent-foreground` | Hover and selected rows, menu highlight | blue-100 / blue-900 | blue-950 / blue-100 | 8.53 / 12.07 |
-| `highlight` / `highlight-foreground` | Rare emphasis fills (amber). Never text on its own | amber-500 / slate-900 | amber-500 / slate-950 | 8.32 / 9.40 |
-| `destructive` | Errors, delete, Closed Lost (text on card) | red-700 | red-400 | 6.42 / 6.17 |
-| `success` | Paid, Closed Won (text on card) | green-700 | green-400 | 4.94 / 10.05 |
-| `warning` | Overdue, needs review (text on card) | amber-700 | amber-400 | 5.05 / 10.39 |
-| `info` | Issued, informational (text on card) | sky-700 | sky-400 | 5.85 / 8.17 |
-| `input` | Form-control boundary (WCAG 1.4.11) | slate ≈450 | slate-500 | 3.64 / 3.74 vs card |
-| `ring` | Focus indicator | blue-600 | blue-400 | 5.26 / 6.77 vs card |
-| `border` | Decorative dividers only, never the only boundary of a control | slate-200 | white 10% | — |
+- **Text:** `text`, `muted`, `faint` (captions). **Surfaces:** `glass`, `glass-2`, `glass-3`, `glass-tile`, `well`, `solid`, `float` (popovers). **Lines:** `line`, `line-2`, `rim`.
+- **Accent:** lime `accent` with `on-accent` text, used for the primary CTA. **Semantic:** `sky`, `lime`, `coral`, `ink`; `good` and `bad` for text; `pill`/`on-pill` for tooltips and toasts.
+- **Charts:** `chart-1` … `chart-4` (sky, lime, coral, ink). Series always carry a label or the Show data table.
 
-Contrast was computed from the OKLCH values (WCAG 2 relative luminance). Re-measure any pair you change; `/design` shows the current values.
+Measured contrast is in [Glass kit and measured contrast](#glass-kit-and-measured-contrast) below and is enforced by `lib/glass-contrast.test.ts` (4.5:1 for text).
 
-**Status color rule.** Status badges are `variant="outline"` with `border-<status>/40 text-<status>` plus an icon. Avoid tinted fills (`bg-success/10`): they pull small text below 4.5:1 in light mode.
+**Status colour rule.** Status is a `StatusPill` with a dot or icon and a label, never colour alone.
 
 ## Typography
 
@@ -45,11 +33,12 @@ Contrast was computed from the OKLCH values (WCAG 2 relative luminance). Re-meas
 - **Figures.** `tabular-nums` wherever numbers align vertically: table cells, totals, axis ticks. Hero numbers may use proportional figures.
 - **Inputs on iOS.** Inputs render at 16 px on phones (shadcn `text-base md:text-sm`) to prevent zoom on focus. Keep that.
 
-## Spacing, radius, elevation
+## Spacing, radius, elevation, motion
 
-- **Spacing.** A 4 px grid (Tailwind spacing). Dense defaults: table cells `p-2`, cards `p-3`/`p-4`, form field gap `gap-1.5`, between fields `gap-5`, between sections `py-8`. The page gutter is `px-4` (16 px) at all widths, and content is capped at `max-w-6xl`.
-- **Radius.** `--radius: 0.375rem` (6 px). Tokens `rounded-sm` … `rounded-4xl` derive from it. Use `rounded-md` for controls, `rounded-lg` for cards and columns, and `rounded-4xl` for badges.
-- **Elevation.** Flat by default. `shadow-xs` on kanban cards and outline buttons, `shadow-md` on popovers and menus, `shadow-lg` on dialogs. Dark mode relies on surface steps (`background` → `card` → `muted`) more than on shadows.
+- **Spacing.** `--gap` 16 px, `--pad` 20 px, page gutter `--gutter` (clamp 16–28 px), content capped at `--app-max` 1840 px. Controls are `--ctl-h` 40 px (`--ctl-h-sm` 32 px, `--icon-btn` 34 px).
+- **Radius tokens.** `rounded-card` 22 px, `rounded-tile` 18 px, `rounded-well` 14 px, `rounded-dock` 30 px, `rounded-full` (`--r-ctl`) for controls. `rounded-sm … rounded-4xl` still derive from `--radius` (0.75 rem). No `rounded-[Npx]`.
+- **Elevation.** Glass is blur (`--blur-glass`) + `--rim` highlight + `--shadow`; popovers use `shadow-pop`. Dark mode leans on surface steps more than on shadow.
+- **Motion.** Transitions use `duration-(--dur-fast|--dur|--dur-slow)` (100/200/300 ms) and `ease-glass`. Tweens go through `d()` in `lib/motion.ts`, which is 0 under `prefers-reduced-motion`. No literal ms or seconds in components (toast time is `TOAST_MS`).
 
 ## States
 
@@ -57,14 +46,14 @@ Every interactive component shows these states (see `/design § Buttons`, `§ Fo
 
 | State | Treatment |
 |---|---|
-| Rest | Token colors as above |
-| Hover | Darken or tint one step (`bg-primary/80`, `bg-muted`). Desktop only, never the only cue |
+| Rest | Token colours as above |
+| Hover | Tint one step (`bg-accent`, `border-line-2`). Desktop only, never the only cue |
 | Focus-visible | **2 px `--ring` outline, 2 px offset**, global and unlayered in `globals.css`, so no component can remove it |
 | Active | `translate-y-px` press on buttons |
 | Disabled | `opacity-50`, `pointer-events-none`. Exempt from contrast, but explain why nearby when it isn't obvious (e.g. WhatsApp disabled, no mobile) |
 | Loading | Disabled + `aria-busy` + spinner + verb ("Saving…"); lists use skeleton rows |
 | Invalid | `aria-invalid` (red border + ring) + message under the field linked by `aria-describedby`, with an icon. Never color alone |
-| Read-only | `readOnly` + `bg-muted`; still focusable and copyable |
+| Read-only | `readOnly` + `bg-well`; still focusable and copyable |
 | Selected | `aria-pressed` / `aria-selected` / `data-state=checked` with `bg-secondary` or `bg-accent` |
 
 ## Touch and pointer
@@ -164,15 +153,12 @@ DeltaBadge, Badge `alert` and the lime CTA put `--on-accent` (#13171a, in both t
 ### Charts (`patterns/charts.tsx`)
 
 - **Library.** shadcn `chart` (Recharts 3). Every chart is a `<figure>` with a `figcaption` title and a **Show data** `<details>` table, so the data is never color-only.
-- **Categorical palette.** 8 slots, `--chart-1` … `--chart-8`, **used in fixed order and never cycled**. A 9th category folds into "Other". This is the validated dataviz reference palette, re-validated on our surfaces (white card and slate-900 card):
-  - Light: worst adjacent CVD ΔE 9.1 and normal-vision ΔE 19.6, all passing. Slots 3, 4 and 5 are below 3:1 on white, so the relief rule applies (direct labels or the data table, both always present).
-  - Dark: all 8 slots are ≥ 3:1, with worst adjacent CVD ΔE 8.4.
-  - Scatter and other all-pairs charts: use only the first 3 slots.
-- **Ordinal ramp.** `--ordinal-1` … `--ordinal-5` (one blue hue, monotone lightness) for funnels and ordered stages. Validated in both modes.
-- **Status colors.** `success`, `warning` and `destructive` are never used as series colors.
-- **Funnel.** Ordinal fills with a 2 px surface gap, and a direct label per stage ("Qualified: 120").
-- **Donut.** Categorical fills, a 2 px surface ring, a center total, and an HTML legend below the chart (legends always present for ≥ 2 series).
-- **Gauge.** A single series (`chart-1`) on a muted track, with the value as large text. It is a headline: no legend, no tooltip.
+- **Categorical palette.** 4 slots, `--chart-1` … `--chart-4` (sky, lime, coral, ink), **used in fixed order and never cycled**. A 5th category folds into "Other". Light slots are below 3:1 on glass, so the relief rule applies (direct labels or the data table, both always present).
+- **Ordinal stages.** Funnels and stage mixes use the same four tokens in pipeline order, with a label per stage.
+- **Status colours.** `good` and `bad` are text colours, never series colours.
+- **Funnel.** Ordinal fills with a 2 px gap, and a direct label per stage ("Qualified: 120").
+- **Donut.** Categorical fills, a 2 px ring, a center total, and an HTML legend below the chart (legends always present for ≥ 2 series).
+- **Gauge.** A single series (`chart-1`) on a `well` track, with the value as large text. It is a headline: no legend, no tooltip.
 - **Line and bar (later).** 2 px lines, rounded data ends, one y-axis only (never dual-axis), a crosshair tooltip, and recessive grid lines.
 - **Motion.** Chart animation is off (`isAnimationActive={false}`).
 - **RTL.** Charts render with `dir="ltr"` geometry, the norm for Arabic business charts. Text inside them still shapes correctly.
@@ -183,7 +169,7 @@ DeltaBadge, Badge `alert` and the lime CTA put `--on-accent` (#13171a, in both t
 - **Dropdown menu.** Record actions behind a ⋯ or labelled button; destructive items last, after a separator, with `variant="destructive"`.
 - **Tooltip.** Supplementary only (e.g. the stored exchange rate). Never put essential information or actions in a tooltip; on touch screens it must also be reachable another way.
 - **Toast (sonner).** Confirms async results ("Quote emailed"). Errors that need action stay inline or in a dialog, not only in a toast.
-- **Skeleton.** `bg-foreground/10` pulse with the shape of the content; reduced motion stops the pulse.
+- **Skeleton.** glass-toned pulse with the shape of the content; reduced motion stops the pulse.
 
 ## RTL and i18n
 
@@ -207,7 +193,7 @@ DeltaBadge, Badge `alert` and the lime CTA put `--on-accent` (#13171a, in both t
 | Criterion | How we meet it |
 |---|---|
 | 1.3.1 Info and relationships | Semantic tables (`scope`, caption), `<dl>` for label/value, `<fieldset>/<legend>`, labelled regions |
-| 1.4.3 / 1.4.11 Contrast | Token pairs above: text ≥ 4.5:1, control borders and focus ring ≥ 3:1, in both themes |
+| 1.4.3 / 1.4.11 Contrast | Measured pairs in the glass table: text ≥ 4.5:1, control borders and focus ring ≥ 3:1, in both themes |
 | 1.4.1 Use of color | Status and stage badges have text and icons; charts have labels and a data table; errors have an icon and text |
 | 1.4.10 Reflow | 360 px with no page-level horizontal scroll, asserted by Playwright at 360, 768 and 1440 |
 | 2.1.1 Keyboard | All controls are native elements or Radix primitives; the kanban board is focusable; there is no hover-only UI |
@@ -232,5 +218,5 @@ DeltaBadge, Badge `alert` and the lime CTA put `--on-accent` (#13171a, in both t
 ## Using the system
 
 - **Building screens.** Compose shadcn components and the patterns, and add new shadcn components with `pnpm dlx shadcn@4.22.1 add <name>` from `apps/web`. Then check the added file for English literals (the lint will flag them) and physical classes.
-- **Changing a token.** Change it in `globals.css` (both `:root` and `.dark`), re-measure contrast, update the table above, and check `/design` in both themes.
-- **Adding a chart palette or slot.** Run the dataviz validator (`validate_palette.js`) against both surfaces before you ship it.
+- **Changing a token.** Change it in `globals.css` (both `:root` and `[data-theme="dark"]`), re-measure contrast, update the table above, and check `/design` in both themes.
+- **Adding a chart slot.** Add the token to both themes, re-run `glass-contrast.test.ts`, and keep a label or data table beside it.

@@ -5,7 +5,7 @@ import { cn } from "cn"
 import { Dialog as SheetPrimitive } from "radix-ui"
 import { useGSAP } from "@gsap/react"
 import { useOverlayRoot } from "@/components/ui/overlay-root"
-import { drawerIn, sheetUp } from "@/lib/motion"
+import { d, drawerIn, sheetUp } from "@/lib/motion"
 import { gsap } from "gsap"
 
 import { Button } from "@/components/ui/button"
@@ -67,7 +67,7 @@ function SheetContent({
   // Slides in from its own edge, mirrored under dir="rtl"; the sign is how far off-screen it starts (lib/motion drawerIn).
   useGSAP(() => {
     if (!overlay.current || !panel.current) return
-    gsap.from(overlay.current, { opacity: 0, duration: 0.2 })
+    gsap.from(overlay.current, { opacity: 0, duration: d(0.2) })
     const rtl = getComputedStyle(panel.current).direction === "rtl"
     if (side === "end") drawerIn(panel.current, rtl ? -100 : 100)
     else if (side === "start") drawerIn(panel.current, rtl ? 100 : -100)
