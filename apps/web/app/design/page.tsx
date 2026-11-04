@@ -149,6 +149,7 @@ export default async function DesignPage() {
       return {
         id: s,
         title: tStage(s),
+        tone: s === "negotiation" ? "coral" : s === "proposal" ? "lime" : "sky",
         count: cards.length,
         totalOmr: cards[0]?.amountOmr ?? "0.000",
         cards: cards.map((d) => ({ id: d.id, title: d.name, subtitle: d.account, amount: d.amount, currency: d.currency })),
@@ -217,7 +218,7 @@ export default async function DesignPage() {
             </div>
             <div data-theme="dark" data-kit="rtl" dir="rtl" lang="ar" role="group" aria-label={t("kit.rtl")} className="kit-stage overflow-hidden rounded-card">
               <DirectionProvider dir="rtl">
-                <GlassKit />
+                <GlassKit rtl />
               </DirectionProvider>
             </div>
           </div>
@@ -581,7 +582,8 @@ export default async function DesignPage() {
             <Donut
               title={t("charts.donut")}
               data={donut}
-              centerLabel={t("charts.donutCenter", { amount: format.number(92400, { notation: "compact", maximumFractionDigits: 1 }) })}
+              centerValue={format.number(92400, { notation: "compact", maximumFractionDigits: 1 })}
+              centerCaption={t("charts.donutCenter")}
             />
             <Gauge title={t("charts.gauge")} percent={72} valueLabel={t("charts.gaugeValue", { percent: 72 })} data={gauge} />
           </div>

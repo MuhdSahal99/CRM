@@ -4,7 +4,7 @@ import { Loader2Icon, MailIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
+import { notify } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ export function SendEmailDialog({ module, id, contacts, defaultSubject }: { modu
     const { status, json } = await callApi("POST", `/${module}/${id}/actions/send_email`, { to_contact_id: contact, subject, message: message || undefined }, { "idempotency-key": key });
     setPending(false);
     if (status === 202) {
-      toast.success(t("queued"));
+      notify(t("queued"));
       setOpen(false);
       setMessage("");
       setKey(crypto.randomUUID()); // the next send is a new request

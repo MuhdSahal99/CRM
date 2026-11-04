@@ -4,7 +4,7 @@ import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
+import { notify } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -34,7 +34,7 @@ export function EditUser({ user, managers, recipients, isSelf }: Props) {
     const { status, json } = await callApi("PUT", `/users/${user.id}`, { data: [{ role, manager_id: managerId }] });
     setPending(null);
     if (status === 200) {
-      toast.success(t("saved"));
+      notify(t("saved"));
       router.refresh();
     } else if (status === 422) {
       setErrors(fieldErrors(json.details.errors ?? [{ api_name: json.details.api_name, message: json.message }]));
@@ -57,7 +57,7 @@ export function EditUser({ user, managers, recipients, isSelf }: Props) {
     setPending(null);
     setConfirming(false);
     if (status === 200) {
-      toast.success(t("deactivated", { name: user.name }));
+      notify(t("deactivated", { name: user.name }));
       router.refresh();
     } else {
       setFailed(true);

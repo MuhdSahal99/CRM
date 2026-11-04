@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { DealsBoard } from "@/components/deals/deals-board";
 import type { KanbanColumn } from "@/components/patterns/kanban";
+import type { Tone } from "@/components/ui/tone";
 import { moduleMeta } from "@/lib/records";
 import { requireContext } from "@/lib/session";
 
@@ -24,8 +25,13 @@ export default async function DealsBoardPage() {
     if (!pipeline) return null;
     return { pipeline, columns: await getKanban(tx, { pipeline_id: pipeline.id, per_column: 25 }), meta: await moduleMeta(tx, "Deals") };
   });
-  const columns: KanbanColumn[] = (data?.columns ?? []).map((c) => ({
+  const category = new Map((data?.pipeline.stages ?? []).map((s) => [s.id, s.record_category]));
+  // GLASS_SPEC 13: early stages sky, middle lime, Negotiation coral; Closed Won / Lost are the outcome rail.
+  const toneOf = (key: string, i: number): Tone => (key.includes("negotiation") ? "coral" : i < 2 ? "sky" : "lime");
+  const columns: KanbanColumn[] = (data?.columns ?? []).map((c, i) => ({
     id: c.stage.id,
+    tone: toneOf(c.stage.name_key, i),
+    outcome: category.get(c.stage.id) === "closed_won" ? "won" : category.get(c.stage.id) === "closed_lost" ? "lost" : undefined,
     title: t(c.stage.name_key),
     count: c.count,
     totalOmr: c.sum_amount_omr,

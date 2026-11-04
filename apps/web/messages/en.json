@@ -3,7 +3,8 @@
     "close": "Close",
     "cancel": "Cancel",
     "save": "Save",
-    "retry": "Retry"
+    "retry": "Retry",
+    "undo": "Undo"
   },
   "theme": {
     "label": "Color theme",
@@ -175,7 +176,8 @@
       "label": "Deal pipeline",
       "move": "Move to stage",
       "moved": "{deal} moved to {stage}",
-      "note": "Columns scroll inside the board, not the page. Every card has a Move to stage menu, so dragging is never required."
+      "note": "Columns scroll inside the board, not the page. Every card has a Move to stage menu, so dragging is never required.",
+      "undone": "Move undone."
     },
     "lineItems": {
       "note": "The PRD US-10 worked example. All amounts come from the server pricing engine; the form only sends quantities, prices and discounts.",
@@ -185,7 +187,7 @@
       "funnel": "Lead to deal funnel",
       "funnelLabel": "{stage}: {count}",
       "donut": "Pipeline by stage (OMR)",
-      "donutCenter": "OMR {amount}",
+      "donutCenter": "OMR in pipeline",
       "gauge": "Q3 target attainment",
       "gaugeValue": "{percent}%",
       "achieved": "Achieved",
@@ -209,7 +211,8 @@
       "tooltip": "Rate stored when the quote was created: 1 AED = 0.10500000 OMR",
       "toast": "Show toast",
       "toastText": "Quote QT-000123 emailed to the customer.",
-      "skeleton": "Skeleton"
+      "skeleton": "Skeleton",
+      "undone": "Move undone."
     },
     "rtl": {
       "note": "dir=\"rtl\" with the Radix DirectionProvider. UI labels stay English until ar.json lands in Phase 2; record data is Arabic sample text. Icons that point a direction are mirrored, numbers and money stay LTR."
@@ -319,6 +322,108 @@
       },
       "loading": {
         "title": "Loading"
+      }
+    },
+    "patterns": {
+      "note": "Data table, board, charts, overlays, calendar, agenda, live bar and the settings layout.",
+      "table": {
+        "title": "Deals",
+        "statusLabel": "Status",
+        "all": "All",
+        "open": "Open",
+        "won": "Won",
+        "count": "{count} deals · {total}",
+        "search": "Search deals",
+        "menu": "Row actions",
+        "edit": "Edit",
+        "duplicate": "Duplicate",
+        "delete": "Delete"
+      },
+      "charts": {
+        "revenue": "Revenue",
+        "revenueSeries": "Won",
+        "target": "Target",
+        "bars": "Deals created",
+        "barsSeries": "Deals",
+        "stacked": "Pipeline by quarter",
+        "seriesNew": "New",
+        "seriesActive": "Active",
+        "seriesRisk": "At risk",
+        "donut": "Stage mix",
+        "donutCaption": "open pipeline"
+      },
+      "overlays": {
+        "title": "Overlays",
+        "dialog": "Open modal",
+        "dialogTitle": "Close deal as lost",
+        "dialogText": "Say why, so the team can learn from it.",
+        "reason": "Reason for loss",
+        "drawer": "Open drawer",
+        "drawerTitle": "Deal details",
+        "drawerText": "Muscat Port fit-out",
+        "summary": "Summary",
+        "activity": "Activity",
+        "activityText": "Quote sent two days ago.",
+        "menu": "Open menu",
+        "menuHeader": "Deal",
+        "popover": "Open popover",
+        "popoverText": "Closing on 30 Nov, owned by Amal Haddad.",
+        "toast": "Show toast",
+        "toastText": "Deal moved to Proposal.",
+        "toastUndone": "Move undone.",
+        "tooltip": "Tooltip",
+        "tooltipText": "Stored rate: 1 AED = 0.105 OMR",
+        "kbdEdit": "E",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "calendar": {
+        "call": "Call Al Bustan",
+        "demo": "Product demo",
+        "review": "Quarter review",
+        "sync": "Pipeline sync",
+        "quote": "Send quote",
+        "visit": "Site visit"
+      },
+      "agenda": {
+        "title": "Today",
+        "caption": "Saturday, Oct 31 · 1/3 done",
+        "call": "Call Gulf Lumen",
+        "callSub": "Confirm the delivery window",
+        "email": "Email the revised quote",
+        "task": "Prepare renewal pack",
+        "typeCall": "Call",
+        "typeEmail": "Email",
+        "typeTask": "Task",
+        "late": "Chase signed order",
+        "lateSub": "Due 28 Oct"
+      },
+      "live": {
+        "title": "Call in progress"
+      },
+      "settings": {
+        "title": "Profile settings",
+        "tabProfile": "Profile",
+        "tabNotify": "Notifications",
+        "tabSecurity": "Security",
+        "tabsLabel": "Settings sections",
+        "name": "Full name",
+        "nameValue": "Amal Haddad",
+        "role": "Sales manager",
+        "email": "amal@saqient.test",
+        "phone": "Phone",
+        "phoneValue": "+968 9123 4567",
+        "complete": "Profile complete",
+        "completeText": "Add a photo to finish your profile.",
+        "statDeals": "Deals",
+        "statWon": "Won",
+        "statRate": "Win rate",
+        "nextEyebrow": "Next",
+        "nextTitle": "Review quota",
+        "discard": "Discard",
+        "save": "Save changes",
+        "notifyText": "Choose what reaches your inbox.",
+        "securityText": "Sign-in and session options."
       }
     }
   },
@@ -1383,5 +1488,38 @@
     "another": "Import another file",
     "tooLarge": "The file is larger than 20 MB.",
     "failed": "The import could not be started. Try again."
+  },
+  "kanban": {
+    "drag": "Drag {title}",
+    "instructions": "Press space on the grip to pick up the deal, the arrow keys to choose a stage, space to drop, escape to cancel.",
+    "dropWon": "Drop here to close as won",
+    "dropLost": "Drop here to close as lost",
+    "dealCount": "{count, plural, one {# deal} other {# deals}}",
+    "announce": {
+      "start": "Picked up {title}.",
+      "over": "{title} is over {stage}.",
+      "drop": "{title} dropped on {stage}.",
+      "cancel": "{title} was not moved."
+    }
+  },
+  "calendar": {
+    "label": "Calendar",
+    "prev": "Previous",
+    "next": "Next",
+    "today": "Today",
+    "view": "Calendar view",
+    "month": "Month",
+    "week": "Week",
+    "more": "+{count} more"
+  },
+  "agenda": {
+    "add": "Add task",
+    "overdue": "Overdue",
+    "complete": "Complete {title}"
+  },
+  "liveBar": {
+    "label": "Call in progress with {name}",
+    "notes": "Notes",
+    "end": "End call"
   }
 }

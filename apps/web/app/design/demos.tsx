@@ -1,9 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { toast } from "sonner";
 import { Kanban, type KanbanColumn } from "@/components/patterns/kanban";
 import { Button } from "@/components/ui/button";
+import { notify } from "@/components/ui/toast";
 
 export function KanbanDemo({ columns }: { columns: KanbanColumn[] }) {
   const t = useTranslations("design.kanban");
@@ -15,7 +15,7 @@ export function KanbanDemo({ columns }: { columns: KanbanColumn[] }) {
       label={t("label")}
       columns={columns}
       moveLabel={t("move")}
-      onMove={(cardId, to) => toast.success(t("moved", { deal: deal(cardId), stage: title(to) }))}
+      onMove={(cardId, to) => notify(t("moved", { deal: deal(cardId), stage: title(to) }), { onUndo: () => notify(t("undone"), { kind: "info" }) })}
     />
   );
 }
@@ -23,7 +23,7 @@ export function KanbanDemo({ columns }: { columns: KanbanColumn[] }) {
 export function ToastButton() {
   const t = useTranslations("design.overlays");
   return (
-    <Button variant="outline" onClick={() => toast.success(t("toastText"))}>
+    <Button variant="outline" onClick={() => notify(t("toastText"), { onUndo: () => notify(t("undone"), { kind: "info" }) })}>
       {t("toast")}
     </Button>
   );

@@ -90,7 +90,7 @@ export function CommandPalette({
     >
       <DialogContent
         showCloseButton={false}
-        className="top-[18%] -translate-y-0 gap-0 overflow-hidden rounded-card border border-border bg-popover p-0 shadow-pop backdrop-blur-xl sm:max-w-xl"
+        className="top-[18%] bottom-auto mt-0 mb-0 gap-0 overflow-hidden p-0 sm:max-w-xl max-md:top-[18%] max-md:bottom-auto max-md:inset-x-4 max-md:mb-0 max-md:w-auto max-md:rounded-card max-md:p-0"
       >
         <DialogTitle className="sr-only">{t("shell.palette.title")}</DialogTitle>
         <DialogDescription className="sr-only">{t("shell.palette.description")}</DialogDescription>

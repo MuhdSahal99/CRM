@@ -131,15 +131,53 @@ export function popoverOut(el: Target, onComplete?: () => void) {
   return gsap.to(el, { scale: 0.94, y: -4, opacity: 0, duration: d(0.15), ease: "power2.in", onComplete });
 }
 
+/** Phones (< 768px, section 9): modals are bottom sheets and the drawer is full screen. */
+export function isPhone(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 767px)").matches;
+}
+
 export function modalIn(overlay: Target, panel: Target) {
   const tl = gsap.timeline();
   tl.from(overlay, { opacity: 0, duration: d(0.2) });
-  tl.from(panel, { y: 16, scale: 0.98, opacity: 0, duration: d(0.4), ease: "back.out(1.4)" }, "<");
+  if (isPhone()) tl.add(sheetUp(panel), "<");
+  else tl.from(panel, { y: 16, scale: 0.98, opacity: 0, duration: d(0.4), ease: "back.out(1.4)" }, "<");
   return tl;
 }
 
-export function drawerIn(panel: Target) {
-  return gsap.fromTo(panel, { xPercent: 100 }, { xPercent: 0, duration: d(0.45), ease: EASE_OUT });
+/** `from` is the starting xPercent: 100 slides in from the right, -100 from the left (use the sign that matches the reading direction). */
+export function drawerIn(panel: Target, from = 100) {
+  return gsap.fromTo(panel, { xPercent: from }, { xPercent: 0, duration: d(0.45), ease: EASE_OUT });
+}
+
+/** Phones: a bottom sheet rises from below instead of popping in. */
+export function sheetUp(panel: Target) {
+  return gsap.fromTo(panel, { yPercent: 100 }, { yPercent: 0, duration: d(0.45), ease: EASE_OUT });
+}
+
+export function toastIn(el: Target) {
+  return gsap.fromTo(el, { y: -12, opacity: 0 }, { y: 0, opacity: 1, duration: d(0.4), ease: "back.out(2)" });
+}
+
+export function toastOut(el: Target, onComplete?: () => void) {
+  return gsap.to(el, { y: -8, opacity: 0, duration: d(0.2), ease: "power2.in", onComplete });
+}
+
+/** Rects of `els` keyed by `key`, taken just before a drop; pass them to flipFrom once the layout has settled. */
+export function snapshotRects(els: Iterable<HTMLElement>, key: (el: HTMLElement) => string) {
+  return new Map([...els].map((el) => [key(el), el.getBoundingClientRect()]));
+}
+
+/** FLIP: slides each element from its snapshot position to where it now sits (0.35s power3.out). `skip` keys are left alone. */
+export function flipFrom(els: Iterable<HTMLElement>, key: (el: HTMLElement) => string, before: Map<string, DOMRect>, skip?: string) {
+  for (const el of els) {
+    const k = key(el);
+    const from = before.get(k);
+    if (!from || k === skip) continue;
+    const to = el.getBoundingClientRect();
+    const dx = from.left - to.left;
+    const dy = from.top - to.top;
+    if (dx || dy) gsap.from(el, { x: dx, y: dy, duration: d(0.35), ease: EASE_OUT, clearProps: "transform" });
+  }
 }
 
 export function iconTap(svg: Target) {

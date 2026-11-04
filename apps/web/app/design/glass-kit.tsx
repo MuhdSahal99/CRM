@@ -25,10 +25,12 @@ import { DeltaBadge, StatChip, StatusPill } from "@/components/ui/status";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import { GlassKitPatterns } from "./glass-kit-patterns";
+
 const NAMES = ["Amal Haddad", "Omar Said", "Priya Nair", "Yusuf Karim", "Lina Mansour"];
 
 /** Every glass primitive in one place (docs/GLASS_SPEC.md section 6). Rendered once per theme and once in RTL. */
-export function GlassKit() {
+export function GlassKit({ rtl = false }: { rtl?: boolean }) {
   const t = useTranslations("design.kit");
   const [range, setRange] = useState("6m");
   const [view, setView] = useState("grid");
@@ -253,6 +255,8 @@ export function GlassKit() {
           </div>
         </GlassCard>
       </div>
+
+      <GlassKitPatterns rtl={rtl} />
     </div>
   );
 }

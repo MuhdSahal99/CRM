@@ -3,6 +3,9 @@
 import * as React from "react"
 import { cn } from "cn"
 import { Dialog as DialogPrimitive } from "radix-ui"
+import { useGSAP } from "@gsap/react"
+import { useOverlayRoot } from "@/components/ui/overlay-root"
+import { modalIn } from "@/lib/motion"
 
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
@@ -40,7 +43,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/40 backdrop-blur-[6px]",
         className
       )}
       {...props}
@@ -57,13 +60,21 @@ function DialogContent({
   showCloseButton?: boolean
 }) {
   const t = useTranslations("common")
+  const overlay = React.useRef<HTMLDivElement>(null)
+  const panel = React.useRef<HTMLDivElement>(null)
+  // Content mounts when the dialog opens, so this runs once per open (lib/motion modalIn; close is instant).
+  useGSAP(() => {
+    if (overlay.current && panel.current) modalIn(overlay.current, panel.current)
+  }, { dependencies: [] })
   return (
-    <DialogPortal>
-      <DialogOverlay />
+    <DialogPortal container={useOverlayRoot()}>
+      <DialogOverlay ref={overlay} />
       <DialogPrimitive.Content
+        ref={panel}
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 start-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // Centred without transforms (GSAP owns transform); phones get a bottom sheet.
+          "float-glass fixed inset-0 z-50 m-auto grid h-fit max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] gap-6 overflow-y-auto rounded-card p-6 text-sm text-popover-foreground outline-none sm:max-w-xl max-md:inset-x-0 max-md:top-auto max-md:bottom-0 max-md:m-0 max-md:w-full max-md:rounded-b-none max-md:pb-[max(1.5rem,env(safe-area-inset-bottom))]",
           className
         )}
         {...props}
@@ -132,7 +143,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("font-heading leading-none font-medium", className)}
+      className={cn("font-heading text-lg leading-tight font-semibold", className)}
       {...props}
     />
   )
