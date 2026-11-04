@@ -3,8 +3,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { type Column, DataTable } from "@/components/patterns/data-table";
-import { Badge } from "@/components/ui/badge";
+import { type Column, DataTable, PersonCell } from "@/components/patterns/data-table";
+import { MailPlusIcon, ShieldCheckIcon, UsersIcon } from "lucide-react";
+import { MotionScope } from "@/components/patterns/motion-scope";
+import { PageHeader } from "@/components/patterns/page-header";
+import { GlassCard } from "@/components/ui/glass-card";
+import { StatChip, StatusPill } from "@/components/ui/status";
 import { requireContext } from "@/lib/session";
 import { InviteDialog } from "./invite-dialog";
 
@@ -30,21 +34,31 @@ export default async function UsersPage() {
       key: "name",
       header: t("name"),
       // Invitations have no member page yet; members open their edit page through a real link (DESIGN_SYSTEM § Data table).
-      cell: (u) => (u.status === "invited" ? u.name : <Link href={`/app/settings/users/${u.id}`} className="font-medium hover:underline">{u.name}</Link>),
+      cell: (u) => (u.status === "invited" ? <PersonCell name={u.name} /> : <Link href={`/app/settings/users/${u.id}`} className="block rounded-full outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"><PersonCell name={u.name} /></Link>),
     },
     { key: "email", header: t("email"), cell: (u) => <bdi>{u.email}</bdi> },
     { key: "role", header: t("role"), cell: (u) => t(`roles.${u.role}`) },
     { key: "manager", header: t("manager"), cell: (u) => u.manager?.name ?? t("noManager") },
-    { key: "status", header: t("status"), cell: (u) => <Badge variant={u.status === "active" ? "secondary" : "outline"}>{t(`statuses.${u.status}`)}</Badge> },
+    { key: "status", header: t("status"), cell: (u) => <StatusPill tone={u.status === "active" ? "lime" : u.status === "invited" ? "sky" : "ink"}>{t(`statuses.${u.status}`)}</StatusPill> },
   ];
+
+  const count = (f: (u: UserRow) => boolean) => users.filter(f).length;
+  const stats = (
+    <>
+      <StatChip icon={<UsersIcon />} value={<span data-count="number" data-to={count((u) => u.status === "active")}>{count((u) => u.status === "active")}</span>} label={t("statActive")} />
+      <StatChip icon={<MailPlusIcon />} value={<span data-count="number" data-to={count((u) => u.status === "invited")}>{count((u) => u.status === "invited")}</span>} label={t("statInvited")} />
+      <StatChip icon={<ShieldCheckIcon />} value={<span data-count="number" data-to={count((u) => u.role === "admin" && u.status === "active")}>{count((u) => u.role === "admin" && u.status === "active")}</span>} label={t("statAdmins")} />
+    </>
+  );
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <InviteDialog managers={managers} />
-      </div>
-      <DataTable caption={t("caption")} columns={columns} rows={users} rowKey={(u) => u.id} emptyText={t("empty")} errorText={t("failed")} />
+      <PageHeader title={[t("title"), t("titleSub")]} stats={stats} actions={<InviteDialog managers={managers} />} />
+      <MotionScope className="grid grid-cols-1 gap-(--gap)">
+        <GlassCard title={t("caption")}>
+          <DataTable caption={t("caption")} columns={columns} rows={users} rowKey={(u) => u.id} emptyText={t("empty")} errorText={t("failed")} />
+        </GlassCard>
+      </MotionScope>
     </div>
   );
 }

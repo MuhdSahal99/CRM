@@ -17,6 +17,7 @@ import { ProportionBar } from "@/components/ui/progress";
 import { DeltaBadge, StatChip } from "@/components/ui/status";
 import type { Tone } from "@/components/ui/tone";
 import { type Currency, formatPercent } from "@/lib/format";
+import { sumOmr } from "@/lib/pipeline";
 import type { RecordData } from "@/lib/records";
 import { requireContext } from "@/lib/session";
 
@@ -29,12 +30,6 @@ async function safe<T>(run: () => Promise<T>): Promise<T | null> {
   } catch {
     return null;
   }
-}
-
-/** Σ of server-computed OMR totals (decimal strings, 3 places), added in thousandths so no float is involved. */
-function sumOmr(totals: string[]): string {
-  const n = totals.reduce((s, v) => s + BigInt(v.replace(".", "")), 0n);
-  return `${n / 1000n}.${(n % 1000n).toString().padStart(3, "0")}`;
 }
 
 // GLASS_SPEC 13, same as the board: early stages sky, middle lime, Negotiation coral.

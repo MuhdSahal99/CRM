@@ -4,8 +4,9 @@ import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GlassCard, Tile } from "@/components/ui/glass-card";
+import { StatusPill } from "@/components/ui/status";
 import { callApi } from "@/lib/api-client";
 
 export type ShareLinkRow = { id: string; expires_at: string; revoked_at: string | null; access_count: number; created_by: { name: string | null } };
@@ -26,19 +27,17 @@ export function ShareLinksList({ module, id, links }: { module: string; id: stri
   }
 
   return (
-    <section aria-labelledby="links-title" className="flex flex-col gap-2">
-      <h2 id="links-title" className="text-lg font-medium">
-        {t("title")}
-      </h2>
-      <ul className="flex flex-col divide-y rounded-lg border">
+    <GlassCard title={t("title")} aria-label={t("title")}>
+      <ul className="flex flex-col gap-2">
         {links.map((l) => {
           const expired = new Date(l.expires_at) <= new Date();
           const active = !l.revoked_at && !expired;
           return (
-            <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+            <li key={l.id}>
+<Tile className="flex flex-wrap items-center justify-between gap-2 p-3">
               <div className="flex min-w-0 flex-col">
                 <span className="flex items-center gap-2">
-                  <Badge variant={active ? "secondary" : "outline"}>{l.revoked_at ? t("state.revoked") : expired ? t("state.expired") : t("state.active")}</Badge>
+                  <StatusPill tone={active ? "lime" : l.revoked_at ? "coral" : "ink"}>{l.revoked_at ? t("state.revoked") : expired ? t("state.expired") : t("state.active")}</StatusPill>
                   <span className="text-sm text-muted-foreground">{t("until", { date: format.dateTime(new Date(l.expires_at), { dateStyle: "medium" }) })}</span>
                 </span>
                 <span className="text-sm text-muted-foreground">{t("opened", { count: l.access_count })}</span>
@@ -49,10 +48,11 @@ export function ShareLinksList({ module, id, links }: { module: string; id: stri
                   {t("revoke")}
                 </Button>
               )}
+            </Tile>
             </li>
           );
         })}
       </ul>
-    </section>
+    </GlassCard>
   );
 }

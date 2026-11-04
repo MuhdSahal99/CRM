@@ -1,10 +1,12 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
+import { Loader2Icon, ReceiptTextIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { type Line, LineItemGrid } from "@/components/patterns/line-item-grid";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { GlassCard } from "@/components/ui/glass-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { callApi } from "@/lib/api-client";
@@ -120,12 +122,12 @@ export function QuoteEditor({ quote, products }: { quote: QuoteData; products: P
   }));
 
   return (
-    <div className="flex flex-col gap-6" aria-busy={pending}>
+    <GlassCard title={t("title")} aria-busy={pending} className="gap-6">
       <div className="flex max-w-md flex-col gap-1.5">
         <Label htmlFor="quote-subject">{t("subject")}</Label>
         <Input id="quote-subject" value={subject} maxLength={255} onChange={(e) => setSubject(e.target.value)} />
       </div>
-      {rows.length === 0 && <p className="text-sm text-muted-foreground">{t("empty")}</p>}
+      {rows.length === 0 && <EmptyState icon={<ReceiptTextIcon />} title={t("empty")} />}
       <LineItemGrid
         lines={lines}
         currency={data.Currency}
@@ -157,6 +159,6 @@ export function QuoteEditor({ quote, products }: { quote: QuoteData; products: P
           </p>
         )}
       </div>
-    </div>
+    </GlassCard>
   );
 }

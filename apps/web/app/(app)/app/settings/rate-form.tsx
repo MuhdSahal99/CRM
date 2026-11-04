@@ -47,11 +47,11 @@ export function RateForm({ kind, options }: { kind: "vat" | "fx"; options: strin
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-end" aria-busy={pending}>
+    <form onSubmit={onSubmit} className="flex flex-col gap-4" aria-busy={pending}>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="rate-choice">{t(`${kind}.${pick}`)}</Label>
         <Select value={choice} onValueChange={setChoice}>
-          <SelectTrigger id="rate-choice" className="w-full sm:w-48">
+          <SelectTrigger id="rate-choice" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

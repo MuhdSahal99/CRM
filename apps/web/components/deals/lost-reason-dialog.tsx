@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
 
 export type Reason = { value: string; label_key: string };
@@ -28,7 +29,7 @@ export function LostReasonDialog({ open, reasons, pending, onCancel, onConfirm }
           }}
         >
           <Label htmlFor="lost-reason">{t("deals.reason")}</Label>
-          <select id="lost-reason" required className="h-9 rounded-md border bg-background px-2 text-sm" value={reason} onChange={(e) => setReason(e.target.value)}>
+          <NativeSelect id="lost-reason" required value={reason} onChange={(e) => setReason(e.target.value)}>
             <option value="" disabled>
               {t("deals.chooseReason")}
             </option>
@@ -37,7 +38,7 @@ export function LostReasonDialog({ open, reasons, pending, onCancel, onConfirm }
                 {t(r.label_key)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </form>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onCancel}>

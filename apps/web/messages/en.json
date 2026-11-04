@@ -742,6 +742,29 @@
         "smtp_username": "SMTP username",
         "smtp_from_email": "From email",
         "smtp_from_name": "From name"
+      },
+      "title1": "Organisation",
+      "title2": "settings",
+      "statFilled": "Details filled in",
+      "discard": "Discard",
+      "tabs": "Settings section",
+      "tab": {
+        "seller": "Seller",
+        "sharing": "Sharing",
+        "email": "Email"
+      },
+      "profile": {
+        "role": "Organisation",
+        "noEmail": "No sender email yet",
+        "completeness": "Profile completeness",
+        "filled": "{filled} of {total} details filled in",
+        "linkDays": "Link days",
+        "country": "Country",
+        "smtp": "SMTP",
+        "on": "On",
+        "off": "Off",
+        "next": "Next",
+        "nextTitle": "VAT rates"
       }
     },
     "vat": {
@@ -755,7 +778,9 @@
       "categories": {
         "standard": "Standard",
         "zero_rated": "Zero-rated"
-      }
+      },
+      "title1": "VAT",
+      "title2": "rates"
     },
     "fx": {
       "metaTitle": "Exchange rates · Saqient CRM",
@@ -765,7 +790,19 @@
       "empty": "No exchange rates yet. Enter one before creating AED or INR deals.",
       "currency": "Currency",
       "rate": "Rate (OMR per 1)",
-      "enteredBy": "Entered by"
+      "enteredBy": "Entered by",
+      "title1": "Exchange",
+      "title2": "rates"
+    },
+    "statRates": "Rates",
+    "statLatest": "Latest effective date",
+    "appearance": {
+      "title": "Appearance",
+      "text": "Dark is the default. The choice is kept on this device.",
+      "label": "Theme",
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System"
     }
   },
   "users": {
@@ -808,7 +845,12 @@
     "deactivated": "{name} has been deactivated.",
     "transferTo": "Transfer their open records to",
     "transferNone": "Do not transfer",
-    "transferHelp": "Open leads, deals and activities move to this person. Closed records stay."
+    "transferHelp": "Open leads, deals and activities move to this person. Closed records stay.",
+    "titleSub": "Directory",
+    "statActive": "Active",
+    "statInvited": "Invited",
+    "statAdmins": "Admins",
+    "member": "Member"
   },
   "fields": {
     "Accounts": {
@@ -1284,7 +1326,18 @@
     "add": "Add {name}",
     "convertedLeads": "Converted leads",
     "allLeads": "Open leads",
-    "converted": "Converted"
+    "converted": "Converted",
+    "search": "Search this page",
+    "view": "View",
+    "viewTable": "Table",
+    "viewGrid": "Grid",
+    "noMatch": "Nothing on this page matches your search.",
+    "statOnPage": "On this page",
+    "statRecent": "Added in 7 days",
+    "pageCaption": "Page {page} · {count} shown",
+    "emailTo": "Email {name}",
+    "callTo": "Call {name}",
+    "related": "Related"
   },
   "timeline": {
     "title": "Timeline",
@@ -1331,7 +1384,15 @@
     "completeTask": "Complete {subject}",
     "empty": "You have no open tasks.",
     "failed": "Something went wrong. Try again.",
-    "list": "Open tasks"
+    "list": "Open tasks",
+    "title1": "My",
+    "title2": "Activities",
+    "newTask": "New task",
+    "statOpen": "Open tasks",
+    "statToday": "Due today",
+    "agenda": "Agenda",
+    "agendaCaption": "{count} open · {overdue} overdue",
+    "emptyText": "Nothing is waiting for you."
   },
   "accept": {
     "metaTitle": "Accept your invitation · Saqient CRM",
@@ -1388,7 +1449,11 @@
     "changeStage": "Change stage",
     "history": "Stage history",
     "newQuote": "New quote",
-    "newQuoteFailed": "The quote could not be created. Try again."
+    "newQuoteFailed": "The quote could not be created. Try again.",
+    "statOpen": "Open deals",
+    "title1": "Pipeline",
+    "title2": "Board",
+    "listLink": "List"
   },
   "documents": {
     "convertQuote": "Convert to sales order",
@@ -1485,7 +1550,10 @@
     "download": "Download the failed rows (CSV)",
     "another": "Import another file",
     "tooLarge": "The file is larger than 20 MB.",
-    "failed": "The import could not be started. Try again."
+    "failed": "The import could not be started. Try again.",
+    "title1": "Import",
+    "title2": "from Zoho",
+    "statModules": "Modules you can import"
   },
   "kanban": {
     "drag": "Drag {title}",
@@ -1578,5 +1646,38 @@
     },
     "viewAll": "View all",
     "added": "Added {date}"
+  },
+  "lists": {
+    "Leads": "Inbox",
+    "Accounts": "Directory",
+    "Contacts": "Directory",
+    "Deals": "Pipeline",
+    "Products": "Catalogue",
+    "Quotes": "Register",
+    "Sales_Orders": "Register",
+    "Invoices": "Register",
+    "Tasks": "Planner",
+    "Calls": "Log",
+    "Meetings": "Diary",
+    "fallback": "Records"
+  },
+  "screens": {
+    "error": {
+      "title": "This page could not load",
+      "text": "Something went wrong. Try again.",
+      "retry": "Try again"
+    },
+    "detail": {
+      "amount": "Amount",
+      "total": "Grand total",
+      "owner": "Owner",
+      "updated": "Last updated",
+      "vat": "VAT",
+      "lines": "Lines"
+    },
+    "form": {
+      "new": "New",
+      "edit": "Edit"
+    }
   }
 }

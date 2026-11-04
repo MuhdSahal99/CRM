@@ -1,6 +1,8 @@
+import { InboxIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SearchInput } from "@/components/ui/search-input";
 import { Segmented, type SegmentedOption } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -90,7 +92,9 @@ export function DataTable<T>({ caption, columns, rows, rowKey, status = "ready",
       );
     }
     if (rows.length === 0) {
-      return <p className="rounded-tile border border-dashed border-line-2 p-6 text-center text-muted-foreground">{emptyText}</p>;
+      return (
+        <EmptyState icon={<InboxIcon />} title={emptyText} className="rounded-tile border border-dashed border-line-2" />
+      );
     }
     const [title, ...rest] = columns;
     return (

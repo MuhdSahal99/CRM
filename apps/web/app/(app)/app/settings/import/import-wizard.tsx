@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Well } from "@/components/ui/glass-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -92,15 +93,15 @@ export function ImportWizard({ modules }: { modules: ModuleSetup[] }) {
   }
 
   const stat = (label: string, value: number) => (
-    <div className="flex flex-col rounded-lg border p-3">
-      <span className="text-2xl font-semibold tabular-nums">{value}</span>
-      <span className="text-sm text-muted-foreground">{label}</span>
-    </div>
+    <Well className="flex flex-col">
+      <span className="text-[22px] font-semibold tabular-nums">{value}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </Well>
   );
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <section className="flex flex-col gap-4" aria-label={t("step1")}>
+    <div className="flex max-w-4xl flex-col gap-(--gap)">
+      <section className="glass flex flex-col gap-4 rounded-card p-(--pad)" aria-label={t("step1")}>
         <div className="flex flex-col gap-2">
           <Label htmlFor="import-module">{t("module")}</Label>
           <Select value={moduleName} onValueChange={(v) => { setModuleName(v); if (file) void choose(file, v); }}>
@@ -123,10 +124,10 @@ export function ImportWizard({ modules }: { modules: ModuleSetup[] }) {
       </section>
 
       {headings.length > 0 && !job && (
-        <section className="flex flex-col gap-3" aria-label={t("step2")}>
-          <h2 className="text-lg font-medium">{t("mapTitle")}</h2>
+        <section className="glass flex flex-col gap-3 rounded-card p-(--pad)" aria-label={t("step2")}>
+          <h2 className="text-[15px] font-medium">{t("mapTitle")}</h2>
           <p className="text-sm text-muted-foreground">{t("mapHint")}</p>
-          <ul className="flex flex-col divide-y rounded-lg border">
+          <ul className="flex flex-col divide-y divide-line rounded-tile border border-line bg-glass-tile">
             {headings.map((h) => (
               <li key={h} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="min-w-0 font-medium break-words">{h}</span>
@@ -155,14 +156,14 @@ export function ImportWizard({ modules }: { modules: ModuleSetup[] }) {
       )}
 
       {error && (
-        <p role="alert" className="rounded-md bg-muted p-3 text-destructive">
+        <p role="alert" className="glass rounded-tile border-coral p-3 text-destructive">
           {error}
         </p>
       )}
 
       {job && (
-        <section className="flex flex-col gap-4" aria-label={t("step3")} aria-live="polite">
-          <h2 className="flex items-center gap-2 text-lg font-medium">
+        <section className="glass flex flex-col gap-4 rounded-card p-(--pad)" aria-label={t("step3")} aria-live="polite">
+          <h2 className="flex items-center gap-2 text-[15px] font-medium">
             {job.status === "done" ? t("doneTitle") : job.status === "failed" ? t("failedTitle") : job.status === "validated" ? t("reportTitle") : t("working")}
             <Badge variant={job.status === "failed" ? "destructive" : "secondary"}>{t(`status.${job.status}`)}</Badge>
           </h2>
@@ -188,7 +189,7 @@ export function ImportWizard({ modules }: { modules: ModuleSetup[] }) {
           {(job.row_errors?.length ?? 0) > 0 && (
             <div className="flex flex-col gap-2">
               <h3 className="font-medium">{t("rowErrors")}</h3>
-              <ul className="flex flex-col divide-y rounded-lg border text-sm">
+              <ul className="flex flex-col divide-y divide-line rounded-tile border border-line bg-glass-tile text-sm">
                 {job.row_errors!.slice(0, 20).map((e, i) => (
                   <li key={i} className="p-2 break-words">
                     {t("rowError", { row: e.row_no, column: e.column, message: e.message })}

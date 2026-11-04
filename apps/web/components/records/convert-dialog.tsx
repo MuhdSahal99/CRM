@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { callApi } from "@/lib/api-client";
@@ -128,13 +129,13 @@ export function ConvertDialog({ id, company, name }: { id: string; company: stri
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <Label htmlFor="convert-deal-stage">{t("stage")}</Label>
-                        <select id="convert-deal-stage" className="h-9 rounded-md border bg-background px-2 text-sm" value={deal.stage} onChange={(e) => setDeal((d) => ({ ...d, stage: e.target.value }))}>
+                        <NativeSelect id="convert-deal-stage" value={deal.stage} onChange={(e) => setDeal((d) => ({ ...d, stage: e.target.value }))}>
                           {pipeline.stages.filter((st) => st.record_category === "open").map((st) => (
                             <option key={st.id} value={st.api_value}>
                               {tAll(st.name_key)}
                             </option>
                           ))}
-                        </select>
+                        </NativeSelect>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <Label htmlFor="convert-deal-amount">{t("amount")}</Label>

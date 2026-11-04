@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { BackLink } from "@/components/patterns/back-link";
+import { PageHeader } from "@/components/patterns/page-header";
 import { RecordForm } from "@/components/records/record-form";
 import { isRecordModule, lookupOptions, moduleMeta, type RecordData, recordTitle } from "@/lib/records";
 import { requireContext } from "@/lib/session";
@@ -32,10 +34,12 @@ export default async function EditRecordPage({ params }: Props) {
     }
   });
   if (!found) notFound();
-  const t = await getTranslations("records");
+  const tAll = await getTranslations();
+  const title = recordTitle(found.meta, found.record);
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("editTitle", { name: recordTitle(found.meta, found.record) })}</h1>
+      <BackLink href={`/app/${module}/${id}`}>{title}</BackLink>
+      <PageHeader title={[tAll("screens.form.edit"), title]} />
       <RecordForm module={module} sections={found.meta.sections} options={found.options} record={found.record} />
     </div>
   );

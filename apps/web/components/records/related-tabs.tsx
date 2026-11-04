@@ -1,6 +1,7 @@
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ModuleMeta, RecordData } from "@/lib/records";
@@ -13,6 +14,7 @@ export function RelatedTabs({ module, id, tabs }: { module: string; id: string; 
   const t = useTranslations();
   if (tabs.length === 0) return null;
   return (
+    <GlassCard title={t("records.related")}>
     <Tabs defaultValue={tabs[0]!.api_name}>
       <TabsList>
         {tabs.map((tab) => (
@@ -39,5 +41,6 @@ export function RelatedTabs({ module, id, tabs }: { module: string; id: string; 
         );
       })}
     </Tabs>
+    </GlassCard>
   );
 }

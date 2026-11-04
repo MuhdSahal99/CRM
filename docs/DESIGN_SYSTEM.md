@@ -136,6 +136,13 @@ DeltaBadge, Badge `alert` and the lime CTA put `--on-accent` (#13171a, in both t
 - **Move to stage.** Every card has a **Move to stage** menu (radio items). This is the required single-pointer, keyboard and screen-reader alternative to dragging (WCAG 2.5.7). Drag-and-drop may be added on top later; it is never the only way.
 - **After a move.** The client calls the API and then refetches counts and totals. Stage rules (e.g. Closed Lost needs a reason) open a dialog before the move is saved.
 
+### Screens (module lists, record pages, deals, documents, activities, settings)
+
+- Every page opens with `PageHeader`: a two-line title (two message keys, or the module label plus a second word; headings keep the module name so they stay findable), up to three `StatChip`s and the actions at the inline end, the primary one in lime. Chips show only what the page already loads: a list shows its own page ("On this page", "Added in 7 days"), a record shows its own fields, the board and Home show the server's kanban counts and sums.
+- Bodies are a 12-column grid of `GlassCard`s (record pages 8 + 4, rate pages 4 + 8, activities 8 + 4) that collapses to one column below `xl`, wrapped in `MotionScope` for the enter, pop and count-up motion.
+- Lists (`RecordList`): search pill over the loaded rows and, for Leads, Accounts and Contacts, a Table / Grid toggle (grid = `RecordCard`). `DataTable` supplies the empty state; `app/(app)/app/loading.tsx` and `[module]/[id]/loading.tsx` the skeletons; `app/(app)/app/error.tsx` the error state with a retry.
+- Native `<select>`s that tests and browsers rely on use `NativeSelect` (form-field skin). Settings → Organisation uses `SettingsLayout` + `ProfileCard` (completeness = filled fields of the settings it loads) and an Appearance card (dark, light, system) for the theme.
+
 ### Forms
 
 - **Labels.** A visible `<Label htmlFor>` above every field. Placeholders are examples, never labels.

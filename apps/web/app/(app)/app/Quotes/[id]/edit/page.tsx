@@ -3,6 +3,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { BanknoteIcon, ListIcon, PercentIcon } from "lucide-react";
+import { Money } from "@/components/money";
+import { BackLink } from "@/components/patterns/back-link";
+import { MotionScope } from "@/components/patterns/motion-scope";
+import { PageHeader } from "@/components/patterns/page-header";
+import { StatChip } from "@/components/ui/status";
 import type { PickerProduct } from "@/components/quotes/product-picker";
 import { type QuoteData, QuoteEditor } from "@/components/quotes/quote-editor";
 import { requireContext } from "@/lib/session";
@@ -30,11 +36,22 @@ export default async function EditQuotePage({ params }: { params: Promise<{ id: 
     }
   });
   if (!found) notFound();
-  const t = await getTranslations("records");
+  const t = await getTranslations();
+  const q = found.quote;
+  const stats = (
+    <>
+      <StatChip icon={<BanknoteIcon />} value={<Money value={q.Grand_Total} currency={q.Currency} />} label={t("screens.detail.total")} />
+      <StatChip icon={<PercentIcon />} value={<Money value={q.VAT_Total} currency={q.Currency} />} label={t("screens.detail.vat")} />
+      <StatChip icon={<ListIcon />} value={<span data-count="number" data-to={q.Line_Items.length}>{q.Line_Items.length}</span>} label={t("screens.detail.lines")} />
+    </>
+  );
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight break-words">{t("editTitle", { name: found.quote.Subject })}</h1>
-      <QuoteEditor quote={found.quote} products={found.products} />
+      <BackLink href={`/app/Quotes/${id}`}>{q.Subject}</BackLink>
+      <PageHeader title={[t("screens.form.edit"), q.Subject]} stats={stats} />
+      <MotionScope className="grid grid-cols-1 gap-(--gap)">
+        <QuoteEditor quote={q} products={found.products} />
+      </MotionScope>
     </div>
   );
 }

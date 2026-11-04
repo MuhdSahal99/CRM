@@ -1,3 +1,5 @@
+import { EmptyState } from "@/components/ui/empty-state";
+import { GlassCard } from "@/components/ui/glass-card";
 import { FileTextIcon, HistoryIcon, PhoneIcon, SquareCheckIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
@@ -26,12 +28,11 @@ export function Timeline({ items, fields }: { items: TimelineItem[]; fields: Fie
   const show = (v: unknown) => (v === null || v === undefined || v === "" ? t("records.noValue") : String(v));
 
   return (
-    <section aria-labelledby="timeline-heading" className="flex flex-col gap-3">
-      <h2 id="timeline-heading" className="text-lg font-medium">{t("timeline.title")}</h2>
+    <GlassCard title={t("timeline.title")} aria-label={t("timeline.title")}>
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("timeline.empty")}</p>
+        <EmptyState icon={<HistoryIcon />} title={t("timeline.empty")} />
       ) : (
-        <ol className="flex flex-col gap-4 border-s ps-4">
+        <ol className="flex flex-col gap-5">
           {items.map((e) => {
             const meta = e.meta ?? {};
             const type = String(meta.type ?? "");
@@ -39,11 +40,14 @@ export function Timeline({ items, fields }: { items: TimelineItem[]; fields: Fie
             const Icon = logged ? (TYPE_ICON[type as keyof typeof TYPE_ICON] ?? ICON.activity_logged) : (ICON[e.event_type as keyof typeof ICON] ?? HistoryIcon);
             const title = logged ? t("timeline.activity_logged", { type: t(`timeline.types.${type}`) }) : t.has(`timeline.${e.event_type}`) ? t(`timeline.${e.event_type}`) : e.event_type;
             return (
-              <li key={e.id} className="flex min-w-0 flex-col gap-1">
+              <li key={e.id} className="flex min-w-0 gap-3">
+                <span aria-hidden className="grid size-8 shrink-0 place-items-center rounded-full bg-glass-2 [&_svg]:size-4 [&_svg]:stroke-[1.6]">
+                  <Icon />
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-x-2 text-sm">
-                  <Icon className="size-4 text-muted-foreground" aria-hidden />
                   <span className="font-medium">{title}</span>
-                  <span className="text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {t("timeline.by", { name: e.actor?.name ?? t("timeline.system") })} · <time dateTime={e.occurred_at}>{when(e.occurred_at)}</time>
                   </span>
                 </div>
@@ -72,11 +76,12 @@ export function Timeline({ items, fields }: { items: TimelineItem[]; fields: Fie
                     })}
                   </ul>
                 )}
+                </div>
               </li>
             );
           })}
         </ol>
       )}
-    </section>
+    </GlassCard>
   );
 }

@@ -1,9 +1,9 @@
 import { getRecord, isDocModule, listPipelines, listShareLinks, listRelated, listRelatedLists, listTimeline, NotFound, withTenant } from "@crm/core";
-import { ChevronLeftIcon, PencilIcon } from "lucide-react";
+import { BanknoteIcon, ClockIcon, PencilIcon, UserRoundIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { DocumentActions } from "@/components/documents/document-actions";
 import { ConvertDialog } from "@/components/records/convert-dialog";
@@ -18,8 +18,13 @@ import { ShareLinksList, type ShareLinkRow } from "@/components/records/share-li
 import { WhatsAppButton, type WhatsAppContact } from "@/components/records/whatsapp-button";
 import { RelatedTabs } from "@/components/records/related-tabs";
 import { Timeline, type TimelineItem } from "@/components/records/timeline";
-import { Badge } from "@/components/ui/badge";
+import { Money } from "@/components/money";
+import { BackLink } from "@/components/patterns/back-link";
+import { MotionScope } from "@/components/patterns/motion-scope";
+import { PageHeader } from "@/components/patterns/page-header";
 import { Button } from "@/components/ui/button";
+import { StatChip, StatusPill } from "@/components/ui/status";
+import type { Currency } from "@/lib/format";
 import { isRecordModule, moduleMeta, type RecordData, recordTitle } from "@/lib/records";
 import { requireContext } from "@/lib/session";
 
@@ -76,47 +81,66 @@ export default async function RecordPage({ params }: Props) {
   const locked = (module === "Sales_Orders" && status !== "created") || (module === "Invoices" && status !== "draft");
   const converted = module === "Leads" && record.Converted === true; // US-05 / AC-24: a converted lead is read-only
 
+  const title = recordTitle(meta, record);
+  const fmt = await getFormatter();
+  const owner = (record.Owner as { name: string | null } | null | undefined)?.name;
+  const modified = typeof record.Modified_Time === "string" ? record.Modified_Time : null;
+  const amount = module === "Deals" ? record.Amount : record.Grand_Total;
+  const currency = (record.Currency ?? "OMR") as Currency;
+  // Figures are the record own fields; nothing is derived here.
+  const stats = (
+    <>
+      {typeof amount === "string" && <StatChip icon={<BanknoteIcon />} value={<Money value={amount} currency={currency} />} label={t(module === "Deals" ? "screens.detail.amount" : "screens.detail.total")} />}
+      {owner && <StatChip icon={<UserRoundIcon />} value={<span className="text-base">{owner}</span>} label={t("screens.detail.owner")} />}
+      {modified && <StatChip icon={<ClockIcon />} value={<span className="text-base">{fmt.dateTime(new Date(modified), { dateStyle: "medium" })}</span>} label={t("screens.detail.updated")} />}
+    </>
+  );
+  const isDoc = module === "Quotes" || module === "Sales_Orders" || module === "Invoices";
+  const actions = (
+    <>
+      {(module === "Accounts" || module === "Contacts") && <ActivityDialog module={module} id={id} />}
+      {module === "Deals" && Boolean(record.Account_Name) && <NewQuoteButton dealId={id} dealName={title} accountId={(record.Account_Name as { id: string }).id} />}
+      {mail && !(module === "Invoices" && status === "draft") && <SendEmailDialog module={module} id={id} contacts={mail.contacts} defaultSubject={title} />}
+      {isDoc && <DocumentActions module={module} id={id} status={status} isAdmin={ctx.role === "admin"} />}
+      {mail && !(module === "Invoices" && status === "draft") && <WhatsAppButton module={module} id={id} contacts={mail.people} title={title} />}
+      {converted && <StatusPill tone="ink">{t("records.converted")}</StatusPill>}
+      {module === "Leads" && !converted && <ConvertDialog id={id} company={String(record.Company ?? "")} name={title} />}
+      {!converted && !locked && (module !== "Products" || ctx.role === "admin") && (
+        <Button asChild variant={isDoc || module === "Leads" ? "outline" : "default"}>
+          <Link href={`/app/${module}/${id}/edit`}>
+            <PencilIcon aria-hidden />
+            {t("records.edit")}
+          </Link>
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <div className="flex flex-col gap-6">
-      <Link href={`/app/${module}`} className="inline-flex items-center gap-1 self-start text-sm text-muted-foreground hover:underline">
-        <ChevronLeftIcon className="size-4 rtl:rotate-180" aria-hidden />
-        {t(`modules.${module}`)}
-      </Link>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{recordTitle(meta, record)}</h1>
-        <div className="flex flex-wrap gap-2">
-          {(module === "Accounts" || module === "Contacts") && <ActivityDialog module={module} id={id} />}
-          {module === "Deals" && Boolean(record.Account_Name) && <NewQuoteButton dealId={id} dealName={recordTitle(meta, record)} accountId={(record.Account_Name as { id: string }).id} />}
-          {mail && !(module === "Invoices" && status === "draft") && <SendEmailDialog module={module} id={id} contacts={mail.contacts} defaultSubject={recordTitle(meta, record)} />}
-          {(module === "Quotes" || module === "Sales_Orders" || module === "Invoices") && <DocumentActions module={module} id={id} status={status} isAdmin={ctx.role === "admin"} />}
-          {converted && <Badge variant="secondary">{t("records.converted")}</Badge>}
-          {module === "Leads" && !converted && <ConvertDialog id={id} company={String(record.Company ?? "")} name={recordTitle(meta, record)} />}
-          {!converted && !locked && (module !== "Products" || ctx.role === "admin") && (
-            <Button asChild variant="outline">
-              <Link href={`/app/${module}/${id}/edit`}>
-                <PencilIcon aria-hidden />
-                {t("records.edit")}
-              </Link>
-            </Button>
+      <BackLink href={`/app/${module}`}>{t(`modules.${module}`)}</BackLink>
+      <PageHeader title={[t(`records.singular.${module}`), title]} stats={stats} actions={actions} />
+      <MotionScope className="grid grid-cols-1 gap-(--gap) xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-(--gap) xl:col-span-8">
+          {module === "Deals" && stages.length > 0 && (
+            <StageControl
+              id={id}
+              version={record.version}
+              stageId={(record.Stage as { id: string } | null)?.id ?? ""}
+              stages={stages}
+              reasons={meta.fields.find((f) => f.api_name === "Reason_For_Loss")?.picklist_values ?? []}
+            />
           )}
+          <RecordDetail sections={meta.sections} record={record} />
+          {isDoc && <QuoteLines record={record} />}
+          <RelatedTabs module={module} id={id} tabs={tabs} />
         </div>
-      </div>
-      {module === "Deals" && stages.length > 0 && (
-        <StageControl
-          id={id}
-          version={record.version}
-          stageId={(record.Stage as { id: string } | null)?.id ?? ""}
-          stages={stages}
-          reasons={meta.fields.find((f) => f.api_name === "Reason_For_Loss")?.picklist_values ?? []}
-        />
-      )}
-      <RecordDetail sections={meta.sections} record={record} />
-      {(module === "Quotes" || module === "Sales_Orders" || module === "Invoices") && <QuoteLines record={record} />}
-      {mail && !(module === "Invoices" && status === "draft") && <div className="flex justify-end"><WhatsAppButton module={module} id={id} contacts={mail.people} title={recordTitle(meta, record)} /></div>}
-      {mail && <ShareLinksList module={module} id={id} links={mail.links} />}
-      {mail && <EmailsList rows={mail.emails} />}
-      <RelatedTabs module={module} id={id} tabs={tabs} />
-      <Timeline items={timeline} fields={meta.fields} />
+        <div className="flex min-w-0 flex-col gap-(--gap) xl:col-span-4">
+          <Timeline items={timeline} fields={meta.fields} />
+          {mail && <ShareLinksList module={module} id={id} links={mail.links} />}
+          {mail && <EmailsList rows={mail.emails} />}
+        </div>
+      </MotionScope>
     </div>
   );
 }

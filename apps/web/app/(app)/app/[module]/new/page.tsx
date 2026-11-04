@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { BackLink } from "@/components/patterns/back-link";
+import { PageHeader } from "@/components/patterns/page-header";
 import { RecordForm } from "@/components/records/record-form";
 import { isRecordModule, lookupOptions, moduleMeta } from "@/lib/records";
 import { requireContext } from "@/lib/session";
@@ -30,9 +32,11 @@ export default async function NewRecordPage({ params, searchParams }: Props) {
     meta.fields.filter((f) => f.data_type === "lookup" && z.uuid().safeParse(query[f.api_name]).success).map((f) => [f.api_name, query[f.api_name]!]),
   );
   const t = await getTranslations("records");
+  const tAll = await getTranslations();
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("newTitle", { name: t(`singular.${module}`) })}</h1>
+      <BackLink href={`/app/${module}`}>{tAll(`modules.${module}`)}</BackLink>
+      <PageHeader title={[tAll("screens.form.new"), t(`singular.${module}`)]} />
       <RecordForm module={module} sections={meta.sections} options={options} defaults={defaults} />
     </div>
   );

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { notify } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
 import { callApi, fieldErrors } from "@/lib/api-client";
 import { ManagerField, type Person, RoleField } from "../user-fields";
@@ -66,8 +67,8 @@ export function EditUser({ user, managers, recipients, isSelf }: Props) {
 
   const active = user.status === "active";
   return (
-    <div className="flex flex-col gap-8">
-      <form onSubmit={onSave} className="flex max-w-md flex-col gap-4" aria-busy={pending === "save"}>
+    <div className="grid grid-cols-1 items-start gap-(--gap) xl:grid-cols-12">
+      <form onSubmit={onSave} className="glass flex flex-col gap-4 rounded-card p-(--pad) xl:col-span-7" aria-busy={pending === "save"}>
         {failed && (
           <p role="alert" className="text-sm text-destructive">
             {t("failed")}
@@ -85,8 +86,8 @@ export function EditUser({ user, managers, recipients, isSelf }: Props) {
       </form>
 
       {active && !isSelf && (
-        <section aria-labelledby="deactivate-title" className="flex max-w-md flex-col items-start gap-3 rounded-lg border border-destructive/40 p-4">
-          <h2 id="deactivate-title" className="font-medium">
+        <section aria-labelledby="deactivate-title" className="glass flex flex-col items-start gap-3 rounded-card border-coral p-(--pad) xl:col-span-5">
+          <h2 id="deactivate-title" className="text-[15px] font-medium">
             {t("deactivateTitle")}
           </h2>
           <p className="text-sm text-muted-foreground">{t("deactivateHelp")}</p>
@@ -101,14 +102,14 @@ export function EditUser({ user, managers, recipients, isSelf }: Props) {
               </DialogHeader>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="transfer-to">{t("transferTo")}</Label>
-                <select id="transfer-to" className="h-9 rounded-md border bg-background px-2 text-sm" value={transferTo} onChange={(e) => setTransferTo(e.target.value)}>
+                <NativeSelect id="transfer-to" value={transferTo} onChange={(e) => setTransferTo(e.target.value)}>
                   <option value="">{t("transferNone")}</option>
                   {recipients.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
                 <p className="text-sm text-muted-foreground">{t("transferHelp")}</p>
               </div>
               <DialogFooter>

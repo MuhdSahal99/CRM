@@ -1,5 +1,11 @@
 import { getTranslations } from "next-intl/server";
-import { Badge } from "@/components/ui/badge";
+import { MailIcon } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { GlassCard, Tile } from "@/components/ui/glass-card";
+import { StatusPill } from "@/components/ui/status";
+import type { Tone } from "@/components/ui/tone";
+
+const TONE: Record<EmailRow["Status"], Tone> = { queued: "sky", sending: "sky", sent: "lime", failed: "coral" };
 
 export type EmailRow = { id: string; To: { name: string }; To_Email: string; Subject: string; Status: "queued" | "sending" | "sent" | "failed"; Error: string | null; Queued_Time: string; Sent_Time: string | null };
 
@@ -7,19 +13,17 @@ export type EmailRow = { id: string; To: { name: string }; To_Email: string; Sub
 export async function EmailsList({ rows }: { rows: EmailRow[] }) {
   const t = await getTranslations("email");
   return (
-    <section aria-labelledby="emails-title" className="flex flex-col gap-2">
-      <h2 id="emails-title" className="text-lg font-medium">
-        {t("title")}
-      </h2>
+    <GlassCard title={t("title")} aria-label={t("title")}>
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("empty")}</p>
+        <EmptyState icon={<MailIcon />} title={t("empty")} />
       ) : (
-        <ul className="flex flex-col divide-y rounded-lg border">
+        <ul className="flex flex-col gap-2">
           {rows.map((e) => (
-            <li key={e.id} className="flex flex-col gap-1 p-3">
+            <li key={e.id}>
+<Tile className="flex flex-col gap-1 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="min-w-0 font-medium break-words">{e.Subject}</span>
-                <Badge variant={e.Status === "failed" ? "destructive" : e.Status === "sent" ? "secondary" : "outline"}>{t(`status.${e.Status}`)}</Badge>
+                <StatusPill tone={TONE[e.Status]}>{t(`status.${e.Status}`)}</StatusPill>
               </div>
               <span className="text-sm text-muted-foreground break-words">
                 {e.To.name} ({e.To_Email})
@@ -29,10 +33,11 @@ export async function EmailsList({ rows }: { rows: EmailRow[] }) {
                   {e.Error}
                 </p>
               )}
+            </Tile>
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </GlassCard>
   );
 }

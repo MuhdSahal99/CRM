@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2Icon } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -64,6 +65,7 @@ export function RecordForm({ module, sections, options, record, defaults = {} }:
   const [failure, setFailure] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [idempotencyKey] = useState(() => crypto.randomUUID()); // one per create intent: a double submit cannot create twice
+  const cancelHref = record ? `/app/${module}/${record.id}` : `/app/${module}`;
   const set = (api: string) => (v: Value) => setValues((prev) => ({ ...prev, [api]: v }));
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -90,15 +92,15 @@ export function RecordForm({ module, sections, options, record, defaults = {} }:
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-8" aria-busy={pending}>
+    <form onSubmit={onSubmit} className="flex flex-col gap-(--gap)" aria-busy={pending}>
       {failure && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="glass rounded-tile border-coral p-3 text-sm text-destructive">
           {failure}
         </p>
       )}
       {sections.map((s) => (
-        <fieldset key={s.label_key} className="flex flex-col gap-4">
-          <legend className="mb-2 text-lg font-medium">{t(s.label_key)}</legend>
+        <fieldset key={s.label_key} className="glass flex min-w-0 flex-col gap-4 rounded-card p-(--pad)">
+          <legend className="float-start mb-3 w-full text-[15px] font-medium">{t(s.label_key)}</legend>
           <div className={cn("grid gap-4", s.columns === 2 && "sm:grid-cols-2 lg:grid-cols-3")}>
             {s.fields.filter(editable).map((f) => (
               <Field key={f.api_name} field={f} value={values[f.api_name]!} onChange={set(f.api_name)} options={options[f.api_name] ?? []} error={errors[f.api_name]} />
@@ -106,7 +108,10 @@ export function RecordForm({ module, sections, options, record, defaults = {} }:
           </div>
         </fieldset>
       ))}
-      <div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button asChild variant="ghost">
+          <Link href={cancelHref}>{t("common.cancel")}</Link>
+        </Button>
         <Button type="submit" disabled={pending}>
           {pending && <Loader2Icon className="animate-spin" aria-hidden />}
           {pending ? t("records.saving") : t("common.save")}

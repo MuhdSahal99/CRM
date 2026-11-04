@@ -1,7 +1,11 @@
 import { IMPORT_MODULES, IMPORT_MODULE_NAMES, listFields, withTenant } from "@crm/core";
 import type { Metadata } from "next";
+import { FileSpreadsheetIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { MotionScope } from "@/components/patterns/motion-scope";
+import { PageHeader } from "@/components/patterns/page-header";
+import { StatChip } from "@/components/ui/status";
 import { requireContext } from "@/lib/session";
 import { ImportWizard, type ModuleSetup } from "./import-wizard";
 
@@ -26,9 +30,14 @@ export default async function ImportPage() {
   );
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-      <p className="max-w-prose text-muted-foreground">{t("lead")}</p>
-      <ImportWizard modules={modules} />
+      <PageHeader
+        title={[t("title1"), t("title2")]}
+        stats={<StatChip icon={<FileSpreadsheetIcon />} value={<span data-count="number" data-to={modules.length}>{modules.length}</span>} label={t("statModules")} />}
+      />
+      <p className="-mt-3 max-w-prose text-sm text-muted-foreground">{t("lead")}</p>
+      <MotionScope className="grid grid-cols-1 gap-(--gap)">
+        <ImportWizard modules={modules} />
+      </MotionScope>
     </div>
   );
 }
