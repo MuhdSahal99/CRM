@@ -669,9 +669,7 @@
     "tagline": "From lead to tax invoice, in OMR, built for sales teams in Oman."
   },
   "app": {
-    "metaTitle": "Home · Saqient CRM",
-    "title": "Welcome to Saqient CRM",
-    "lead": "Your leads, deals and documents will appear here."
+    "metaTitle": "Home · Saqient CRM"
   },
   "shell": {
     "nav": "Main",
@@ -1521,5 +1519,64 @@
     "label": "Call in progress with {name}",
     "notes": "Notes",
     "end": "End call"
+  },
+  "home": {
+    "title1": "Sales",
+    "title2": "Overview",
+    "newDeal": "New deal",
+    "board": "Pipeline board",
+    "retry": "Try again",
+    "loading": "Loading home",
+    "stats": {
+      "pipeline": "Open pipeline",
+      "openDeals": "Open deals",
+      "winRate": "Win rate, closed deals",
+      "due": "Due today",
+      "overdue": "{count} overdue"
+    },
+    "openAcross": "open across <b>{count}</b> deals",
+    "pipeline": {
+      "title": "Pipeline by stage",
+      "seriesValue": "Pipeline (OMR)",
+      "seriesCount": "Deals"
+    },
+    "noOpen": {
+      "title": "No open deals",
+      "text": "Deals you can see will appear here."
+    },
+    "soon": {
+      "title": "Closing soon",
+      "subtitle": "Open deals by closing date"
+    },
+    "closes": "Closes {date}",
+    "stageProb": "{stage} · {probability}%",
+    "day": {
+      "title": "My day",
+      "subtitle": "{date} · {count} due",
+      "all": "All activities",
+      "overdue": "Overdue",
+      "today": "Due today",
+      "empty": "Nothing due today",
+      "emptyText": "You are all caught up."
+    },
+    "mix": {
+      "title": "Stage mix",
+      "all": "All deals",
+      "label": "Open deals by stage",
+      "stage": "Stage",
+      "deals": "Deals",
+      "value": "Value (OMR)",
+      "share": "Share"
+    },
+    "recent": {
+      "Leads": "Recent leads",
+      "Accounts": "Recent accounts"
+    },
+    "recentEmpty": {
+      "Leads": "No leads yet",
+      "Accounts": "No accounts yet"
+    },
+    "viewAll": "View all",
+    "added": "Added {date}"
   }
 }

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
+import { HomeBody } from "@/components/home/home-body";
+import { HomeSkeleton } from "@/components/home/home-skeleton";
 import { requireContext } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -7,14 +10,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-// Home after sign-in; modules arrive with their slices.
+// Home: pipeline, my day and recent records, all from existing reads under the caller's visibility (RLS).
 export default async function AppHome() {
   await requireContext(); // layouts are not re-run on client navigation, so every page checks too
-  const t = await getTranslations("app");
   return (
-    <div className="flex flex-col gap-2">
-      <h1 className="text-[2rem] leading-tight font-semibold tracking-tight">{t("title")}</h1>
-      <p className="text-base text-muted-foreground">{t("lead")}</p>
-    </div>
+    <Suspense fallback={<HomeSkeleton />}>
+      <HomeBody />
+    </Suspense>
   );
 }

@@ -69,15 +69,15 @@ export function ProportionBar({ segments, label, headers, className }: { segment
             <th scope="col" className="pb-1 text-start font-normal">
               {headers.name}
             </th>
-            <th scope="col" className="pb-1 text-end font-normal">
+            <th scope="col" className="pb-1 ps-3 text-end font-normal">
               {headers.count}
             </th>
             {hasValue && (
-              <th scope="col" className="pb-1 text-end font-normal">
+              <th scope="col" className="pb-1 ps-3 text-end font-normal">
                 {headers.value}
               </th>
             )}
-            <th scope="col" className="pb-1 text-end font-normal">
+            <th scope="col" className="pb-1 ps-3 text-end font-normal">
               {headers.share}
             </th>
           </tr>
@@ -91,9 +91,9 @@ export function ProportionBar({ segments, label, headers, className }: { segment
                   {s.name}
                 </span>
               </th>
-              <td className="py-2 text-end tabular-nums">{s.count}</td>
-              {hasValue && <td className="py-2 text-end tabular-nums">{s.value}</td>}
-              <td className="py-2 text-end text-muted-foreground tabular-nums">{formatPercent((s.count / total) * 100, locale)}</td>
+              <td className="py-2 ps-3 text-end tabular-nums">{s.count}</td>
+              {hasValue && <td className="py-2 ps-3 text-end tabular-nums">{s.value}</td>}
+              <td className="py-2 ps-3 text-end text-muted-foreground tabular-nums">{formatPercent((s.count / total) * 100, locale)}</td>
             </tr>
           ))}
         </tbody>
